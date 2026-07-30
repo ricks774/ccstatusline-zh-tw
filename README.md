@@ -9,8 +9,6 @@ _在終端中顯示模型資訊、Git 分支、Token 用量及其他實時指標
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/ricks774/ccstatusline-zh-tw/blob/main/LICENSE)
 [![Node.js Version](https://img.shields.io/node/v/ccstatusline.svg)](https://nodejs.org)
 
-![Demo](https://raw.githubusercontent.com/ricks774/ccstatusline-zh-tw/main/screenshots/demo.gif)
-
 ## 📚 目錄
 
 - [關於本專案](#-關於本專案)
