@@ -107,9 +107,34 @@ bun run build
 
 跳過 `npm link`，在 Claude Code 設定裡直接指向 clone 下來的 `dist/ccstatusline.js` 路徑（見下方「配置 Claude Code」）。適合只在單一機器上使用、不想動到全域指令的情況。
 
-### 配置 Claude Code
+### 啟動配置介面
 
-在 Claude Code 設定中新增狀態列配置。編輯 `~/.claude/settings.json`：
+方式一（已全域連結）：
+
+```bash
+ccstatusline-zh-tw setup
+```
+
+方式二（本機建置檔案）：
+
+```bash
+node /path/to/ccstatusline-zh-tw/dist/ccstatusline.js setup
+```
+
+這將開啟互動式 TUI 配置介面，你可以：
+
+- 新增、刪除、重新排列元件
+- 設定顏色和樣式
+- 選擇 Powerline 主題
+- 實時預覽狀態列效果
+
+### 配置 Claude Code（推薦：用 TUI 自動安裝）
+
+進入 TUI 後，在主選單選擇 **「📦 安裝到 Claude Code」**，會自動偵測 Claude Code 安裝狀態、幫你把 `statusLine` 設定寫入 `~/.claude/settings.json`，並可選擇「自動更新」或「固定版本全域安裝」。不需要手動編輯 JSON。
+
+#### 手動配置（備用方案）
+
+如果不想用 TUI 安裝，也可以自行編輯 `~/.claude/settings.json`：
 
 **若採用方式一（已 `npm link` / `bun link`）：**
 
@@ -151,27 +176,6 @@ Windows 路徑範例（注意反斜線要跳脫）：
 ```
 
 > `refreshInterval` 僅在 Claude Code ≥ 2.1.97 時生效，TUI 中可設定為 `1-60` 秒，留空則不寫入該欄位。
-
-### 啟動配置介面
-
-方式一（已全域連結）：
-
-```bash
-ccstatusline-zh-tw setup
-```
-
-方式二（本機建置檔案）：
-
-```bash
-node /path/to/ccstatusline-zh-tw/dist/ccstatusline.js setup
-```
-
-這將開啟互動式 TUI 配置介面，你可以：
-
-- 新增、刪除、重新排列元件
-- 設定顏色和樣式
-- 選擇 Powerline 主題
-- 實時預覽狀態列效果
 
 ---
 
