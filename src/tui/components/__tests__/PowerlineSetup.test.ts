@@ -83,7 +83,7 @@ describe('PowerlineSetup helpers', () => {
             theme: 'gruvbox'
         };
 
-        expect(getSeparatorDisplay(config)).toBe('\uE0B4 - \u53F3\u5706\u5F27');
+        expect(getSeparatorDisplay(config)).toBe('\uE0B4 - \u53F3\u5713\u5F27');
         expect(getCapDisplay(config, 'start')).toBe('\uE0B2 - \u4E09\u89D2');
         expect(getCapDisplay(config, 'end')).toBe('\uE0B0 - \u4E09\u89D2');
         expect(getThemeDisplay(config)).toBe('Gruvbox');
@@ -108,20 +108,20 @@ describe('PowerlineSetup helpers', () => {
 
         expect(enabledItems[0]).toMatchObject({
             label: '\u5206\u9694\u7B26    ',
-            sublabel: '(\u591A\u4E2A)',
+            sublabel: '(\u591A\u500B)',
             disabled: false
         });
         expect(enabledItems[1]).toMatchObject({
             label: '\u8D77\u59CB\u7AEF\u5E3D  ',
-            sublabel: '(\u65E0)'
+            sublabel: '(\u7121)'
         });
         expect(enabledItems[2]).toMatchObject({
-            label: '\u7ED3\u675F\u7AEF\u5E3D  ',
-            sublabel: '(\uE0BC - \u659C\u7EBF)'
+            label: '\u7D50\u675F\u7AEF\u5E3D  ',
+            sublabel: '(\uE0BC - \u659C\u7DDA)'
         });
         expect(enabledItems[3]).toMatchObject({
-            label: '\u4E3B\u9898      ',
-            sublabel: '(\u81EA\u5B9A\u4E49)'
+            label: '\u4E3B\u984C      ',
+            sublabel: '(\u81EA\u5B9A\u7FA9)'
         });
     });
 
