@@ -1,0 +1,140 @@
+name: Upstream auto-sync
+
+# 每日掃描上游 sirmalloc/ccstatusline 最新 release。發現新版本時，自動跑
+# headless Claude Code 完成「cherry-pick 增量 + 中文化 + 自測 + 開 PR」，
+# 並對 PR 開啟 auto-merge（CI 綠後自動合併）。
+#
+# Claude 遇到無法自信解決的大沖突時，不會硬合，而是開一個 issue 通知後停止。
+# 合併後由 release.yml 負責釋出（npm publish 前有一道人工審批 gate）。
+#
+# 需要的倉庫配置：
+#   - Secret  CLAUDE_CODE_OAUTH_TOKEN  —— headless Claude Code 鑑權
+#     （本地 `claude setup-token` 用 Pro/Max 訂閱生成，無需 API 付費額度）
+#   - Settings → General → 勾選 "Allow auto-merge"
+#   - main 分支保護：要求 Build / Lint & Type Check / Test 三個 check 透過
+#     （否則 auto-merge 會在 CI 出結果前就直接合）
+
+on:
+  schedule:
+    # 每天 UTC 01:00 = 北京時間 09:00
+    - cron: '0 1 * * *'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: '強制同步到指定上游 tag（留空＝自動取 latest）'
+        required: false
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  detect:
+    runs-on: ubuntu-latest
+    outputs:
+      needs_sync: ${{ steps.diff.outputs.needs_sync }}
+      tag: ${{ steps.upstream.outputs.tag }}
+      fork_version: ${{ steps.fork.outputs.version }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Resolve fork version
+        id: fork
+        run: echo "version=$(jq -r .version package.json)" >> "$GITHUB_OUTPUT"
+
+      - name: Resolve upstream latest release
+        id: upstream
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ -n "${{ inputs.tag }}" ]; then
+            TAG="${{ inputs.tag }}"
+          else
+            TAG=$(gh api repos/sirmalloc/ccstatusline/releases/latest --jq .tag_name)
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Determine if sync needed
+        id: diff
+        env:
+          FORK_VERSION: ${{ steps.fork.outputs.version }}
+          UPSTREAM_TAG: ${{ steps.upstream.outputs.tag }}
+          FORCED_TAG: ${{ inputs.tag }}
+        run: |
+          FORK="${FORK_VERSION#v}"
+          UP="${UPSTREAM_TAG#v}"
+          LATEST=$(printf '%s\n%s\n' "$FORK" "$UP" | sort -V | tail -n 1)
+
+          if [ -n "$FORCED_TAG" ]; then
+            echo "needs_sync=true" >> "$GITHUB_OUTPUT"
+            echo "⚠️  手動指定同步到 v$UP"
+          elif [ "$FORK" = "$UP" ]; then
+            echo "needs_sync=false" >> "$GITHUB_OUTPUT"
+            echo "✅ Fork 已是最新（v$FORK）"
+          elif [ "$LATEST" = "$FORK" ]; then
+            echo "needs_sync=false" >> "$GITHUB_OUTPUT"
+            echo "✅ Fork v$FORK 比上游 v$UP 更新，無需同步"
+          else
+            echo "needs_sync=true" >> "$GITHUB_OUTPUT"
+            echo "⚠️  Fork v$FORK，上游 v$UP —— 需要同步"
+          fi
+
+  sync:
+    needs: detect
+    if: needs.detect.outputs.needs_sync == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Configure git + upstream remote
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git remote add upstream https://github.com/sirmalloc/ccstatusline.git || true
+          # fork 自己的 release tag(v2.2.19 等)和上游同名 tag 指向不同 commit，
+          # --tags 會因 "would clobber existing tag" 整體退出 1。新 tag(待同步那個)
+          # 和 upstream/main 都已正常拉到，這裡容忍這個良性失敗即可；切勿加 --force
+          # (會把 fork 的釋出 tag 覆蓋成上游 commit，毀掉中文化釋出歷史)。
+          git fetch upstream --tags || true
+
+      - uses: oven-sh/setup-bun@v2
+
+      - name: Run Claude Code sync
+        uses: anthropics/claude-code-action@be7b93b1907a4abad570368f3c74b6fe3807510b # v1.0.183
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          github_token: ${{ github.token }}
+          claude_args: '--allowedTools Bash,Read,Edit,Write,Grep,Glob'
+          prompt: |
+            上游 sirmalloc/ccstatusline 釋出了新版本 ${{ needs.detect.outputs.tag }}，
+            當前 fork 在 v${{ needs.detect.outputs.fork_version }}。請完成自動同步。
+
+            嚴格參照倉庫內 `.claude/commands/sync-upstream.md` 的流程與術語表，要點：
+
+            1. upstream remote 已配置並 fetch 完成。**用 git cherry-pick 取增量**，
+               不要用 jj rebase —— 本 fork 是「每次 squash 一個 sync 提交」的歷史，
+               jj rebase 會產生大量虛假衝突。
+               先定位 fork 上次同步到的上游 commit：fork 的 package.json version
+               對應某個上游版本，在 `upstream/main` 歷史裡按 package.json version
+               找到那個 commit 作為 cherry-pick 起點。
+            2. `git cherry-pick <起點>..${{ needs.detect.outputs.tag }}` 取增量。
+            3. 解衝突：保留 fork 的中文化，新出現的英文按術語表翻譯；
+               package.json 保留 `ccstatusline-zh-tw` 名稱只取版本號。
+            4. 中文化所有新增的使用者可見字串（元件名/描述/選單/提示/校驗資訊），
+               type ID、config 鍵名、檔案路徑保持英文。
+            5. 跑 `bun install && bun run lint`，再用
+               `env -u HTTPS_PROXY -u HTTP_PROXY -u ALL_PROXY -u https_proxy -u http_proxy -u all_proxy bun test`，
+               兩者必須全綠；測試斷言裡的英文文案同步翻成中文。
+            6. 更新 README：同步版本號、元件數、功能列項。
+            7. 新建分支 `sync/upstream-<YYYY-MM-DD>`，提交（訊息用
+               `feat: 同步上游 ccstatusline ${{ needs.detect.outputs.tag }} 並完成中文化`），
+               push 到 origin，用 `gh pr create --base main` 開 PR，
+               再 `gh pr merge --auto --squash` 開啟自動合併。
+            8. **不要自己 merge PR，不要 npm publish。**
+
+            如果遇到上游大規模重構、衝突無法自信解決：不要硬合，
+            用 `gh issue create --label upstream-sync` 開 issue 描述 diff 摘要後停止。

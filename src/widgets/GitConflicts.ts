@@ -1,0 +1,94 @@
+import type { RenderContext } from '../types/RenderContext';
+import type { Settings } from '../types/Settings';
+import type {
+    CustomKeybind,
+    Widget,
+    WidgetEditorDisplay,
+    WidgetEditorProps,
+    WidgetItem
+} from '../types/Widget';
+import {
+    getGitConflictCount,
+    isInsideGitWorkTree
+} from '../utils/git';
+
+import { makeModifierText } from './shared/editor-display';
+import {
+    getHideNoGitKeybinds,
+    getHideNoGitModifierText,
+    handleToggleNoGitAction,
+    isHideNoGitEnabled
+} from './shared/git-no-git';
+import {
+    formatSymbolPrefix,
+    getSymbolKeybind,
+    renderSymbolOverrideEditor
+} from './shared/symbol-override';
+
+const DEFAULT_SYMBOL = '⚠';
+
+export class GitConflictsWidget implements Widget {
+    getDefaultColor(): string { return 'red'; }
+    getDescription(): string { return '顯示合併衝突數量'; }
+    getDisplayName(): string { return 'Git 衝突'; }
+    getCategory(): string { return 'Git'; }
+
+    getEditorDisplay(item: WidgetItem): WidgetEditorDisplay {
+        const modifiers: string[] = [];
+        const noGitText = getHideNoGitModifierText(item);
+        if (noGitText)
+            modifiers.push('隱藏「無 Git」');
+
+        return {
+            displayText: this.getDisplayName(),
+            modifierText: makeModifierText(modifiers)
+        };
+    }
+
+    handleEditorAction(action: string, item: WidgetItem): WidgetItem | null {
+        return handleToggleNoGitAction(action, item);
+    }
+
+    render(item: WidgetItem, context: RenderContext, _settings: Settings): string | null {
+        const hideNoGit = isHideNoGitEnabled(item);
+        const prefix = formatSymbolPrefix(item, DEFAULT_SYMBOL);
+
+        if (context.isPreview) {
+            if (item.rawValue)
+                return '2';
+            return `${prefix}2`;
+        }
+
+        if (!isInsideGitWorkTree(context)) {
+            return hideNoGit ? null : '（無 Git）';
+        }
+
+        const count = getGitConflictCount(context);
+
+        if (item.rawValue) {
+            return count.toString();
+        }
+
+        return `${prefix}${count}`;
+    }
+
+    getCustomKeybinds(): CustomKeybind[] {
+        return [
+            ...getHideNoGitKeybinds(),
+            getSymbolKeybind()
+        ];
+    }
+
+    renderEditor(props: WidgetEditorProps) {
+        return renderSymbolOverrideEditor(props, DEFAULT_SYMBOL);
+    }
+
+    getNumericValue(context: RenderContext, _item: WidgetItem): number | null {
+        if (!isInsideGitWorkTree(context))
+            return null;
+        return getGitConflictCount(context);
+    }
+
+    supportsRawValue(): boolean { return true; }
+    supportsColors(_item: WidgetItem): boolean { return true; }
+}

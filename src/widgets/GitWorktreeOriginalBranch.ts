@@ -1,0 +1,30 @@
+import type { RenderContext } from '../types/RenderContext';
+import type { Settings } from '../types/Settings';
+import type {
+    Widget,
+    WidgetEditorDisplay,
+    WidgetItem
+} from '../types/Widget';
+
+export class GitWorktreeOriginalBranchWidget implements Widget {
+    getDefaultColor(): string { return 'yellow'; }
+    getDescription(): string { return '進入工作樹前檢出的 Git 分支'; }
+    getDisplayName(): string { return 'Git 工作樹原分支'; }
+    getCategory(): string { return 'Git'; }
+
+    getEditorDisplay(_item: WidgetItem): WidgetEditorDisplay {
+        return { displayText: this.getDisplayName() };
+    }
+
+    render(_item: WidgetItem, context: RenderContext, _settings: Settings): string | null {
+        if (context.isPreview) {
+            return 'main';
+        }
+
+        const originalBranch = context.data?.worktree?.original_branch;
+        return originalBranch ?? null;
+    }
+
+    supportsRawValue(): boolean { return false; }
+    supportsColors(_item: WidgetItem): boolean { return true; }
+}
