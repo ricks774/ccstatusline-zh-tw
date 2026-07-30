@@ -81,23 +81,36 @@ ccstatusline 是一個優秀的 Claude Code CLI 狀態列格式化工具，支�
 
 ### 安裝
 
-透過 npm 全域性安裝：
+本 fork 不發布到 npm，僅供自用或從 GitHub clone 後自行建置安裝。
+
+#### 方式一：Clone 後全域連結（推薦，安裝完可直接打指令）
 
 ```bash
-npm install -g ccstatusline-zh-tw
+git clone https://github.com/ricks774/ccstatusline-zh-tw.git
+cd ccstatusline-zh-tw
+bun install       # 或 npm install
+bun run build      # 產生 dist/ccstatusline.js
+npm link           # 或 bun link，註冊全域指令 ccstatusline-zh-tw
 ```
 
-或者使用 Bun：
+之後任何地方都能直接執行 `ccstatusline-zh-tw` 指令。日後拉新版只需要：
 
 ```bash
-bun install -g ccstatusline-zh-tw
+git pull
+bun run build
 ```
 
-> 💡 提示：v2.2.14 起 ccstatusline 增加了「固定版本全域性安裝」選項，TUI 中選擇 **固定全域性安裝** 即可鎖定當前版本，避免 `@latest` 跟隨上游。詳見 TUI 安裝流程。
+不用重新 `npm link`。若要移除，執行 `npm unlink -g ccstatusline-zh-tw`。
+
+#### 方式二：不註冊全域指令，直接指到本機建置檔案
+
+跳過 `npm link`，在 Claude Code 設定裡直接指向 clone 下來的 `dist/ccstatusline.js` 路徑（見下方「配置 Claude Code」）。適合只在單一機器上使用、不想動到全域指令的情況。
 
 ### 配置 Claude Code
 
 在 Claude Code 設定中新增狀態列配置。編輯 `~/.claude/settings.json`：
+
+**若採用方式一（已 `npm link` / `bun link`）：**
 
 ```json
 {
@@ -110,30 +123,46 @@ bun install -g ccstatusline-zh-tw
 }
 ```
 
-如果使用 `npx` 或 `bunx` 執行，可以使用以下命令：
+**若採用方式二（直接指到本機建置檔案）：**
 
 ```json
 {
   "statusLine": {
     "type": "command",
-    "command": "npx -y ccstatusline-zh-tw@latest",
-    "padding": 0
+    "command": "node /path/to/ccstatusline-zh-tw/dist/ccstatusline.js",
+    "padding": 0,
+    "refreshInterval": 10
+  }
+}
+```
+
+Windows 路徑範例（注意反斜線要跳脫）：
+
+```json
+{
+  "statusLine": {
+    "type": "command",
+    "command": "node \"D:\\github\\ccstatusline-zh-tw\\dist\\ccstatusline.js\"",
+    "padding": 0,
+    "refreshInterval": 10
   }
 }
 ```
 
 > `refreshInterval` 僅在 Claude Code ≥ 2.1.97 時生效，TUI 中可設定為 `1-60` 秒，留空則不寫入該欄位。
->
-> 其他支援的 `command` 取值：
-> - `bunx -y ccstatusline-zh-tw@latest`
-> - `ccstatusline-zh-tw`（用於自管理 / 全域性安裝）
->
-> 如需固定版本，可在 TUI 安裝時選擇「固定全域性安裝」，TUI 會全域性安裝當前版本並將 `command` 寫為 `ccstatusline-zh-tw`。
 
 ### 啟動配置介面
 
+方式一（已全域連結）：
+
 ```bash
 ccstatusline-zh-tw setup
+```
+
+方式二（本機建置檔案）：
+
+```bash
+node /path/to/ccstatusline-zh-tw/dist/ccstatusline.js setup
 ```
 
 這將開啟互動式 TUI 配置介面，你可以：
@@ -147,11 +176,7 @@ ccstatusline-zh-tw setup
 
 ## 🪟 Windows 支援
 
-ccstatusline-zh-tw 完整支援 Windows 系統。安裝方式相同：
-
-```bash
-npm install -g ccstatusline-zh-tw
-```
+ccstatusline-zh-tw 完整支援 Windows 系統，安裝方式與上方「安裝」章節相同（clone + `bun run build` + `npm link`，或直接指向本機建置檔案）。
 
 Windows 下 Claude Code 的配置路徑為 `%USERPROFILE%\.claude\settings.json`。
 
