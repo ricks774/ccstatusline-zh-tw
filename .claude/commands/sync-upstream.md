@@ -8,7 +8,7 @@ argument-hint: "<upstream-tag, e.g. v2.2.17>"
 把上游 sirmalloc/ccstatusline 的新 release `$ARGUMENTS` 同步到當前 fork，
 保持 fork 的中文化風格、包名重新命名、測試全綠，最後開 PR。
 
-**不要自動 merge PR，不要自動 npm publish——這兩步由使用者人工執行。**
+**不要自動 merge PR——這一步由使用者人工執行。本 fork 僅供自用／GitHub clone 安裝，不發布到 npm。**
 
 ## 硬約束（每次 sync 不變）
 
@@ -195,23 +195,21 @@ PR body 模板（寫到 `/tmp/sync-pr-body.md`）：
 ```
 
 CI 自動同步場景（`upstream-sync.yml` 呼叫）：開完 PR 直接
-`gh pr merge --auto --squash` 開啟自動合併，CI 綠後自動合，釋出交給 `release.yml`。
+`gh pr merge --auto --squash` 開啟自動合併，CI 綠後自動合併即完成，不觸發任何發布動作。
 
 ### 步驟 8：交接
 
 PR 開好後：
 
 - **CI 自動同步**（`upstream-sync.yml`）：已 `gh pr merge --auto --squash`，到此為止。
-  CI 綠 → 自動合併 → `release.yml` 檢測到版本號變化 → 在 `npm-publish`
-  Environment 暫停等使用者審批 → 批准後釋出。
+  CI 綠 → 自動合併 → 完成，使用者之後在本機 `git pull && bun run build` 即可用到新版。
 - **手動跑**：`gh pr checks <PR#> --watch` 看 CI，綠後把 PR URL 給使用者，
-  由使用者 review + `gh pr merge --squash`。合併後釋出同樣交給 `release.yml`。
+  由使用者 review + `gh pr merge --squash`。
 
 ## 注意事項
 
 - **用 git cherry-pick 取增量，不要 jj rebase / git rebase** —— 見步驟 1 上方說明
-- **不要自己 merge PR，不要手動 npm publish** —— 合併交給 auto-merge + CI，
-  釋出交給 `release.yml`（含人工審批 gate）
+- **不要自己 merge PR** —— 合併交給 auto-merge + CI，本 fork 不發布到 npm
 - 遇到不知道怎麼翻譯的術語 → 查 fork 已有翻譯先（`grep -rn '關鍵詞' src/`）
 - 遇到上游大規模重構 → 停下來：手動場景問使用者，CI 場景開 issue 通知後停止
 - lint 錯誤不要用 `eslint-disable` 註釋繞過 —— 專案 CLAUDE.md 硬約束，改原始碼

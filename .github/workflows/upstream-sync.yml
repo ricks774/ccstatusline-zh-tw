@@ -5,7 +5,7 @@ name: Upstream auto-sync
 # 並對 PR 開啟 auto-merge（CI 綠後自動合併）。
 #
 # Claude 遇到無法自信解決的大沖突時，不會硬合，而是開一個 issue 通知後停止。
-# 合併後由 release.yml 負責釋出（npm publish 前有一道人工審批 gate）。
+# 本 fork 僅供自用／GitHub clone 安裝，合併後不會發布到 npm。
 #
 # 需要的倉庫配置：
 #   - Secret  CLAUDE_CODE_OAUTH_TOKEN  —— headless Claude Code 鑑權
