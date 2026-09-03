@@ -4,7 +4,7 @@
 
 _在終端中顯示模型資訊、Git 分支、Token 用量及其他實時指標_
 
-> 本專案是 [ccstatusline](https://github.com/sirmalloc/ccstatusline) 的**繁體中文化 Fork**，當前同步至上游 v2.2.27 版本（含周 Fable 用量元件、設定匯入/匯出（含預覽與合併模式）、用量 API limits[] 陣列解析、壓縮後上下文長度修復及渲染器分隔符保留修復等最新功能）。所有使用者可見的介面文字（元件名稱、分類、描述、選單標籤、提示資訊等）均已翻譯為中文，方便中文使用者使用。
+> 本專案是 [ccstatusline](https://github.com/sirmalloc/ccstatusline) 的**繁體中文化 Fork**，當前同步至上游 v2.2.28 版本（含 Nerd 字型切換輔助函式整合、計時進度條四捨五入規則統一、轉錄檔案讀取效能優化、用量鎖死鎖時限修復及 Git 快取暫存檔清理修復等最新變更）。所有使用者可見的介面文字（元件名稱、分類、描述、選單標籤、提示資訊等）均已翻譯為中文，方便中文使用者使用。
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/ricks774/ccstatusline-zh-tw/blob/main/LICENSE)
 [![Node.js Version](https://img.shields.io/node/v/ccstatusline.svg)](https://nodejs.org)
@@ -45,6 +45,7 @@ ccstatusline 是一個優秀的 Claude Code CLI 狀態列格式化工具，支�
 - **快取命中率 / 快取讀取 / 快取寫入**（Cache Hit Rate / Cache Read / Cache Write）、**超額已用元件**（Extra Usage Used）、**壓縮計數改用 compact_boundary 標記精準檢測**（不再依賴上下文百分比推斷）、**彈性分隔符 Powerline 路徑修復**、**可覆蓋字元字形（Glyph override）**、**每元件暗淡樣式**（整體暗淡 / 括號暗淡）、**invalid settings.json 非破壞性恢復與警告**（v2.2.21–v2.2.22）
 - **快取計時器 / Git CI 狀態 / 沙箱狀態元件**、**單側預設內邊距**、**選擇性 Powerline 對齊**、**Git 分支與根目錄寬度限制**、**當前目錄字元**、**可配置上下文視窗兜底值**、**可組合壓縮指標**、**`--version` 引數**、**用量快取與載入態修復**、**非同步 Git PR/CI 檢查重新整理**（v2.2.23–v2.2.25）
 - **周 Fable 用量元件**、**設定匯入/匯出**（含變更預覽與全部取代/合併模式）、**用量 API `limits[]` 陣列解析**（相容遷移帳戶）、**每模型周用量改讀 `limits[]`**、**壓縮後上下文長度改由 `compact_boundary` 回報**、**渲染器隱藏元件後分隔符保留修復**（v2.2.26–v2.2.27）
+- **Nerd 字型切換輔助函式整合**（VimMode / SandboxStatus / RemoteControlStatus / VoiceStatus / CompactionCounter 共用邏輯）、**計時進度條四捨五入規則統一**（時段 / 時段重置 / 周重置計時器改用四捨五入而非無條件捨去）、**轉錄檔案讀取效能優化**（同一次渲染只讀取一次，Block 相關元件無作用中時段時快取空結果 1 分鐘）、**用量鎖死鎖時限修復**（超過 24 小時的鎖時限視為異常並忽略）、**Git 快取寫入失敗時的暫存檔清理修復**（v2.2.28）
 - **確認對話方塊** "是 / 否"
 - **分類篩選** "全部" 等介面元素
 
@@ -57,7 +58,7 @@ ccstatusline 是一個優秀的 Claude Code CLI 狀態列格式化工具，支�
 | 介面語言   | 英文         | 中文                      |
 | 配置相容性 | —            | ✅ 共用相同 settings.json |
 | 功能差異   | —            | 無，功能完全一致          |
-| 同步版本   | 最新         | v2.2.27（+ 周 Fable 用量 / 設定匯入匯出 / 用量 limits[] 解析 / 壓縮上下文修復 / 中文化覆蓋） |
+| 同步版本   | 最新         | v2.2.28（+ Nerd 字型輔助函式整合 / 計時進度條四捨五入統一 / 轉錄讀取效能優化 / 用量鎖修復 / 中文化覆蓋） |
 
 ---
 
