@@ -7,6 +7,7 @@ import type {
     WidgetItem
 } from '../types/Widget';
 import { getContextWindowInputTotalTokens } from '../utils/context-window';
+import { resolveNumberFormat } from '../utils/number-format';
 import { formatTokens } from '../utils/renderer';
 
 import { isHidden } from './shared/hideable';
@@ -28,8 +29,9 @@ export class TokensInputWidget implements Widget {
     }
 
     render(item: WidgetItem, context: RenderContext, settings: Settings): string | null {
+        const format = resolveNumberFormat('token', item, settings);
         if (context.isPreview) {
-            return formatRawOrLabeledValue(item, '輸入: ', '15.2k');
+            return formatRawOrLabeledValue(item, '輸入: ', formatTokens(15200, format));
         }
 
         const inputTotalTokens = context.tokenMetrics?.inputTokens
@@ -43,9 +45,10 @@ export class TokensInputWidget implements Widget {
             return null;
         }
 
-        return formatRawOrLabeledValue(item, '輸入: ', formatTokens(inputTotalTokens));
+        return formatRawOrLabeledValue(item, '輸入: ', formatTokens(inputTotalTokens, format));
     }
 
     supportsRawValue(): boolean { return true; }
     supportsColors(item: WidgetItem): boolean { return true; }
+    supportsNumberFormat(): boolean { return true; }
 }

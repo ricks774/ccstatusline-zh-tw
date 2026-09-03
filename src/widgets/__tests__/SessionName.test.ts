@@ -106,7 +106,7 @@ describe('SessionNameWidget', () => {
             DEFAULT_SETTINGS
         );
 
-        expect(result).toBe('Session: Precomputed Session');
+        expect(result).toBe('會話: Precomputed Session');
     });
 
     it('should skip malformed JSON lines', () => {
@@ -142,6 +142,6 @@ describe('SessionNameWidget', () => {
             DEFAULT_SETTINGS
         );
 
-        expect(result).toBe('Session: Latest Huge Session');
+        expect(result).toBe('會話: Latest Huge Session');
     });
 });

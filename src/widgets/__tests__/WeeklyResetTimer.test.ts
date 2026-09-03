@@ -129,7 +129,7 @@ describe('WeeklyResetTimerWidget', () => {
         });
 
         // 35% of 16 cells is 5.6, past the half-cell mark, so the 6th cell fills.
-        expect(render(widget, item, { usageData: {} })).toBe('Weekly Reset [██████░░░░░░░░░░] 35.0%');
+        expect(render(widget, item, { usageData: {} })).toBe('周重置 [██████░░░░░░░░░░] 35.0%');
     });
 
     it('returns usage error when no weekly reset data is available', () => {
@@ -352,6 +352,7 @@ describe('WeeklyResetTimerWidget', () => {
             { key: 'h', label: '(h)僅小時', action: 'toggle-hours' }
         ],
         supportsDateMode: true,
+        supportsSliderMode: true,
         expectedModifierText: '(中進度條, 反轉)',
         expectedProgressKeybinds: [
             { key: 'p', label: '(p)進度條切換', action: 'toggle-progress' },

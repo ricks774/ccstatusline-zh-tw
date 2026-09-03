@@ -68,7 +68,7 @@ describe('GitAheadBehindWidget', () => {
 
     it('renders no git outside a work tree and hides via the unified state', () => {
         mockExecFileSync.mockReturnValue('false\n');
-        expect(render()).toBe('(no git)');
+        expect(render()).toBe('（無 Git）');
 
         clearGitCache();
         mockExecFileSync.mockReturnValue('false\n');
@@ -78,7 +78,7 @@ describe('GitAheadBehindWidget', () => {
     it('renders no upstream and hides via the unified state', () => {
         mockExecFileSync.mockReturnValueOnce('true\n');
         mockExecFileSync.mockReturnValueOnce('');
-        expect(render()).toBe('(no upstream)');
+        expect(render()).toBe('（無 upstream）');
 
         clearGitCache();
         mockExecFileSync.mockReturnValueOnce('true\n');

@@ -21,7 +21,7 @@ describe('OutputStyleWidget', () => {
         expect(render(
             { id: 'output-style', type: 'output-style' },
             { data: { output_style: { name: 'Explanatory' } } }
-        )).toBe('Style: Explanatory');
+        )).toBe('風格: Explanatory');
     });
 
     it('renders nothing when output style data is missing', () => {
@@ -35,7 +35,7 @@ describe('OutputStyleWidget', () => {
     it('hides the default style only when the default-value hide state is enabled', () => {
         const context: RenderContext = { data: { output_style: { name: 'default' } } };
 
-        expect(render({ id: 'output-style', type: 'output-style' }, context)).toBe('Style: default');
+        expect(render({ id: 'output-style', type: 'output-style' }, context)).toBe('風格: default');
         expect(render({
             id: 'output-style',
             type: 'output-style',
@@ -45,6 +45,6 @@ describe('OutputStyleWidget', () => {
             id: 'output-style',
             type: 'output-style',
             metadata: { hide: 'default-value' }
-        }, { data: { output_style: { name: 'Explanatory' } } })).toBe('Style: Explanatory');
+        }, { data: { output_style: { name: 'Explanatory' } } })).toBe('風格: Explanatory');
     });
 });

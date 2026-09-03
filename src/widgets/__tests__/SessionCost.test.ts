@@ -21,11 +21,19 @@ describe('SessionCostWidget', () => {
         expect(render(
             { id: 'session-cost', type: 'session-cost' },
             { data: { cost: { total_cost_usd: 2.456 } } }
-        )).toBe('Cost: $2.46');
+        )).toBe('費用: $2.46');
     });
 
     it('renders nothing when cost data is missing', () => {
         expect(render({ id: 'session-cost', type: 'session-cost' }, {})).toBeNull();
+    });
+
+    it('formats the preview sample with the selected cost style', () => {
+        expect(render({
+            id: 'session-cost',
+            type: 'session-cost',
+            numberFormat: { style: 'whole' }
+        }, { isPreview: true })).toBe('費用: $2');
     });
 
     it('declares the zero hideable state', () => {
@@ -35,7 +43,7 @@ describe('SessionCostWidget', () => {
     it('hides $0.00 only when the zero hide state is enabled', () => {
         const context: RenderContext = { data: { cost: { total_cost_usd: 0 } } };
 
-        expect(render({ id: 'session-cost', type: 'session-cost' }, context)).toBe('Cost: $0.00');
+        expect(render({ id: 'session-cost', type: 'session-cost' }, context)).toBe('費用: $0.00');
         expect(render({
             id: 'session-cost',
             type: 'session-cost',
@@ -45,7 +53,7 @@ describe('SessionCostWidget', () => {
             id: 'session-cost',
             type: 'session-cost',
             metadata: { hide: 'zero' }
-        }, { data: { cost: { total_cost_usd: 0.01 } } })).toBe('Cost: $0.01');
+        }, { data: { cost: { total_cost_usd: 0.01 } } })).toBe('費用: $0.01');
     });
 
     it('treats sub-cent costs that display as $0.00 as zero', () => {
@@ -54,5 +62,18 @@ describe('SessionCostWidget', () => {
             type: 'session-cost',
             metadata: { hide: 'zero' }
         }, { data: { cost: { total_cost_usd: 0.001 } } })).toBeNull();
+    });
+
+    it.each([
+        { name: 'compact', numberFormat: { style: 'compact' as const } },
+        { name: 'whole', numberFormat: { style: 'whole' as const } },
+        { name: 'custom-decimal', numberFormat: { decimals: 4 } }
+    ])('preserves zero hiding with the $name number format', ({ numberFormat }) => {
+        expect(render({
+            id: 'session-cost',
+            type: 'session-cost',
+            metadata: { hide: 'zero' },
+            numberFormat
+        }, { data: { cost: { total_cost_usd: 0 } } })).toBeNull();
     });
 });
