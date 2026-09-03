@@ -195,7 +195,7 @@ function collectTokenMetricRecord(state: TokenMetricState, data: TranscriptLine 
             isMainChain: data?.isSidechain !== true && !data?.isApiErrorMessage
         };
 
-        const hasStopReason = Object.hasOwn(message, 'stop_reason');
+        const hasStopReason = Object.prototype.hasOwnProperty.call(message, 'stop_reason');
         if (hasStopReason && !state.hasStopReasonField) {
             state.hasStopReasonField = true;
             state.metrics = createTokenMetricAccumulator();
@@ -482,18 +482,18 @@ function formatSessionDuration(firstTimestampMs: number | null, lastTimestampMs:
 
     const totalMinutes = Math.floor((lastTimestampMs - firstTimestampMs) / (1000 * 60));
     if (totalMinutes < 1) {
-        return '<1m';
+        return '<1分';
     }
 
     const hours = Math.floor(totalMinutes / 60);
     const minutes = totalMinutes % 60;
     if (hours === 0) {
-        return `${minutes}m`;
+        return `${minutes}分`;
     }
     if (minutes === 0) {
-        return `${hours}hr`;
+        return `${hours}時`;
     }
-    return `${hours}hr ${minutes}m`;
+    return `${hours}時 ${minutes}分`;
 }
 
 function normalizeSpeedWindows(windowSeconds: number[] | undefined): number[] {

@@ -9,6 +9,7 @@ import type { RenderContext } from '../types/RenderContext';
 import type { Settings } from '../types/Settings';
 import type {
     CustomKeybind,
+    HideableState,
     Widget,
     WidgetEditorDisplay,
     WidgetEditorProps,
@@ -18,19 +19,16 @@ import type { WidgetHookDef } from '../utils/hooks';
 import { shouldInsertInput } from '../utils/input-guards';
 
 import { makeModifierText } from './shared/editor-display';
-import {
-    isMetadataFlagEnabled,
-    removeMetadataKeys,
-    toggleMetadataFlag
-} from './shared/metadata';
+import { isHidden } from './shared/hideable';
+import { removeMetadataKeys } from './shared/metadata';
 
 type Mode = 'current' | 'count' | 'list';
 const MODES: Mode[] = ['current', 'count', 'list'];
 const MODE_LABELS: Record<Mode, string> = { current: '最近使用', count: '總計數', list: '唯一列表' };
-const HIDE_WHEN_EMPTY_KEY = 'hideWhenEmpty';
 const LIST_LIMIT_KEY = 'listLimit';
-const TOGGLE_HIDE_EMPTY_ACTION = 'toggle-hide-empty';
 const EDIT_LIST_LIMIT_ACTION = 'edit-list-limit';
+
+const EMPTY_HIDEABLE_STATE: HideableState = { key: 'empty', label: '沒有使用過技能時' };
 
 function parseListLimit(item: WidgetItem): number {
     const parsed = parseInt(item.metadata?.[LIST_LIMIT_KEY] ?? '0', 10);
@@ -76,8 +74,7 @@ export class SkillsWidget implements Widget {
 
     getCustomKeybinds(item?: WidgetItem): CustomKeybind[] {
         const keybinds: CustomKeybind[] = [
-            { key: 'v', label: '(v)檢視切換', action: 'cycle-mode' },
-            { key: 'h', label: '(h)空時隱藏', action: TOGGLE_HIDE_EMPTY_ACTION }
+            { key: 'v', label: '(v)檢視切換', action: 'cycle-mode' }
         ];
 
         if (item && this.getMode(item) === 'list') {
@@ -85,6 +82,10 @@ export class SkillsWidget implements Widget {
         }
 
         return keybinds;
+    }
+
+    getHideableStates(): HideableState[] {
+        return [EMPTY_HIDEABLE_STATE];
     }
 
     getEditorDisplay(item: WidgetItem): WidgetEditorDisplay {
@@ -95,9 +96,6 @@ export class SkillsWidget implements Widget {
                 modifiers.push(`數量限制: ${limit}`);
             }
         }
-        if (this.isHideWhenEmptyEnabled(item)) {
-            modifiers.push('空時隱藏');
-        }
         return { displayText: '技能', modifierText: makeModifierText(modifiers) };
     }
 
@@ -106,9 +104,6 @@ export class SkillsWidget implements Widget {
             const next = MODES[(MODES.indexOf(this.getMode(item)) + 1) % MODES.length] ?? 'current';
             const nextItem = next === 'list' ? item : removeMetadataKeys(item, [LIST_LIMIT_KEY]);
             return { ...nextItem, metadata: { ...nextItem.metadata, mode: next } };
-        }
-        if (action === TOGGLE_HIDE_EMPTY_ACTION) {
-            return toggleMetadataFlag(item, HIDE_WHEN_EMPTY_KEY);
         }
         return null;
     }
@@ -120,7 +115,7 @@ export class SkillsWidget implements Widget {
     render(item: WidgetItem, context: RenderContext, _settings: Settings): string | null {
         const mode = this.getMode(item);
         const raw = item.rawValue;
-        const hideWhenEmpty = this.isHideWhenEmptyEnabled(item);
+        const hideWhenEmpty = isHidden(item, EMPTY_HIDEABLE_STATE.key);
 
         if (context.isPreview) {
             if (mode === 'current') {
@@ -167,10 +162,6 @@ export class SkillsWidget implements Widget {
     private getMode(item: WidgetItem): Mode {
         const mode = item.metadata?.mode;
         return mode && MODES.includes(mode as Mode) ? mode as Mode : 'current';
-    }
-
-    private isHideWhenEmptyEnabled(item: WidgetItem): boolean {
-        return isMetadataFlagEnabled(item, HIDE_WHEN_EMPTY_KEY);
     }
 }
 

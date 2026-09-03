@@ -5,6 +5,7 @@ import type {
 import type { Settings } from '../types/Settings';
 import type {
     CustomKeybind,
+    HideableState,
     Widget,
     WidgetEditorDisplay,
     WidgetEditorProps,
@@ -13,6 +14,7 @@ import type {
 import { ZERO_COMPACTION_STATS } from '../utils/compaction';
 import { formatTokens } from '../utils/format-tokens';
 
+import { isHidden } from './shared/hideable';
 import {
     isMetadataFlagEnabled,
     isNerdFontEnabled,
@@ -35,9 +37,7 @@ type CompactionCounterFormat = typeof FORMATS[number];
 
 const DEFAULT_FORMAT: CompactionCounterFormat = 'icon-space-number';
 const CYCLE_FORMAT_ACTION = 'cycle-format';
-const TOGGLE_HIDE_ZERO_ACTION = 'toggle-hide-zero';
 const TOGGLE_NERD_FONT_ACTION = 'toggle-nerd-font';
-const HIDE_ZERO_METADATA_KEY = 'hideZero';
 const TOGGLE_TRIGGERS_ACTION = 'toggle-triggers';
 const SHOW_TRIGGERS_METADATA_KEY = 'showTriggers';
 const TOGGLE_RECLAIMED_ACTION = 'toggle-reclaimed';
@@ -59,6 +59,7 @@ const METRIC_LABELS: Record<CompactionMetric, string> = {
     reclaimed: '已回收'
 };
 const RECLAIMED_SLOT: SymbolSlot = { id: 'symbolReclaimed', label: '已回收', defaultSymbol: '↓' };
+const ZERO_HIDEABLE_STATE: HideableState = { key: 'zero', label: '計數為零時' };
 const SAMPLE_STATS: CompactionData = Object.freeze({
     count: 2,
     byTrigger: Object.freeze({ auto: 1, manual: 1, unknown: 0 }),
@@ -79,20 +80,6 @@ const NERD_FONT_FORMATS: NerdFontFormats<CompactionCounterFormat> = {
     defaultFormat: DEFAULT_FORMAT,
     canUseNerdFont
 };
-
-function isHideZeroEnabled(item: WidgetItem): boolean {
-    return item.metadata?.[HIDE_ZERO_METADATA_KEY] === 'true';
-}
-
-function toggleHideZero(item: WidgetItem): WidgetItem {
-    return {
-        ...item,
-        metadata: {
-            ...(item.metadata ?? {}),
-            [HIDE_ZERO_METADATA_KEY]: (!isHideZeroEnabled(item)).toString()
-        }
-    };
-}
 
 function getMetric(item: WidgetItem): CompactionMetric {
     const metric = item.metadata?.[METRIC_METADATA_KEY];
@@ -205,14 +192,15 @@ export class CompactionCounterWidget implements Widget {
                 modifiers.push('已回收');
             }
         }
-        if (isHideZeroEnabled(item)) {
-            modifiers.push('零時隱藏');
-        }
 
         return {
             displayText: '壓縮計數',
             modifierText: `(${modifiers.join(', ')})`
         };
+    }
+
+    getHideableStates(): HideableState[] {
+        return [ZERO_HIDEABLE_STATE];
     }
 
     handleEditorAction(action: string, item: WidgetItem): WidgetItem | null {
@@ -228,10 +216,6 @@ export class CompactionCounterWidget implements Widget {
             const nextFormat = FORMATS[(FORMATS.indexOf(currentFormat) + 1) % FORMATS.length] ?? DEFAULT_FORMAT;
 
             return setNerdFontFormat(item, nextFormat, NERD_FONT_FORMATS);
-        }
-
-        if (action === TOGGLE_HIDE_ZERO_ACTION) {
-            return toggleHideZero(item);
         }
 
         if (action === TOGGLE_NERD_FONT_ACTION) {
@@ -256,13 +240,13 @@ export class CompactionCounterWidget implements Widget {
 
         if (metric !== DEFAULT_METRIC) {
             const value = getMetricValue(data, metric);
-            if (value === 0 && isHideZeroEnabled(item) && !context.isPreview) {
+            if (value === 0 && isHidden(item, ZERO_HIDEABLE_STATE.key) && !context.isPreview) {
                 return null;
             }
             return metric === 'reclaimed' ? formatTokens(value) : String(value);
         }
 
-        if (data.count === 0 && isHideZeroEnabled(item) && !context.isPreview) {
+        if (data.count === 0 && isHidden(item, ZERO_HIDEABLE_STATE.key) && !context.isPreview) {
             return null;
         }
 
@@ -276,9 +260,9 @@ export class CompactionCounterWidget implements Widget {
         ];
 
         // The format / glyph / trigger toggles only shape the composite 'count'
-        // display; a single-metric value just needs the metric and hide-zero.
+        // display; a single-metric value just needs the metric selector, since
+        // hide-zero is one of the states in the shared hide checklist.
         if (item !== undefined && getMetric(item) !== DEFAULT_METRIC) {
-            keybinds.push({ key: 'h', label: '(h)零時隱藏', action: TOGGLE_HIDE_ZERO_ACTION });
             return keybinds;
         }
 
@@ -288,7 +272,6 @@ export class CompactionCounterWidget implements Widget {
         }
         keybinds.push({ key: 's', label: '(s)觸發器分類', action: TOGGLE_TRIGGERS_ACTION });
         keybinds.push({ key: 't', label: '(t)已回收令牌', action: TOGGLE_RECLAIMED_ACTION });
-        keybinds.push({ key: 'h', label: '(h)零時隱藏', action: TOGGLE_HIDE_ZERO_ACTION });
         keybinds.push(getSymbolKeybind());
 
         return keybinds;

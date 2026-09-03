@@ -159,7 +159,7 @@ describe('jsonl transcript metrics', () => {
 
         const duration = await getSessionDuration(transcriptPath);
 
-        expect(duration).toBe('<1m');
+        expect(duration).toBe('<1分');
     });
 
     it('formats multi-hour session durations', async () => {
@@ -173,7 +173,7 @@ describe('jsonl transcript metrics', () => {
 
         const duration = await getSessionDuration(transcriptPath);
 
-        expect(duration).toBe('2hr 5m');
+        expect(duration).toBe('2時 5分');
     });
 
     it('returns null for missing transcript files', async () => {
@@ -757,7 +757,7 @@ describe('jsonl transcript metrics', () => {
                 totalTokens: 10,
                 contextLength: 5
             },
-            sessionDuration: '4m',
+            sessionDuration: '4分',
             speedMetricsCollection: {
                 sessionAverage: {
                     totalDurationMs: 60000,
