@@ -9,6 +9,7 @@ import type { RenderContext } from '../types/RenderContext';
 import type { Settings } from '../types/Settings';
 import type {
     CustomKeybind,
+    HideableState,
     Widget,
     WidgetEditorDisplay,
     WidgetEditorProps,
@@ -18,19 +19,16 @@ import type { WidgetHookDef } from '../utils/hooks';
 import { shouldInsertInput } from '../utils/input-guards';
 
 import { makeModifierText } from './shared/editor-display';
-import {
-    isMetadataFlagEnabled,
-    removeMetadataKeys,
-    toggleMetadataFlag
-} from './shared/metadata';
+import { isHidden } from './shared/hideable';
+import { removeMetadataKeys } from './shared/metadata';
 
 type Mode = 'current' | 'count' | 'list';
 const MODES: Mode[] = ['current', 'count', 'list'];
-const MODE_LABELS: Record<Mode, string> = { current: '最近使用', count: '總計數', list: '唯一列表' };
-const HIDE_WHEN_EMPTY_KEY = 'hideWhenEmpty';
+const MODE_LABELS: Record<Mode, string> = { current: 'last used', count: 'total count', list: 'unique list' };
 const LIST_LIMIT_KEY = 'listLimit';
-const TOGGLE_HIDE_EMPTY_ACTION = 'toggle-hide-empty';
 const EDIT_LIST_LIMIT_ACTION = 'edit-list-limit';
+
+const EMPTY_HIDEABLE_STATE: HideableState = { key: 'empty', label: 'when no skills have been used' };
 
 function parseListLimit(item: WidgetItem): number {
     const parsed = parseInt(item.metadata?.[LIST_LIMIT_KEY] ?? '0', 10);
@@ -61,9 +59,9 @@ function setListLimit(item: WidgetItem, limit: number): WidgetItem {
 
 export class SkillsWidget implements Widget {
     getDefaultColor(): string { return 'magenta'; }
-    getDescription(): string { return '顯示來自 Hook 資料的 Claude Code 技能呼叫'; }
-    getDisplayName(): string { return '技能'; }
-    getCategory(): string { return '會話'; }
+    getDescription(): string { return 'Shows Claude Code skill invocations from hook data'; }
+    getDisplayName(): string { return 'Skills'; }
+    getCategory(): string { return 'Session'; }
     supportsRawValue(): boolean { return true; }
     supportsColors(): boolean { return true; }
 
@@ -76,15 +74,18 @@ export class SkillsWidget implements Widget {
 
     getCustomKeybinds(item?: WidgetItem): CustomKeybind[] {
         const keybinds: CustomKeybind[] = [
-            { key: 'v', label: '(v)檢視切換', action: 'cycle-mode' },
-            { key: 'h', label: '(h)空時隱藏', action: TOGGLE_HIDE_EMPTY_ACTION }
+            { key: 'v', label: '(v)iew: last/count/list', action: 'cycle-mode' }
         ];
 
         if (item && this.getMode(item) === 'list') {
-            keybinds.push({ key: 'l', label: '(l)數量限制', action: EDIT_LIST_LIMIT_ACTION });
+            keybinds.push({ key: 'l', label: '(l)imit', action: EDIT_LIST_LIMIT_ACTION });
         }
 
         return keybinds;
+    }
+
+    getHideableStates(): HideableState[] {
+        return [EMPTY_HIDEABLE_STATE];
     }
 
     getEditorDisplay(item: WidgetItem): WidgetEditorDisplay {
@@ -92,13 +93,10 @@ export class SkillsWidget implements Widget {
         if (this.getMode(item) === 'list') {
             const limit = parseListLimit(item);
             if (limit > 0) {
-                modifiers.push(`數量限制: ${limit}`);
+                modifiers.push(`limit: ${limit}`);
             }
         }
-        if (this.isHideWhenEmptyEnabled(item)) {
-            modifiers.push('空時隱藏');
-        }
-        return { displayText: '技能', modifierText: makeModifierText(modifiers) };
+        return { displayText: 'Skills', modifierText: makeModifierText(modifiers) };
     }
 
     handleEditorAction(action: string, item: WidgetItem): WidgetItem | null {
@@ -106,9 +104,6 @@ export class SkillsWidget implements Widget {
             const next = MODES[(MODES.indexOf(this.getMode(item)) + 1) % MODES.length] ?? 'current';
             const nextItem = next === 'list' ? item : removeMetadataKeys(item, [LIST_LIMIT_KEY]);
             return { ...nextItem, metadata: { ...nextItem.metadata, mode: next } };
-        }
-        if (action === TOGGLE_HIDE_EMPTY_ACTION) {
-            return toggleMetadataFlag(item, HIDE_WHEN_EMPTY_KEY);
         }
         return null;
     }
@@ -120,16 +115,16 @@ export class SkillsWidget implements Widget {
     render(item: WidgetItem, context: RenderContext, _settings: Settings): string | null {
         const mode = this.getMode(item);
         const raw = item.rawValue;
-        const hideWhenEmpty = this.isHideWhenEmptyEnabled(item);
+        const hideWhenEmpty = isHidden(item, EMPTY_HIDEABLE_STATE.key);
 
         if (context.isPreview) {
             if (mode === 'current') {
-                return raw ? 'commit' : '技能: commit';
+                return raw ? 'commit' : 'Skill: commit';
             }
             if (mode === 'count') {
-                return raw ? '5' : '技能: 5';
+                return raw ? '5' : 'Skills: 5';
             }
-            return raw ? 'commit, review-pr' : '技能: commit, review-pr';
+            return raw ? 'commit, review-pr' : 'Skills: commit, review-pr';
         }
 
         if (mode === 'current') {
@@ -138,16 +133,16 @@ export class SkillsWidget implements Widget {
                 if (hideWhenEmpty) {
                     return null;
                 }
-                return raw ? 'none' : '技能: 無';
+                return raw ? 'none' : 'Skill: none';
             }
-            return raw ? currentSkill : `技能: ${currentSkill}`;
+            return raw ? currentSkill : `Skill: ${currentSkill}`;
         }
         if (mode === 'count') {
             const total = context.skillsMetrics?.totalInvocations ?? 0;
             if (hideWhenEmpty && total === 0) {
                 return null;
             }
-            return raw ? String(total) : `技能: ${total}`;
+            return raw ? String(total) : `Skills: ${total}`;
         }
 
         const uniqueSkills = context.skillsMetrics?.uniqueSkills ?? [];
@@ -155,22 +150,18 @@ export class SkillsWidget implements Widget {
             if (hideWhenEmpty) {
                 return null;
             }
-            return raw ? 'none' : '技能: 無';
+            return raw ? 'none' : 'Skills: none';
         }
 
         const limit = parseListLimit(item);
         const visibleSkills = limit > 0 ? uniqueSkills.slice(0, limit) : uniqueSkills;
         const list = visibleSkills.join(', ');
-        return raw ? list : `技能: ${list}`;
+        return raw ? list : `Skills: ${list}`;
     }
 
     private getMode(item: WidgetItem): Mode {
         const mode = item.metadata?.mode;
         return mode && MODES.includes(mode as Mode) ? mode as Mode : 'current';
-    }
-
-    private isHideWhenEmptyEnabled(item: WidgetItem): boolean {
-        return isMetadataFlagEnabled(item, HIDE_WHEN_EMPTY_KEY);
     }
 }
 

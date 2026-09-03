@@ -2,6 +2,7 @@ import type { RenderContext } from '../types/RenderContext';
 import type { Settings } from '../types/Settings';
 import type {
     CustomKeybind,
+    HideableState,
     Widget,
     WidgetEditorDisplay,
     WidgetItem
@@ -17,9 +18,12 @@ import { makeModifierText } from './shared/editor-display';
 import {
     getRemoteWidgetKeybinds,
     handleRemoteWidgetAction,
-    isHideNoRemoteEnabled,
     isLinkToRepoEnabled
 } from './shared/git-remote';
+import {
+    NO_REMOTE_HIDEABLE_STATE,
+    isHidden
+} from './shared/hideable';
 import {
     isMetadataFlagEnabled,
     toggleMetadataFlag
@@ -30,27 +34,28 @@ const TOGGLE_OWNER_ONLY_ACTION = 'toggle-owner-only';
 
 export class GitOriginOwnerRepoWidget implements Widget {
     getDefaultColor(): string { return 'cyan'; }
-    getDescription(): string { return '以 所有者/倉庫 形式顯示 origin 遠端'; }
-    getDisplayName(): string { return 'Git Origin 所有者/倉庫'; }
+    getDescription(): string { return 'Shows the origin remote as owner/repo'; }
+    getDisplayName(): string { return 'Git Origin Owner/Repo'; }
     getCategory(): string { return 'Git'; }
 
     getEditorDisplay(item: WidgetItem): WidgetEditorDisplay {
         const modifiers: string[] = [];
 
-        if (isHideNoRemoteEnabled(item)) {
-            modifiers.push('空值時隱藏');
-        }
         if (isLinkToRepoEnabled(item)) {
-            modifiers.push('連結');
+            modifiers.push('link');
         }
         if (isMetadataFlagEnabled(item, OWNER_ONLY_WHEN_FORK_KEY)) {
-            modifiers.push('Fork 時僅顯示所有者');
+            modifiers.push('owner only when fork');
         }
 
         return {
             displayText: this.getDisplayName(),
             modifierText: makeModifierText(modifiers)
         };
+    }
+
+    getHideableStates(): HideableState[] {
+        return [NO_REMOTE_HIDEABLE_STATE];
     }
 
     handleEditorAction(action: string, item: WidgetItem): WidgetItem | null {
@@ -62,7 +67,7 @@ export class GitOriginOwnerRepoWidget implements Widget {
     }
 
     render(item: WidgetItem, context: RenderContext, _settings: Settings): string | null {
-        const hideWhenEmpty = isHideNoRemoteEnabled(item);
+        const hideWhenEmpty = isHidden(item, NO_REMOTE_HIDEABLE_STATE.key);
         const linkEnabled = isLinkToRepoEnabled(item);
         const ownerOnlyWhenFork = isMetadataFlagEnabled(item, OWNER_ONLY_WHEN_FORK_KEY);
 
@@ -90,7 +95,7 @@ export class GitOriginOwnerRepoWidget implements Widget {
     getCustomKeybinds(): CustomKeybind[] {
         return [
             ...getRemoteWidgetKeybinds(),
-            { key: 'o', label: '(o)Fork 時僅顯示 owner', action: TOGGLE_OWNER_ONLY_ACTION }
+            { key: 'o', label: '(o)wner only when fork', action: TOGGLE_OWNER_ONLY_ACTION }
         ];
     }
 

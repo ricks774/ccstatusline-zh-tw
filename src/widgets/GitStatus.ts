@@ -2,6 +2,7 @@ import type { RenderContext } from '../types/RenderContext';
 import type { Settings } from '../types/Settings';
 import type {
     CustomKeybind,
+    HideableState,
     Widget,
     WidgetEditorDisplay,
     WidgetEditorProps,
@@ -12,13 +13,10 @@ import {
     isInsideGitWorkTree
 } from '../utils/git';
 
-import { makeModifierText } from './shared/editor-display';
 import {
-    getHideNoGitKeybinds,
-    getHideNoGitModifierText,
-    handleToggleNoGitAction,
-    isHideNoGitEnabled
-} from './shared/git-no-git';
+    NO_GIT_HIDEABLE_STATE,
+    isHidden
+} from './shared/hideable';
 import {
     getSlotSymbol,
     getSymbolKeybind,
@@ -26,42 +24,34 @@ import {
     type SymbolSlot
 } from './shared/symbol-override';
 
-const CONFLICTS_SLOT: SymbolSlot = { id: 'symbolConflicts', label: '衝突', defaultSymbol: '!' };
-const STAGED_SLOT: SymbolSlot = { id: 'symbolStaged', label: '已暫存', defaultSymbol: '+' };
-const UNSTAGED_SLOT: SymbolSlot = { id: 'symbolUnstaged', label: '未暫存', defaultSymbol: '*' };
-const UNTRACKED_SLOT: SymbolSlot = { id: 'symbolUntracked', label: '未追蹤', defaultSymbol: '?' };
+const CONFLICTS_SLOT: SymbolSlot = { id: 'symbolConflicts', label: 'Conflicts', defaultSymbol: '!' };
+const STAGED_SLOT: SymbolSlot = { id: 'symbolStaged', label: 'Staged', defaultSymbol: '+' };
+const UNSTAGED_SLOT: SymbolSlot = { id: 'symbolUnstaged', label: 'Unstaged', defaultSymbol: '*' };
+const UNTRACKED_SLOT: SymbolSlot = { id: 'symbolUntracked', label: 'Untracked', defaultSymbol: '?' };
 
 export class GitStatusWidget implements Widget {
     getDefaultColor(): string { return 'yellow'; }
-    getDescription(): string { return '顯示 Git 狀態指示：+ 已暫存, * 未暫存, ? 未跟蹤, ! 衝突'; }
-    getDisplayName(): string { return 'Git 狀態'; }
+    getDescription(): string { return 'Shows git status indicators: + staged, * unstaged, ? untracked, ! conflicts'; }
+    getDisplayName(): string { return 'Git Status'; }
     getCategory(): string { return 'Git'; }
 
     getEditorDisplay(item: WidgetItem): WidgetEditorDisplay {
-        const modifiers: string[] = [];
-        const noGitText = getHideNoGitModifierText(item);
-        if (noGitText)
-            modifiers.push('隱藏「無 Git」');
-
-        return {
-            displayText: this.getDisplayName(),
-            modifierText: makeModifierText(modifiers)
-        };
+        return { displayText: this.getDisplayName() };
     }
 
-    handleEditorAction(action: string, item: WidgetItem): WidgetItem | null {
-        return handleToggleNoGitAction(action, item);
+    getHideableStates(): HideableState[] {
+        return [NO_GIT_HIDEABLE_STATE];
     }
 
     render(item: WidgetItem, context: RenderContext, _settings: Settings): string | null {
-        const hideNoGit = isHideNoGitEnabled(item);
+        const hideNoGit = isHidden(item, NO_GIT_HIDEABLE_STATE.key);
 
         if (context.isPreview) {
             return this.formatStatus(item, { staged: true, unstaged: true, untracked: false, conflicts: false });
         }
 
         if (!isInsideGitWorkTree(context)) {
-            return hideNoGit ? null : '（無 Git）';
+            return hideNoGit ? null : '(no git)';
         }
 
         const status = getGitStatus(context);
@@ -89,10 +79,7 @@ export class GitStatusWidget implements Widget {
     }
 
     getCustomKeybinds(): CustomKeybind[] {
-        return [
-            ...getHideNoGitKeybinds(),
-            getSymbolKeybind()
-        ];
+        return [getSymbolKeybind()];
     }
 
     renderEditor(props: WidgetEditorProps) {

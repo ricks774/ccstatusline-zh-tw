@@ -19,17 +19,15 @@ describe('SkillsWidget', () => {
     it('uses v as the mode toggle keybind', () => {
         const widget = new SkillsWidget();
         expect(widget.getCustomKeybinds({ id: 'skills', type: 'skills' })).toEqual([
-            { key: 'v', label: '(v)檢視切換', action: 'cycle-mode' },
-            { key: 'h', label: '(h)空時隱藏', action: 'toggle-hide-empty' }
+            { key: 'v', label: '(v)iew: last/count/list', action: 'cycle-mode' }
         ]);
         expect(widget.getCustomKeybinds({
             id: 'skills',
             type: 'skills',
             metadata: { mode: 'list' }
         })).toEqual([
-            { key: 'v', label: '(v)檢視切換', action: 'cycle-mode' },
-            { key: 'h', label: '(h)空時隱藏', action: 'toggle-hide-empty' },
-            { key: 'l', label: '(l)數量限制', action: 'edit-list-limit' }
+            { key: 'v', label: '(v)iew: last/count/list', action: 'cycle-mode' },
+            { key: 'l', label: '(l)imit', action: 'edit-list-limit' }
         ]);
     });
 
@@ -60,25 +58,10 @@ describe('SkillsWidget', () => {
         expect(updated?.metadata?.listLimit).toBeUndefined();
     });
 
-    it('toggles hide-when-empty metadata', () => {
+    it('declares the empty hideable state', () => {
         const widget = new SkillsWidget();
-        const base: WidgetItem = { id: 'skills', type: 'skills' };
-        const hidden = widget.handleEditorAction('toggle-hide-empty', base);
-        const shown = widget.handleEditorAction('toggle-hide-empty', hidden ?? base);
 
-        expect(hidden?.metadata?.hideWhenEmpty).toBe('true');
-        expect(shown?.metadata?.hideWhenEmpty).toBe('false');
-    });
-
-    it('shows hide-when-empty in editor modifier text when enabled', () => {
-        const widget = new SkillsWidget();
-        const display = widget.getEditorDisplay({
-            id: 'skills',
-            type: 'skills',
-            metadata: { hideWhenEmpty: 'true' }
-        });
-
-        expect(display.modifierText).toBe('(最近使用, 空時隱藏)');
+        expect(widget.getHideableStates().map(state => state.key)).toEqual(['empty']);
     });
 
     it('shows list limit in editor modifier text when configured', () => {
@@ -89,7 +72,7 @@ describe('SkillsWidget', () => {
             metadata: { mode: 'list', listLimit: '2' }
         });
 
-        expect(display.modifierText).toBe('(唯一列表, 數量限制: 2)');
+        expect(display.modifierText).toBe('(unique list, limit: 2)');
     });
 
     it('renders current, count, and list modes from skills metrics', () => {
@@ -101,11 +84,11 @@ describe('SkillsWidget', () => {
             }
         };
 
-        expect(render({ id: 'skills', type: 'skills' }, context)).toBe('技能: review-pr');
-        expect(render({ id: 'skills', type: 'skills', metadata: { mode: 'count' } }, context)).toBe('技能: 3');
-        expect(render({ id: 'skills', type: 'skills', metadata: { mode: 'list' } }, context)).toBe('技能: commit, review-pr');
-        expect(render({ id: 'skills', type: 'skills', metadata: { mode: 'list', listLimit: '1' } }, context)).toBe('技能: commit');
-        expect(render({ id: 'skills', type: 'skills', metadata: { mode: 'list', listLimit: '0' } }, context)).toBe('技能: commit, review-pr');
+        expect(render({ id: 'skills', type: 'skills' }, context)).toBe('Skill: review-pr');
+        expect(render({ id: 'skills', type: 'skills', metadata: { mode: 'count' } }, context)).toBe('Skills: 3');
+        expect(render({ id: 'skills', type: 'skills', metadata: { mode: 'list' } }, context)).toBe('Skills: commit, review-pr');
+        expect(render({ id: 'skills', type: 'skills', metadata: { mode: 'list', listLimit: '1' } }, context)).toBe('Skills: commit');
+        expect(render({ id: 'skills', type: 'skills', metadata: { mode: 'list', listLimit: '0' } }, context)).toBe('Skills: commit, review-pr');
     });
 
     it('shows non-hidden empty outputs by default', () => {
@@ -117,9 +100,9 @@ describe('SkillsWidget', () => {
             }
         };
 
-        expect(render({ id: 'skills', type: 'skills' }, context)).toBe('技能: 無');
-        expect(render({ id: 'skills', type: 'skills', metadata: { mode: 'count' } }, context)).toBe('技能: 0');
-        expect(render({ id: 'skills', type: 'skills', metadata: { mode: 'list' } }, context)).toBe('技能: 無');
+        expect(render({ id: 'skills', type: 'skills' }, context)).toBe('Skill: none');
+        expect(render({ id: 'skills', type: 'skills', metadata: { mode: 'count' } }, context)).toBe('Skills: 0');
+        expect(render({ id: 'skills', type: 'skills', metadata: { mode: 'list' } }, context)).toBe('Skills: none');
     });
 
     it('hides empty outputs when hide-when-empty is enabled', () => {
@@ -134,17 +117,17 @@ describe('SkillsWidget', () => {
         expect(render({
             id: 'skills',
             type: 'skills',
-            metadata: { hideWhenEmpty: 'true' }
+            metadata: { hide: 'empty' }
         }, context)).toBeNull();
         expect(render({
             id: 'skills',
             type: 'skills',
-            metadata: { mode: 'count', hideWhenEmpty: 'true' }
+            metadata: { mode: 'count', hide: 'empty' }
         }, context)).toBeNull();
         expect(render({
             id: 'skills',
             type: 'skills',
-            metadata: { mode: 'list', hideWhenEmpty: 'true' }
+            metadata: { mode: 'list', hide: 'empty' }
         }, context)).toBeNull();
     });
 });

@@ -5,6 +5,7 @@ import type {
 import type { Settings } from '../types/Settings';
 import type {
     CustomKeybind,
+    HideableState,
     Widget,
     WidgetEditorDisplay,
     WidgetEditorProps,
@@ -13,6 +14,7 @@ import type {
 import { ZERO_COMPACTION_STATS } from '../utils/compaction';
 import { formatTokens } from '../utils/format-tokens';
 
+import { isHidden } from './shared/hideable';
 import {
     isMetadataFlagEnabled,
     isNerdFontEnabled,
@@ -35,9 +37,7 @@ type CompactionCounterFormat = typeof FORMATS[number];
 
 const DEFAULT_FORMAT: CompactionCounterFormat = 'icon-space-number';
 const CYCLE_FORMAT_ACTION = 'cycle-format';
-const TOGGLE_HIDE_ZERO_ACTION = 'toggle-hide-zero';
 const TOGGLE_NERD_FONT_ACTION = 'toggle-nerd-font';
-const HIDE_ZERO_METADATA_KEY = 'hideZero';
 const TOGGLE_TRIGGERS_ACTION = 'toggle-triggers';
 const SHOW_TRIGGERS_METADATA_KEY = 'showTriggers';
 const TOGGLE_RECLAIMED_ACTION = 'toggle-reclaimed';
@@ -51,14 +51,8 @@ type CompactionMetric = typeof METRICS[number];
 const DEFAULT_METRIC: CompactionMetric = 'count';
 const METRIC_METADATA_KEY = 'metric';
 const CYCLE_METRIC_ACTION = 'cycle-metric';
-const METRIC_LABELS: Record<CompactionMetric, string> = {
-    count: '計數',
-    auto: '自動',
-    manual: '手動',
-    unknown: '未知',
-    reclaimed: '已回收'
-};
-const RECLAIMED_SLOT: SymbolSlot = { id: 'symbolReclaimed', label: '已回收', defaultSymbol: '↓' };
+const RECLAIMED_SLOT: SymbolSlot = { id: 'symbolReclaimed', label: 'Reclaimed', defaultSymbol: '↓' };
+const ZERO_HIDEABLE_STATE: HideableState = { key: 'zero', label: 'when count is zero' };
 const SAMPLE_STATS: CompactionData = Object.freeze({
     count: 2,
     byTrigger: Object.freeze({ auto: 1, manual: 1, unknown: 0 }),
@@ -79,20 +73,6 @@ const NERD_FONT_FORMATS: NerdFontFormats<CompactionCounterFormat> = {
     defaultFormat: DEFAULT_FORMAT,
     canUseNerdFont
 };
-
-function isHideZeroEnabled(item: WidgetItem): boolean {
-    return item.metadata?.[HIDE_ZERO_METADATA_KEY] === 'true';
-}
-
-function toggleHideZero(item: WidgetItem): WidgetItem {
-    return {
-        ...item,
-        metadata: {
-            ...(item.metadata ?? {}),
-            [HIDE_ZERO_METADATA_KEY]: (!isHideZeroEnabled(item)).toString()
-        }
-    };
-}
 
 function getMetric(item: WidgetItem): CompactionMetric {
     const metric = item.metadata?.[METRIC_METADATA_KEY];
@@ -165,7 +145,7 @@ function formatStats(data: CompactionData, item: WidgetItem, icon: string): stri
 function formatCount(count: number, format: CompactionCounterFormat, icon: string): string {
     switch (format) {
         case 'icon-space-number': return `${icon} ${count}`;
-        case 'text-and-number': return `壓縮次數: ${count}`;
+        case 'text-and-number': return `Compactions: ${count}`;
         case 'number': return String(count);
     }
 }
@@ -184,35 +164,36 @@ function formatCount(count: number, format: CompactionCounterFormat, icon: strin
  */
 export class CompactionCounterWidget implements Widget {
     getDefaultColor(): string { return 'yellow'; }
-    getDescription(): string { return '統計當前會話中上下文壓縮（compaction）發生的次數'; }
-    getDisplayName(): string { return '壓縮計數'; }
-    getCategory(): string { return '上下文'; }
+    getDescription(): string { return 'Count of context compaction events in the current session.'; }
+    getDisplayName(): string { return 'Compaction Counter'; }
+    getCategory(): string { return 'Context'; }
     getEditorDisplay(item: WidgetItem): WidgetEditorDisplay {
         const metric = getMetric(item);
         const modifiers: string[] = [];
 
         if (metric !== DEFAULT_METRIC) {
-            modifiers.push(`${METRIC_LABELS[metric]}值`);
+            modifiers.push(`${metric} value`);
         } else {
             modifiers.push(getFormat(item));
             if (isNerdFontEnabled(item, NERD_FONT_FORMATS)) {
-                modifiers.push('Nerd 字型');
+                modifiers.push('nerd font');
             }
             if (isMetadataFlagEnabled(item, SHOW_TRIGGERS_METADATA_KEY)) {
-                modifiers.push('觸發器分類');
+                modifiers.push('trigger split');
             }
             if (isMetadataFlagEnabled(item, SHOW_RECLAIMED_METADATA_KEY)) {
-                modifiers.push('已回收');
+                modifiers.push('reclaimed');
             }
-        }
-        if (isHideZeroEnabled(item)) {
-            modifiers.push('零時隱藏');
         }
 
         return {
-            displayText: '壓縮計數',
+            displayText: 'Compaction Counter',
             modifierText: `(${modifiers.join(', ')})`
         };
+    }
+
+    getHideableStates(): HideableState[] {
+        return [ZERO_HIDEABLE_STATE];
     }
 
     handleEditorAction(action: string, item: WidgetItem): WidgetItem | null {
@@ -228,10 +209,6 @@ export class CompactionCounterWidget implements Widget {
             const nextFormat = FORMATS[(FORMATS.indexOf(currentFormat) + 1) % FORMATS.length] ?? DEFAULT_FORMAT;
 
             return setNerdFontFormat(item, nextFormat, NERD_FONT_FORMATS);
-        }
-
-        if (action === TOGGLE_HIDE_ZERO_ACTION) {
-            return toggleHideZero(item);
         }
 
         if (action === TOGGLE_NERD_FONT_ACTION) {
@@ -256,13 +233,13 @@ export class CompactionCounterWidget implements Widget {
 
         if (metric !== DEFAULT_METRIC) {
             const value = getMetricValue(data, metric);
-            if (value === 0 && isHideZeroEnabled(item) && !context.isPreview) {
+            if (value === 0 && isHidden(item, ZERO_HIDEABLE_STATE.key) && !context.isPreview) {
                 return null;
             }
             return metric === 'reclaimed' ? formatTokens(value) : String(value);
         }
 
-        if (data.count === 0 && isHideZeroEnabled(item) && !context.isPreview) {
+        if (data.count === 0 && isHidden(item, ZERO_HIDEABLE_STATE.key) && !context.isPreview) {
             return null;
         }
 
@@ -272,23 +249,22 @@ export class CompactionCounterWidget implements Widget {
 
     getCustomKeybinds(item?: WidgetItem): CustomKeybind[] {
         const keybinds: CustomKeybind[] = [
-            { key: 'v', label: '(v)指標', action: CYCLE_METRIC_ACTION }
+            { key: 'v', label: '(v)alue', action: CYCLE_METRIC_ACTION }
         ];
 
         // The format / glyph / trigger toggles only shape the composite 'count'
-        // display; a single-metric value just needs the metric and hide-zero.
+        // display; a single-metric value just needs the metric selector, since
+        // hide-zero is one of the states in the shared hide checklist.
         if (item !== undefined && getMetric(item) !== DEFAULT_METRIC) {
-            keybinds.push({ key: 'h', label: '(h)零時隱藏', action: TOGGLE_HIDE_ZERO_ACTION });
             return keybinds;
         }
 
-        keybinds.push({ key: 'f', label: '(f)格式切換', action: CYCLE_FORMAT_ACTION });
+        keybinds.push({ key: 'f', label: '(f)ormat', action: CYCLE_FORMAT_ACTION });
         if (item === undefined || canUseNerdFont(item)) {
-            keybinds.push({ key: 'n', label: '(n)Nerd 字型', action: TOGGLE_NERD_FONT_ACTION });
+            keybinds.push({ key: 'n', label: '(n)erd font', action: TOGGLE_NERD_FONT_ACTION });
         }
-        keybinds.push({ key: 's', label: '(s)觸發器分類', action: TOGGLE_TRIGGERS_ACTION });
-        keybinds.push({ key: 't', label: '(t)已回收令牌', action: TOGGLE_RECLAIMED_ACTION });
-        keybinds.push({ key: 'h', label: '(h)零時隱藏', action: TOGGLE_HIDE_ZERO_ACTION });
+        keybinds.push({ key: 's', label: '(s)plit by trigger', action: TOGGLE_TRIGGERS_ACTION });
+        keybinds.push({ key: 't', label: '(t)okens reclaimed', action: TOGGLE_RECLAIMED_ACTION });
         keybinds.push(getSymbolKeybind());
 
         return keybinds;

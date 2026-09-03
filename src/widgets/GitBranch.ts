@@ -2,6 +2,7 @@ import type { RenderContext } from '../types/RenderContext';
 import type { Settings } from '../types/Settings';
 import type {
     CustomKeybind,
+    HideableState,
     Widget,
     WidgetEditorDisplay,
     WidgetEditorProps,
@@ -22,11 +23,9 @@ import {
 
 import { makeModifierText } from './shared/editor-display';
 import {
-    getHideNoGitKeybinds,
-    getHideNoGitModifierText,
-    handleToggleNoGitAction,
-    isHideNoGitEnabled
-} from './shared/git-no-git';
+    NO_GIT_HIDEABLE_STATE,
+    isHidden
+} from './shared/hideable';
 import {
     MAX_WIDTH_ACTION,
     applyMaxWidth,
@@ -74,17 +73,14 @@ function toggleLink(item: WidgetItem): WidgetItem {
 
 export class GitBranchWidget implements Widget {
     getDefaultColor(): string { return 'magenta'; }
-    getDescription(): string { return '顯示當前 Git 分支名'; }
-    getDisplayName(): string { return 'Git 分支'; }
+    getDescription(): string { return 'Shows the current git branch name'; }
+    getDisplayName(): string { return 'Git Branch'; }
     getCategory(): string { return 'Git'; }
     getEditorDisplay(item: WidgetItem): WidgetEditorDisplay {
         const isLink = isLinkEnabled(item);
         const modifiers: string[] = [];
-        const noGitText = getHideNoGitModifierText(item);
-        if (noGitText)
-            modifiers.push('隱藏「無 Git」');
         if (isLink)
-            modifiers.push('倉庫連結');
+            modifiers.push('repo link');
         const maxWidthText = getMaxWidthModifier(item);
         if (maxWidthText)
             modifiers.push(maxWidthText);
@@ -94,16 +90,20 @@ export class GitBranchWidget implements Widget {
         };
     }
 
+    getHideableStates(): HideableState[] {
+        return [NO_GIT_HIDEABLE_STATE];
+    }
+
     handleEditorAction(action: string, item: WidgetItem): WidgetItem | null {
         if (action === TOGGLE_LINK_ACTION) {
             return toggleLink(item);
         }
-        return handleToggleNoGitAction(action, item);
+        return null;
     }
 
     render(item: WidgetItem, context: RenderContext, settings: Settings): string | null {
         void settings;
-        const hideNoGit = isHideNoGitEnabled(item);
+        const hideNoGit = isHidden(item, NO_GIT_HIDEABLE_STATE.key);
         const isLink = isLinkEnabled(item);
         const prefix = formatSymbolPrefix(item, DEFAULT_SYMBOL);
 
@@ -113,12 +113,12 @@ export class GitBranchWidget implements Widget {
         }
 
         if (!isInsideGitWorkTree(context)) {
-            return hideNoGit ? null : '⎇ 無 Git';
+            return hideNoGit ? null : `${prefix}no git`;
         }
 
         const branch = this.getGitBranch(context);
         if (!branch) {
-            return hideNoGit ? null : '⎇ 無 Git';
+            return hideNoGit ? null : `${prefix}no git`;
         }
 
         const displayText = applyMaxWidth(item.rawValue ? branch : `${prefix}${branch}`, item.maxWidth);
@@ -142,8 +142,7 @@ export class GitBranchWidget implements Widget {
 
     getCustomKeybinds(): CustomKeybind[] {
         return [
-            ...getHideNoGitKeybinds(),
-            { key: 'l', label: '(l)倉庫連結', action: TOGGLE_LINK_ACTION },
+            { key: 'l', label: '(l)ink to repo', action: TOGGLE_LINK_ACTION },
             getMaxWidthKeybind(),
             getSymbolKeybind()
         ];

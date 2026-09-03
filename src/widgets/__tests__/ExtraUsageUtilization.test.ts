@@ -38,7 +38,7 @@ describe('ExtraUsageUtilizationWidget', () => {
             }
         };
 
-        expect(render(widget, { id: 'extra', type: 'extra-usage-utilization' }, context)).toBe('超額: 25.0%');
+        expect(render(widget, { id: 'extra', type: 'extra-usage-utilization' }, context)).toBe('Overage: 25.0%');
         expect(render(widget, {
             id: 'extra',
             rawValue: true,
@@ -48,12 +48,12 @@ describe('ExtraUsageUtilizationWidget', () => {
             id: 'extra',
             metadata: { display: 'progress-short' },
             type: 'extra-usage-utilization'
-        }, context)).toBe('超額: [████░░░░░░░░░░░░] 25.0%');
+        }, context)).toBe('Overage: [████░░░░░░░░░░░░] 25.0%');
         expect(render(widget, {
             id: 'extra',
             metadata: { display: 'slider-only' },
             type: 'extra-usage-utilization'
-        }, context)).toBe('超額: ▓▓▓░░░░░░░');
+        }, context)).toBe('Overage: ▓▓▓░░░░░░░');
     });
 
     it('renders available utilization before unrelated usage errors', () => {
@@ -65,50 +65,38 @@ describe('ExtraUsageUtilizationWidget', () => {
                 extraUsageEnabled: true,
                 extraUsageUtilization: 2.6
             }
-        })).toBe('超額: 2.6%');
+        })).toBe('Overage: 2.6%');
     });
 
-    it('exposes and toggles hide-if-disabled configuration', () => {
+    it('declares the disabled and no-data hideable states alongside display keybinds', () => {
         const widget = new ExtraUsageUtilizationWidget();
         const baseItem: WidgetItem = { id: 'extra', type: 'extra-usage-utilization' };
 
         expect(widget.getCustomKeybinds(baseItem)).toEqual([
-            { key: 'p', label: '(p)進度條切換', action: 'toggle-progress' },
-            { key: 'u', label: '(u)顯示剩餘', action: 'toggle-invert' },
-            { key: 'h', label: '(h)禁用時隱藏', action: 'toggle-hide-disabled' }
+            { key: 'p', label: '(p)rogress toggle', action: 'toggle-progress' },
+            { key: 'u', label: '(u) show remaining', action: 'toggle-invert' }
         ]);
         expect(widget.getCustomKeybinds({
             ...baseItem,
             metadata: { display: 'progress' }
         })).toEqual([
-            { key: 'p', label: '(p)進度條切換', action: 'toggle-progress' },
-            { key: 'u', label: '(u)顯示剩餘', action: 'toggle-invert' },
-            { key: 'h', label: '(h)禁用時隱藏', action: 'toggle-hide-disabled' }
+            { key: 'p', label: '(p)rogress toggle', action: 'toggle-progress' },
+            { key: 'u', label: '(u) show remaining', action: 'toggle-invert' }
         ]);
         expect(widget.getCustomKeybinds({
             ...baseItem,
             metadata: { invert: 'true' }
         })).toEqual([
-            { key: 'p', label: '(p)進度條切換', action: 'toggle-progress' },
-            { key: 'u', label: '(u)顯示已用', action: 'toggle-invert' },
-            { key: 'h', label: '(h)禁用時隱藏', action: 'toggle-hide-disabled' }
+            { key: 'p', label: '(p)rogress toggle', action: 'toggle-progress' },
+            { key: 'u', label: '(u) show used', action: 'toggle-invert' }
         ]);
-        expect(widget.getEditorDisplay(baseItem).modifierText).toBe('(已用)');
+        expect(widget.getEditorDisplay(baseItem).modifierText).toBe('(used)');
         expect(widget.getEditorDisplay({
             ...baseItem,
             metadata: { invert: 'true' }
-        }).modifierText).toBe('(剩餘)');
+        }).modifierText).toBe('(remaining)');
 
-        const hidden = widget.handleEditorAction('toggle-hide-disabled', baseItem);
-        expect(hidden?.metadata?.hideIfDisabled).toBe('true');
-        expect(widget.getEditorDisplay(hidden ?? baseItem).modifierText).toBe('(已用, 禁用時隱藏)');
-        expect(widget.getEditorDisplay({
-            ...baseItem,
-            metadata: { display: 'progress', hideIfDisabled: 'true' }
-        }).modifierText).toBe('(長進度條, 已用, 禁用時隱藏)');
-
-        const shown = widget.handleEditorAction('toggle-hide-disabled', hidden ?? baseItem);
-        expect(shown?.metadata?.hideIfDisabled).toBe('false');
+        expect(widget.getHideableStates().map(state => state.key)).toEqual(['disabled', 'no-data']);
     });
 
     it('shows usage errors only when required extra usage data is missing', () => {
@@ -120,6 +108,18 @@ describe('ExtraUsageUtilizationWidget', () => {
         expect(render(widget, { id: 'extra', type: 'extra-usage-utilization' }, { usageData: { extraUsageEnabled: true } })).toBeNull();
     });
 
+    it('hides usage errors when the no-data state is enabled', () => {
+        const widget = new ExtraUsageUtilizationWidget();
+
+        mockGetUsageErrorMessage.mockReturnValue('[Timeout]');
+
+        expect(render(widget, {
+            id: 'extra',
+            metadata: { hide: 'no-data' },
+            type: 'extra-usage-utilization'
+        }, { usageData: { error: 'timeout' } })).toBeNull();
+    });
+
     it('renders n/a when extra usage is disabled', () => {
         const widget = new ExtraUsageUtilizationWidget();
 
@@ -129,7 +129,7 @@ describe('ExtraUsageUtilizationWidget', () => {
                 extraUsageEnabled: false,
                 extraUsageUtilization: 25
             }
-        })).toBe('超額: n/a');
+        })).toBe('Overage: n/a');
         const rawProgressItem: WidgetItem = {
             id: 'extra',
             metadata: { display: 'progress-short' },
@@ -145,7 +145,7 @@ describe('ExtraUsageUtilizationWidget', () => {
 
         const hiddenItem: WidgetItem = {
             id: 'extra',
-            metadata: { hideIfDisabled: 'true' },
+            metadata: { hide: 'disabled' },
             type: 'extra-usage-utilization'
         };
 
@@ -164,7 +164,7 @@ describe('ExtraUsageUtilizationWidget', () => {
                 extraUsageEnabled: true,
                 extraUsageUtilization: 25
             }
-        })).toBe('超額: [████████████░░░░] 75.0%');
+        })).toBe('Overage: [████████████░░░░] 75.0%');
     });
 
     it('inverts plain text and preview rendering', () => {
@@ -180,13 +180,13 @@ describe('ExtraUsageUtilizationWidget', () => {
                 extraUsageEnabled: true,
                 extraUsageUtilization: 25
             }
-        })).toBe('超額: 75.0%');
+        })).toBe('Overage: 75.0%');
         expect(render(widget, { ...item, rawValue: true }, {
             usageData: {
                 extraUsageEnabled: true,
                 extraUsageUtilization: 25
             }
         })).toBe('75.0%');
-        expect(render(widget, item, { isPreview: true })).toBe('超額: 97.4%');
+        expect(render(widget, item, { isPreview: true })).toBe('Overage: 97.4%');
     });
 });

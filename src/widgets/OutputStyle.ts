@@ -1,25 +1,38 @@
 import type { RenderContext } from '../types/RenderContext';
 import type { Settings } from '../types/Settings';
 import type {
+    HideableState,
     Widget,
     WidgetEditorDisplay,
     WidgetItem
 } from '../types/Widget';
 
+import { isHidden } from './shared/hideable';
+
+const DEFAULT_VALUE_HIDEABLE_STATE: HideableState = { key: 'default-value', label: 'when style is \'default\'' };
+
 export class OutputStyleWidget implements Widget {
     getDefaultColor(): string { return 'cyan'; }
-    getDescription(): string { return '顯示當前 Claude Code 輸出風格'; }
-    getDisplayName(): string { return '輸出風格'; }
-    getCategory(): string { return '核心'; }
+    getDescription(): string { return 'Shows the current Claude Code output style'; }
+    getDisplayName(): string { return 'Output Style'; }
+    getCategory(): string { return 'Core'; }
     getEditorDisplay(item: WidgetItem): WidgetEditorDisplay {
         return { displayText: this.getDisplayName() };
     }
 
+    getHideableStates(): HideableState[] {
+        return [DEFAULT_VALUE_HIDEABLE_STATE];
+    }
+
     render(item: WidgetItem, context: RenderContext, settings: Settings): string | null {
         if (context.isPreview) {
-            return item.rawValue ? 'default' : '風格: default';
+            return item.rawValue ? 'default' : 'Style: default';
         } else if (context.data?.output_style?.name) {
-            return item.rawValue ? context.data.output_style.name : `風格: ${context.data.output_style.name}`;
+            const styleName = context.data.output_style.name;
+            if (styleName === 'default' && isHidden(item, DEFAULT_VALUE_HIDEABLE_STATE.key)) {
+                return null;
+            }
+            return item.rawValue ? styleName : `Style: ${styleName}`;
         }
         return null;
     }

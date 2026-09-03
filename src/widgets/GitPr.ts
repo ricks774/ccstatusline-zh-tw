@@ -1,7 +1,7 @@
 import type { RenderContext } from '../types/RenderContext';
 import type { Settings } from '../types/Settings';
 import type {
-    CustomKeybind,
+    HideableState,
     Widget,
     WidgetEditorDisplay,
     WidgetItem
@@ -19,22 +19,14 @@ import {
 } from '../utils/git-review-cache';
 import { renderOsc8Link } from '../utils/hyperlink';
 
-import { makeModifierText } from './shared/editor-display';
 import {
-    getHideNoGitKeybinds,
-    getHideNoGitModifierText,
-    handleToggleNoGitAction,
-    isHideNoGitEnabled
-} from './shared/git-no-git';
-import {
-    isMetadataFlagEnabled,
-    toggleMetadataFlag
-} from './shared/metadata';
+    NO_GIT_HIDEABLE_STATE,
+    isHidden
+} from './shared/hideable';
 
-const HIDE_STATUS_KEY = 'hideStatus';
-const HIDE_TITLE_KEY = 'hideTitle';
-const TOGGLE_STATUS_ACTION = 'toggle-status';
-const TOGGLE_TITLE_ACTION = 'toggle-title';
+const NO_DATA_HIDEABLE_STATE: HideableState = { key: 'no-data', label: 'when there is no PR/MR' };
+const STATUS_HIDEABLE_STATE: HideableState = { key: 'status', label: 'status segment' };
+const TITLE_HIDEABLE_STATE: HideableState = { key: 'title', label: 'title segment' };
 
 export interface GitPrWidgetDeps {
     getCachedGitReviewData: typeof getCachedGitReviewData;
@@ -55,7 +47,7 @@ const DEFAULT_GIT_PR_WIDGET_DEPS: GitPrWidgetDeps = {
 const PREVIEW_PR: GitReviewData = {
     number: 42,
     url: 'https://github.com/owner/repo/pull/42',
-    title: '示例 PR 標題',
+    title: 'Example PR title',
     state: 'OPEN',
     reviewDecision: ''
 };
@@ -109,64 +101,38 @@ export class GitPrWidget implements Widget {
     constructor(private readonly deps: GitPrWidgetDeps = DEFAULT_GIT_PR_WIDGET_DEPS) {}
 
     getDefaultColor(): string { return 'cyan'; }
-    getDescription(): string { return '顯示當前分支的 PR/MR 資訊（可點選連結、狀態、標題）'; }
+    getDescription(): string { return 'Shows PR/MR info for the current branch (clickable link, status, title)'; }
     getDisplayName(): string { return 'Git PR/MR'; }
     getCategory(): string { return 'Git'; }
 
     getEditorDisplay(item: WidgetItem): WidgetEditorDisplay {
-        const modifiers: string[] = [];
-        const noGitText = getHideNoGitModifierText(item);
-        if (noGitText)
-            modifiers.push('隱藏「無 Git」');
-        if (isMetadataFlagEnabled(item, HIDE_STATUS_KEY))
-            modifiers.push('無狀態');
-        if (isMetadataFlagEnabled(item, HIDE_TITLE_KEY))
-            modifiers.push('無標題');
-        return {
-            displayText: this.getDisplayName(),
-            modifierText: makeModifierText(modifiers)
-        };
+        return { displayText: this.getDisplayName() };
     }
 
-    handleEditorAction(action: string, item: WidgetItem): WidgetItem | null {
-        if (action === TOGGLE_STATUS_ACTION) {
-            return toggleMetadataFlag(item, HIDE_STATUS_KEY);
-        }
-        if (action === TOGGLE_TITLE_ACTION) {
-            return toggleMetadataFlag(item, HIDE_TITLE_KEY);
-        }
-        return handleToggleNoGitAction(action, item);
+    getHideableStates(): HideableState[] {
+        return [NO_GIT_HIDEABLE_STATE, NO_DATA_HIDEABLE_STATE, STATUS_HIDEABLE_STATE, TITLE_HIDEABLE_STATE];
     }
 
     render(item: WidgetItem, context: RenderContext, settings: Settings): string | null {
         void settings;
-        const hideNoGit = isHideNoGitEnabled(item);
-        const showStatus = !isMetadataFlagEnabled(item, HIDE_STATUS_KEY);
-        const showTitle = !isMetadataFlagEnabled(item, HIDE_TITLE_KEY);
+        const showStatus = !isHidden(item, STATUS_HIDEABLE_STATE.key);
+        const showTitle = !isHidden(item, TITLE_HIDEABLE_STATE.key);
 
         if (context.isPreview) {
             return buildDisplay(item, PREVIEW_PR, showStatus, showTitle, resolvePrNoun(PREVIEW_PR, context, this.deps));
         }
 
         if (!this.deps.isInsideGitWorkTree(context)) {
-            return hideNoGit ? null : `(無 ${resolvePrNoun(null, context, this.deps)})`;
+            return isHidden(item, NO_GIT_HIDEABLE_STATE.key) ? null : `(no ${resolvePrNoun(null, context, this.deps)})`;
         }
 
         const cwd = this.deps.resolveGitCwd(context) ?? this.deps.getProcessCwd();
         const prData = this.deps.getCachedGitReviewData(cwd, { includeChecks: context.gitReviewNeedsChecks ?? false });
         if (!prData) {
-            return hideNoGit ? null : `(無 ${resolvePrNoun(null, context, this.deps)})`;
+            return isHidden(item, NO_DATA_HIDEABLE_STATE.key) ? null : `(no ${resolvePrNoun(null, context, this.deps)})`;
         }
 
         return buildDisplay(item, prData, showStatus, showTitle, resolvePrNoun(prData, context, this.deps));
-    }
-
-    getCustomKeybinds(): CustomKeybind[] {
-        return [
-            ...getHideNoGitKeybinds(),
-            { key: 's', label: '(s)狀態', action: TOGGLE_STATUS_ACTION },
-            { key: 't', label: '(t)標題', action: TOGGLE_TITLE_ACTION }
-        ];
     }
 
     supportsRawValue(): boolean { return true; }

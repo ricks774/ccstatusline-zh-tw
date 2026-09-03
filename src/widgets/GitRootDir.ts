@@ -2,6 +2,7 @@ import type { RenderContext } from '../types/RenderContext';
 import type { Settings } from '../types/Settings';
 import type {
     CustomKeybind,
+    HideableState,
     Widget,
     WidgetEditorDisplay,
     WidgetEditorProps,
@@ -20,11 +21,9 @@ import {
 
 import { makeModifierText } from './shared/editor-display';
 import {
-    getHideNoGitKeybinds,
-    getHideNoGitModifierText,
-    handleToggleNoGitAction,
-    isHideNoGitEnabled
-} from './shared/git-no-git';
+    NO_GIT_HIDEABLE_STATE,
+    isHidden
+} from './shared/hideable';
 import {
     MAX_WIDTH_ACTION,
     applyMaxWidth,
@@ -44,15 +43,12 @@ const IDE_LINK_LABELS: Record<IdeLinkMode, string> = {
 
 export class GitRootDirWidget implements Widget {
     getDefaultColor(): string { return 'cyan'; }
-    getDescription(): string { return '顯示 Git 倉庫根目錄名'; }
-    getDisplayName(): string { return 'Git 根目錄'; }
+    getDescription(): string { return 'Shows the git repository root directory name'; }
+    getDisplayName(): string { return 'Git Root Dir'; }
     getCategory(): string { return 'Git'; }
     getEditorDisplay(item: WidgetItem): WidgetEditorDisplay {
         const ideLinkMode = this.getIdeLinkMode(item);
         const modifiers: string[] = [];
-        const noGitText = getHideNoGitModifierText(item);
-        if (noGitText)
-            modifiers.push('隱藏「無 Git」');
         if (ideLinkMode)
             modifiers.push(IDE_LINK_LABELS[ideLinkMode]);
         const maxWidthText = getMaxWidthModifier(item);
@@ -64,15 +60,19 @@ export class GitRootDirWidget implements Widget {
         };
     }
 
+    getHideableStates(): HideableState[] {
+        return [NO_GIT_HIDEABLE_STATE];
+    }
+
     handleEditorAction(action: string, item: WidgetItem): WidgetItem | null {
         if (action === TOGGLE_LINK_ACTION) {
             return this.cycleIdeLinkMode(item);
         }
-        return handleToggleNoGitAction(action, item);
+        return null;
     }
 
     render(item: WidgetItem, context: RenderContext, _settings: Settings): string | null {
-        const hideNoGit = isHideNoGitEnabled(item);
+        const hideNoGit = isHidden(item, NO_GIT_HIDEABLE_STATE.key);
         const ideLinkMode = this.getIdeLinkMode(item);
 
         if (context.isPreview) {
@@ -81,12 +81,12 @@ export class GitRootDirWidget implements Widget {
         }
 
         if (!isInsideGitWorkTree(context)) {
-            return hideNoGit ? null : '無 Git';
+            return hideNoGit ? null : 'no git';
         }
 
         const rootDir = this.getGitRootDir(context);
         if (!rootDir) {
-            return hideNoGit ? null : '無 Git';
+            return hideNoGit ? null : 'no git';
         }
 
         const name = applyMaxWidth(this.getRootDirName(rootDir), item.maxWidth);
@@ -112,8 +112,7 @@ export class GitRootDirWidget implements Widget {
 
     getCustomKeybinds(): CustomKeybind[] {
         return [
-            ...getHideNoGitKeybinds(),
-            { key: 'l', label: '(l)IDE 連結', action: TOGGLE_LINK_ACTION },
+            { key: 'l', label: '(l)ink to IDE', action: TOGGLE_LINK_ACTION },
             getMaxWidthKeybind()
         ];
     }

@@ -38,7 +38,7 @@ describe('ExtraUsageUsedWidget', () => {
             }
         };
 
-        expect(render(widget, { id: 'extra', type: 'extra-usage-used' }, context)).toBe('超額已用: $106.00');
+        expect(render(widget, { id: 'extra', type: 'extra-usage-used' }, context)).toBe('Overage Used: $106.00');
         expect(render(widget, {
             id: 'extra',
             rawValue: true,
@@ -54,7 +54,7 @@ describe('ExtraUsageUsedWidget', () => {
                 extraUsageEnabled: true,
                 extraUsageUsed: 542
             }
-        })).toBe('超額已用: $5.42');
+        })).toBe('Overage Used: $5.42');
     });
 
     it('formats used budget in the currency reported by the API', () => {
@@ -66,24 +66,14 @@ describe('ExtraUsageUsedWidget', () => {
                 extraUsageEnabled: true,
                 extraUsageUsed: 542
             }
-        })).toBe('超額已用: €5.42');
+        })).toBe('Overage Used: €5.42');
     });
 
-    it('exposes and toggles hide-if-disabled configuration', () => {
+    it('declares the disabled and no-data hideable states', () => {
         const widget = new ExtraUsageUsedWidget();
-        const baseItem: WidgetItem = { id: 'extra', type: 'extra-usage-used' };
 
-        expect(widget.getCustomKeybinds()).toEqual([
-            { key: 'h', label: '(h)禁用時隱藏', action: 'toggle-hide-disabled' }
-        ]);
-        expect(widget.getEditorDisplay(baseItem).modifierText).toBeUndefined();
-
-        const hidden = widget.handleEditorAction('toggle-hide-disabled', baseItem);
-        expect(hidden?.metadata?.hideIfDisabled).toBe('true');
-        expect(widget.getEditorDisplay(hidden ?? baseItem).modifierText).toBe('(禁用時隱藏)');
-
-        const shown = widget.handleEditorAction('toggle-hide-disabled', hidden ?? baseItem);
-        expect(shown?.metadata?.hideIfDisabled).toBe('false');
+        expect(widget.getHideableStates().map(state => state.key)).toEqual(['disabled', 'no-data']);
+        expect(widget.getEditorDisplay({ id: 'extra', type: 'extra-usage-used' }).modifierText).toBeUndefined();
     });
 
     it('renders available used budget before unrelated usage errors', () => {
@@ -95,7 +85,7 @@ describe('ExtraUsageUsedWidget', () => {
                 extraUsageEnabled: true,
                 extraUsageUsed: 10600
             }
-        })).toBe('超額已用: $106.00');
+        })).toBe('Overage Used: $106.00');
     });
 
     it('shows usage errors only when required extra usage data is missing', () => {
@@ -116,7 +106,7 @@ describe('ExtraUsageUsedWidget', () => {
                 extraUsageEnabled: false,
                 extraUsageUsed: 10600
             }
-        })).toBe('超額已用: n/a');
+        })).toBe('Overage Used: n/a');
         expect(render(widget, { id: 'extra', rawValue: true, type: 'extra-usage-used' }, { usageData: { extraUsageEnabled: false } })).toBe('n/a');
     });
 
@@ -125,7 +115,7 @@ describe('ExtraUsageUsedWidget', () => {
 
         const hiddenItem: WidgetItem = {
             id: 'extra',
-            metadata: { hideIfDisabled: 'true' },
+            metadata: { hide: 'disabled' },
             type: 'extra-usage-used'
         };
 

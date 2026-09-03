@@ -2,6 +2,7 @@ import type { RenderContext } from '../types/RenderContext';
 import type { Settings } from '../types/Settings';
 import type {
     CustomKeybind,
+    HideableState,
     Widget,
     WidgetEditorDisplay,
     WidgetEditorProps,
@@ -13,6 +14,10 @@ import {
 } from '../utils/jj';
 
 import {
+    NO_JJ_HIDEABLE_STATE,
+    isHidden
+} from './shared/hideable';
+import {
     formatSymbolPrefix,
     getSymbolKeybind,
     renderSymbolOverrideEditor
@@ -22,39 +27,19 @@ const DEFAULT_SYMBOL = '🔖';
 
 export class JjBookmarksWidget implements Widget {
     getDefaultColor(): string { return 'magenta'; }
-    getDescription(): string { return '顯示當前的 Jujutsu 書籤'; }
-    getDisplayName(): string { return 'JJ 書籤'; }
+    getDescription(): string { return 'Shows the current jujutsu bookmark(s)'; }
+    getDisplayName(): string { return 'JJ Bookmarks'; }
     getCategory(): string { return 'Jujutsu'; }
     getEditorDisplay(item: WidgetItem): WidgetEditorDisplay {
-        const hideNoJj = item.metadata?.hideNoJj === 'true';
-        const modifiers: string[] = [];
-
-        if (hideNoJj) {
-            modifiers.push('隱藏「無 JJ」');
-        }
-
-        return {
-            displayText: this.getDisplayName(),
-            modifierText: modifiers.length > 0 ? `(${modifiers.join(', ')})` : undefined
-        };
+        return { displayText: this.getDisplayName() };
     }
 
-    handleEditorAction(action: string, item: WidgetItem): WidgetItem | null {
-        if (action === 'toggle-nojj') {
-            const currentState = item.metadata?.hideNoJj === 'true';
-            return {
-                ...item,
-                metadata: {
-                    ...item.metadata,
-                    hideNoJj: (!currentState).toString()
-                }
-            };
-        }
-        return null;
+    getHideableStates(): HideableState[] {
+        return [NO_JJ_HIDEABLE_STATE];
     }
 
     render(item: WidgetItem, context: RenderContext, _settings: Settings): string | null {
-        const hideNoJj = item.metadata?.hideNoJj === 'true';
+        const hideNoJj = isHidden(item, NO_JJ_HIDEABLE_STATE.key);
         const prefix = formatSymbolPrefix(item, DEFAULT_SYMBOL);
 
         if (context.isPreview) {
@@ -62,7 +47,7 @@ export class JjBookmarksWidget implements Widget {
         }
 
         if (!isInsideJjRepo(context)) {
-            return hideNoJj ? null : '🔖 無 JJ';
+            return hideNoJj ? null : `${prefix}no jj`;
         }
 
         const bookmarks = this.getJjBookmarks(context);
@@ -95,10 +80,7 @@ export class JjBookmarksWidget implements Widget {
     }
 
     getCustomKeybinds(): CustomKeybind[] {
-        return [
-            { key: 'h', label: '(h)隱藏「無 JJ」提示', action: 'toggle-nojj' },
-            getSymbolKeybind()
-        ];
+        return [getSymbolKeybind()];
     }
 
     renderEditor(props: WidgetEditorProps) {
