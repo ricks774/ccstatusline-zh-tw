@@ -7,6 +7,10 @@ import type {
     WidgetEditorDisplay,
     WidgetItem
 } from '../types/Widget';
+import {
+    formatPercent,
+    resolveNumberFormat
+} from '../utils/number-format';
 
 import {
     getCacheHitRate,
@@ -24,9 +28,9 @@ import { formatRawOrLabeledValue } from './shared/raw-or-labeled';
 
 export class CacheHitRateWidget implements Widget {
     getDefaultColor(): string { return 'green'; }
-    getDescription(): string { return '顯示提示快取命中率（快取讀取 vs 快取寫入）'; }
-    getDisplayName(): string { return '快取命中率'; }
-    getCategory(): string { return '快取'; }
+    getDescription(): string { return 'Shows prompt cache hit rate (cache reads vs cache writes)'; }
+    getDisplayName(): string { return 'Cache Hit Rate'; }
+    getCategory(): string { return 'Cache'; }
     getEditorDisplay(item: WidgetItem): WidgetEditorDisplay {
         return { displayText: this.getDisplayName(), modifierText: getCacheModifierText(item) };
     }
@@ -40,26 +44,27 @@ export class CacheHitRateWidget implements Widget {
     }
 
     render(item: WidgetItem, context: RenderContext, settings: Settings): string | null {
+        const format = resolveNumberFormat('percent', item, settings);
         if (context.isPreview) {
-            return formatRawOrLabeledValue(item, '快取命中: ', '87.0%');
+            return formatRawOrLabeledValue(item, 'Cache Hit: ', formatPercent(87, format));
         }
 
         const hideWhenEmpty = isHidden(item, CACHE_EMPTY_HIDEABLE_STATE.key);
         const tokens = getCacheTokens(context, isCacheSessionScope(item));
         if (!tokens) {
-            return hideWhenEmpty ? null : formatRawOrLabeledValue(item, '快取命中: ', 'n/a');
+            return hideWhenEmpty ? null : formatRawOrLabeledValue(item, 'Cache Hit: ', 'n/a');
         }
 
         const hitRate = getCacheHitRate(tokens);
         if (hitRate === null) {
-            return hideWhenEmpty ? null : formatRawOrLabeledValue(item, '快取命中: ', '0.0%');
+            return hideWhenEmpty ? null : formatRawOrLabeledValue(item, 'Cache Hit: ', formatPercent(0, format));
         }
 
         if (hitRate === 0 && hideWhenEmpty) {
             return null;
         }
 
-        return formatRawOrLabeledValue(item, '快取命中: ', `${hitRate.toFixed(1)}%`);
+        return formatRawOrLabeledValue(item, 'Cache Hit: ', formatPercent(hitRate, format));
     }
 
     getCustomKeybinds(item?: WidgetItem): CustomKeybind[] {
@@ -68,4 +73,5 @@ export class CacheHitRateWidget implements Widget {
 
     supportsRawValue(): boolean { return true; }
     supportsColors(item: WidgetItem): boolean { return true; }
+    supportsNumberFormat(): boolean { return true; }
 }

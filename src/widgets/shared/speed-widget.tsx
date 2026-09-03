@@ -6,6 +6,7 @@ import {
 import React, { useState } from 'react';
 
 import type { RenderContext } from '../../types/RenderContext';
+import type { Settings } from '../../types/Settings';
 import type { SpeedMetrics } from '../../types/SpeedMetrics';
 import type {
     CustomKeybind,
@@ -15,6 +16,7 @@ import type {
     WidgetItem
 } from '../../types/Widget';
 import { shouldInsertInput } from '../../utils/input-guards';
+import { resolveNumberFormat } from '../../utils/number-format';
 import {
     calculateInputSpeed,
     calculateOutputSpeed,
@@ -44,31 +46,31 @@ interface SpeedWidgetKindConfig {
     label: string;
     displayName: string;
     description: string;
-    sessionPreview: string;
-    windowedPreview: string;
+    sessionPreview: number;
+    windowedPreview: number;
 }
 
 const SPEED_WIDGET_CONFIG: Record<SpeedWidgetKind, SpeedWidgetKindConfig> = {
     input: {
-        label: '輸入: ',
-        displayName: '輸入速度',
-        description: '顯示會話平均輸入 Token 速度（tokens/sec）。可選視窗：0-120 秒（0 = 全會話平均）。',
-        sessionPreview: '85.2 t/s',
-        windowedPreview: '31.5 t/s'
+        label: 'In: ',
+        displayName: 'Input Speed',
+        description: 'Shows session-average input token speed (tokens/sec). Optional window: 0-120 seconds (0 = full-session average).',
+        sessionPreview: 85.2,
+        windowedPreview: 31.5
     },
     output: {
-        label: '輸出: ',
-        displayName: '輸出速度',
-        description: '顯示會話平均輸出 Token 速度（tokens/sec）。可選視窗：0-120 秒（0 = 全會話平均）。',
-        sessionPreview: '42.5 t/s',
-        windowedPreview: '26.8 t/s'
+        label: 'Out: ',
+        displayName: 'Output Speed',
+        description: 'Shows session-average output token speed (tokens/sec). Optional window: 0-120 seconds (0 = full-session average).',
+        sessionPreview: 42.5,
+        windowedPreview: 26.8
     },
     total: {
-        label: '合計: ',
-        displayName: '總速度',
-        description: '顯示會話平均總 Token 速度（tokens/sec）。可選視窗：0-120 秒（0 = 全會話平均）。',
-        sessionPreview: '127.7 t/s',
-        windowedPreview: '58.3 t/s'
+        label: 'Total: ',
+        displayName: 'Total Speed',
+        description: 'Shows session-average total token speed (tokens/sec). Optional window: 0-120 seconds (0 = full-session average).',
+        sessionPreview: 127.7,
+        windowedPreview: 58.3
     }
 };
 
@@ -102,8 +104,8 @@ export function getSpeedWidgetDescription(kind: SpeedWidgetKind): string {
 export function getSpeedWidgetEditorDisplay(kind: SpeedWidgetKind, item: WidgetItem): WidgetEditorDisplay {
     const windowSeconds = getWidgetSpeedWindowSeconds(item);
     const modifiers = windowSeconds > 0
-        ? [`${windowSeconds}秒視窗`]
-        : ['全會話平均'];
+        ? [`${windowSeconds}s window`]
+        : ['session avg'];
 
     return {
         displayText: getSpeedWidgetDisplayName(kind),
@@ -114,15 +116,15 @@ export function getSpeedWidgetEditorDisplay(kind: SpeedWidgetKind, item: WidgetI
 export function renderSpeedWidgetValue(
     kind: SpeedWidgetKind,
     item: WidgetItem,
-    context: RenderContext
+    context: RenderContext,
+    settings: Settings
 ): string | null {
     const config = SPEED_WIDGET_CONFIG[kind];
-    const previewValue = isWidgetSpeedWindowEnabled(item)
-        ? config.windowedPreview
-        : config.sessionPreview;
+    const format = resolveNumberFormat('speed', item, settings);
 
     if (context.isPreview) {
-        return formatRawOrLabeledValue(item, config.label, previewValue);
+        const previewValue = isWidgetSpeedWindowEnabled(item) ? config.windowedPreview : config.sessionPreview;
+        return formatRawOrLabeledValue(item, config.label, formatSpeed(previewValue, format));
     }
 
     const metrics = getSpeedMetricsForWidget(item, context);
@@ -135,7 +137,7 @@ export function renderSpeedWidgetValue(
         return null;
     }
 
-    return formatRawOrLabeledValue(item, config.label, formatSpeed(speed));
+    return formatRawOrLabeledValue(item, config.label, formatSpeed(speed, format));
 }
 
 export function getSpeedWidgetHideableStates(): HideableState[] {
@@ -145,7 +147,7 @@ export function getSpeedWidgetHideableStates(): HideableState[] {
 export function getSpeedWidgetCustomKeybinds(): CustomKeybind[] {
     return [{
         key: 'w',
-        label: '(w)時間視窗',
+        label: '(w)indow',
         action: WINDOW_EDITOR_ACTION
     }];
 }
@@ -188,24 +190,24 @@ const SpeedWindowEditor: React.FC<WidgetEditorProps> = ({ widget, onComplete, on
     });
 
     if (action !== WINDOW_EDITOR_ACTION) {
-        return <Text>未知編輯模式</Text>;
+        return <Text>Unknown editor mode</Text>;
     }
 
     return (
         <Box flexDirection='column'>
             <Box>
                 <Text>
-                    輸入時間視窗（秒，
+                    Enter window in seconds (
                     {MIN_SPEED_WINDOW_SECONDS}
                     -
                     {MAX_SPEED_WINDOW_SECONDS}
-                    ）：
+                    ):
                     {' '}
                 </Text>
                 <Text>{windowInput}</Text>
                 <Text backgroundColor='gray' color='black'>{' '}</Text>
             </Box>
-            <Text dimColor>0 表示禁用視窗模式並使用全會話平均值。按 Enter 儲存，ESC 取消。</Text>
+            <Text dimColor>0 disables window mode and averages the full session. Press Enter to save, ESC to cancel.</Text>
         </Box>
     );
 };

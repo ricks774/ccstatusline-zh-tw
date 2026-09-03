@@ -8,6 +8,10 @@ import type {
     WidgetItem
 } from '../types/Widget';
 import {
+    formatPercent,
+    resolveNumberFormat
+} from '../utils/number-format';
+import {
     getUsageErrorMessage,
     resolveWeeklyUsageWindow
 } from '../utils/usage';
@@ -33,9 +37,9 @@ import {
 
 export class WeeklyUsageWidget implements Widget {
     getDefaultColor(): string { return 'brightBlue'; }
-    getDescription(): string { return '顯示每週 API 用量百分比'; }
-    getDisplayName(): string { return '周用量'; }
-    getCategory(): string { return '用量'; }
+    getDescription(): string { return 'Shows weekly API usage percentage'; }
+    getDisplayName(): string { return 'Weekly Usage'; }
+    getCategory(): string { return 'Usage'; }
 
     getEditorDisplay(item: WidgetItem): WidgetEditorDisplay {
         return {
@@ -68,6 +72,7 @@ export class WeeklyUsageWidget implements Widget {
         const displayMode = getUsageDisplayMode(item);
         const inverted = isUsageInverted(item);
         const showCursor = isUsageCursorEnabled(item);
+        const format = resolveNumberFormat('percent', item, settings);
 
         if (context.isPreview) {
             const previewPercent = 12;
@@ -76,17 +81,17 @@ export class WeeklyUsageWidget implements Widget {
             if (isUsageProgressMode(displayMode)) {
                 const width = getUsageProgressBarWidth(displayMode);
                 const progressBar = makeTimerProgressBar(renderedPercent, width, showCursor ? { cursorPercent: 50 } : undefined);
-                const progressDisplay = `[${progressBar}] ${renderedPercent.toFixed(1)}%`;
-                return formatRawOrLabeledValue(item, '周用量: ', progressDisplay);
+                const progressDisplay = `[${progressBar}] ${formatPercent(renderedPercent, format)}`;
+                return formatRawOrLabeledValue(item, 'Weekly: ', progressDisplay);
             }
 
             if (isUsageSliderMode(displayMode)) {
                 const slider = makeSliderBar(renderedPercent, undefined, showCursor ? { cursorPercent: 50 } : undefined);
-                const sliderDisplay = displayMode === 'slider' ? `${slider} ${renderedPercent.toFixed(1)}%` : slider;
-                return formatRawOrLabeledValue(item, '周用量: ', sliderDisplay);
+                const sliderDisplay = displayMode === 'slider' ? `${slider} ${formatPercent(renderedPercent, format)}` : slider;
+                return formatRawOrLabeledValue(item, 'Weekly: ', sliderDisplay);
             }
 
-            return formatRawOrLabeledValue(item, '周用量: ', `${renderedPercent.toFixed(1)}%`);
+            return formatRawOrLabeledValue(item, 'Weekly: ', formatPercent(renderedPercent, format));
         }
 
         const data = context.usageData ?? {};
@@ -114,17 +119,17 @@ export class WeeklyUsageWidget implements Widget {
             const width = getUsageProgressBarWidth(displayMode);
 
             const progressBar = makeTimerProgressBar(renderedPercent, width, getCursorOptions());
-            const progressDisplay = `[${progressBar}] ${renderedPercent.toFixed(1)}%`;
-            return formatRawOrLabeledValue(item, '周用量: ', progressDisplay);
+            const progressDisplay = `[${progressBar}] ${formatPercent(renderedPercent, format)}`;
+            return formatRawOrLabeledValue(item, 'Weekly: ', progressDisplay);
         }
 
         if (isUsageSliderMode(displayMode)) {
             const slider = makeSliderBar(renderedPercent, undefined, getCursorOptions());
-            const sliderDisplay = displayMode === 'slider' ? `${slider} ${renderedPercent.toFixed(1)}%` : slider;
-            return formatRawOrLabeledValue(item, '周用量: ', sliderDisplay);
+            const sliderDisplay = displayMode === 'slider' ? `${slider} ${formatPercent(renderedPercent, format)}` : slider;
+            return formatRawOrLabeledValue(item, 'Weekly: ', sliderDisplay);
         }
 
-        return formatRawOrLabeledValue(item, '周用量: ', `${renderedPercent.toFixed(1)}%`);
+        return formatRawOrLabeledValue(item, 'Weekly: ', formatPercent(renderedPercent, format));
     }
 
     getCustomKeybinds(item?: WidgetItem): CustomKeybind[] {
@@ -133,4 +138,5 @@ export class WeeklyUsageWidget implements Widget {
 
     supportsRawValue(): boolean { return true; }
     supportsColors(item: WidgetItem): boolean { return true; }
+    supportsNumberFormat(): boolean { return true; }
 }

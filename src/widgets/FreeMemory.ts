@@ -1,6 +1,7 @@
 import { execSync } from 'child_process';
 import os from 'os';
 
+import type { NumberFormat } from '../types/NumberFormat';
 import type { RenderContext } from '../types/RenderContext';
 import type { Settings } from '../types/Settings';
 import type {
@@ -8,18 +9,22 @@ import type {
     WidgetEditorDisplay,
     WidgetItem
 } from '../types/Widget';
+import {
+    renderMagnitude,
+    resolveNumberFormat
+} from '../utils/number-format';
 
-function formatBytes(bytes: number): string {
+function formatBytes(bytes: number, format: NumberFormat): string {
     const GB = 1024 ** 3;
     const MB = 1024 ** 2;
     const KB = 1024;
 
     if (bytes >= GB)
-        return `${(bytes / GB).toFixed(1)}G`;
+        return `${renderMagnitude(bytes / GB, format, 1)}G`;
     if (bytes >= MB)
-        return `${(bytes / MB).toFixed(0)}M`;
+        return `${renderMagnitude(bytes / MB, format, 0)}M`;
     if (bytes >= KB)
-        return `${(bytes / KB).toFixed(0)}K`;
+        return `${renderMagnitude(bytes / KB, format, 0)}K`;
     return `${bytes}B`;
 }
 
@@ -63,16 +68,18 @@ function getUsedMemoryMacOS(): number | null {
 
 export class FreeMemoryWidget implements Widget {
     getDefaultColor(): string { return 'cyan'; }
-    getDescription(): string { return '顯示系統記憶體使用情況（已用/總量）'; }
-    getDisplayName(): string { return '記憶體用量'; }
-    getCategory(): string { return '環境'; }
+    getDescription(): string { return 'Shows system memory usage (used/total)'; }
+    getDisplayName(): string { return 'Memory Usage'; }
+    getCategory(): string { return 'Environment'; }
     getEditorDisplay(item: WidgetItem): WidgetEditorDisplay {
         return { displayText: this.getDisplayName() };
     }
 
     render(item: WidgetItem, context: RenderContext, settings: Settings): string | null {
+        const format = resolveNumberFormat('memory', item, settings);
         if (context.isPreview) {
-            return item.rawValue ? '12.4G/16.0G' : '記憶體: 12.4G/16.0G';
+            const value = `${formatBytes(12.4 * 1024 ** 3, format)}/${formatBytes(16 * 1024 ** 3, format)}`;
+            return item.rawValue ? value : `Mem: ${value}`;
         }
 
         const total = os.totalmem();
@@ -86,11 +93,12 @@ export class FreeMemoryWidget implements Widget {
             used = total - os.freemem();
         }
 
-        const value = `${formatBytes(used)}/${formatBytes(total)}`;
+        const value = `${formatBytes(used, format)}/${formatBytes(total, format)}`;
 
-        return item.rawValue ? value : `記憶體: ${value}`;
+        return item.rawValue ? value : `Mem: ${value}`;
     }
 
     supportsRawValue(): boolean { return true; }
     supportsColors(item: WidgetItem): boolean { return true; }
+    supportsNumberFormat(): boolean { return true; }
 }

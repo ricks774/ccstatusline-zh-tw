@@ -7,6 +7,7 @@ import type {
     WidgetEditorDisplay,
     WidgetItem
 } from '../types/Widget';
+import { resolveNumberFormat } from '../utils/number-format';
 
 import {
     formatTokensWithPercentage,
@@ -25,9 +26,9 @@ import { formatRawOrLabeledValue } from './shared/raw-or-labeled';
 
 export class CacheWriteWidget implements Widget {
     getDefaultColor(): string { return 'yellow'; }
-    getDescription(): string { return '顯示寫入快取的快取寫入令牌數及其上下文佔比'; }
-    getDisplayName(): string { return '快取寫入'; }
-    getCategory(): string { return '快取'; }
+    getDescription(): string { return 'Shows cache write tokens written to cache, with context share'; }
+    getDisplayName(): string { return 'Cache Write'; }
+    getCategory(): string { return 'Cache'; }
     getEditorDisplay(item: WidgetItem): WidgetEditorDisplay {
         return { displayText: this.getDisplayName(), modifierText: getCacheModifierText(item) };
     }
@@ -41,22 +42,25 @@ export class CacheWriteWidget implements Widget {
     }
 
     render(item: WidgetItem, context: RenderContext, settings: Settings): string | null {
+        const tokenFormat = resolveNumberFormat('token', item, settings);
+        const percentFormat = resolveNumberFormat('percent', item, settings);
         if (context.isPreview) {
-            return formatRawOrLabeledValue(item, '快取寫入: ', '3k (16.0%)');
+            const value = formatTokensWithPercentage(3000, 16, tokenFormat, percentFormat);
+            return formatRawOrLabeledValue(item, 'Cache Write: ', value);
         }
 
         const hideWhenEmpty = isHidden(item, CACHE_EMPTY_HIDEABLE_STATE.key);
         const tokens = getCacheTokens(context, isCacheSessionScope(item));
         if (!tokens) {
-            return hideWhenEmpty ? null : formatRawOrLabeledValue(item, '快取寫入: ', 'n/a');
+            return hideWhenEmpty ? null : formatRawOrLabeledValue(item, 'Cache Write: ', 'n/a');
         }
 
         if (tokens.creation === 0 && hideWhenEmpty) {
             return null;
         }
 
-        const value = formatTokensWithPercentage(tokens.creation, getCacheWritePercentage(tokens));
-        return formatRawOrLabeledValue(item, '快取寫入: ', value);
+        const value = formatTokensWithPercentage(tokens.creation, getCacheWritePercentage(tokens), tokenFormat, percentFormat);
+        return formatRawOrLabeledValue(item, 'Cache Write: ', value);
     }
 
     getCustomKeybinds(item?: WidgetItem): CustomKeybind[] {
@@ -65,4 +69,5 @@ export class CacheWriteWidget implements Widget {
 
     supportsRawValue(): boolean { return true; }
     supportsColors(item: WidgetItem): boolean { return true; }
+    supportsNumberFormat(): boolean { return true; }
 }

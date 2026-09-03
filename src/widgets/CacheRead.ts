@@ -7,6 +7,7 @@ import type {
     WidgetEditorDisplay,
     WidgetItem
 } from '../types/Widget';
+import { resolveNumberFormat } from '../utils/number-format';
 
 import {
     formatTokensWithPercentage,
@@ -25,9 +26,9 @@ import { formatRawOrLabeledValue } from './shared/raw-or-labeled';
 
 export class CacheReadWidget implements Widget {
     getDefaultColor(): string { return 'green'; }
-    getDescription(): string { return '顯示從快取提供的快取讀取令牌數及其上下文佔比'; }
-    getDisplayName(): string { return '快取讀取'; }
-    getCategory(): string { return '快取'; }
+    getDescription(): string { return 'Shows cache read tokens served from cache, with context share'; }
+    getDisplayName(): string { return 'Cache Read'; }
+    getCategory(): string { return 'Cache'; }
     getEditorDisplay(item: WidgetItem): WidgetEditorDisplay {
         return { displayText: this.getDisplayName(), modifierText: getCacheModifierText(item) };
     }
@@ -41,22 +42,25 @@ export class CacheReadWidget implements Widget {
     }
 
     render(item: WidgetItem, context: RenderContext, settings: Settings): string | null {
+        const tokenFormat = resolveNumberFormat('token', item, settings);
+        const percentFormat = resolveNumberFormat('percent', item, settings);
         if (context.isPreview) {
-            return formatRawOrLabeledValue(item, '快取讀取: ', '12k (64.0%)');
+            const value = formatTokensWithPercentage(12000, 64, tokenFormat, percentFormat);
+            return formatRawOrLabeledValue(item, 'Cache Read: ', value);
         }
 
         const hideWhenEmpty = isHidden(item, CACHE_EMPTY_HIDEABLE_STATE.key);
         const tokens = getCacheTokens(context, isCacheSessionScope(item));
         if (!tokens) {
-            return hideWhenEmpty ? null : formatRawOrLabeledValue(item, '快取讀取: ', 'n/a');
+            return hideWhenEmpty ? null : formatRawOrLabeledValue(item, 'Cache Read: ', 'n/a');
         }
 
         if (tokens.read === 0 && hideWhenEmpty) {
             return null;
         }
 
-        const value = formatTokensWithPercentage(tokens.read, getCacheReadPercentage(tokens));
-        return formatRawOrLabeledValue(item, '快取讀取: ', value);
+        const value = formatTokensWithPercentage(tokens.read, getCacheReadPercentage(tokens), tokenFormat, percentFormat);
+        return formatRawOrLabeledValue(item, 'Cache Read: ', value);
     }
 
     getCustomKeybinds(item?: WidgetItem): CustomKeybind[] {
@@ -65,4 +69,5 @@ export class CacheReadWidget implements Widget {
 
     supportsRawValue(): boolean { return true; }
     supportsColors(item: WidgetItem): boolean { return true; }
+    supportsNumberFormat(): boolean { return true; }
 }
