@@ -4,7 +4,7 @@
 
 _在終端中顯示模型資訊、Git 分支、Token 用量及其他實時指標_
 
-> 本專案是 [ccstatusline](https://github.com/sirmalloc/ccstatusline) 的**繁體中文化 Fork**，當前同步至上游 v2.2.27 版本（含周 Fable 用量元件、設定匯入/匯出（含預覽與合併模式）、用量 API limits[] 陣列解析、壓縮後上下文長度修復及渲染器分隔符保留修復等最新功能）。所有使用者可見的介面文字（元件名稱、分類、描述、選單標籤、提示資訊等）均已翻譯為中文，方便中文使用者使用。
+> 本專案是 [ccstatusline](https://github.com/sirmalloc/ccstatusline) 的**繁體中文化 Fork**，當前同步至上游 v2.2.29 版本（含統一的元件隱藏狀態系統、可設定數字精度、Claude 服務狀態元件及多項渲染修復等最新功能）。所有使用者可見的介面文字（元件名稱、分類、描述、選單標籤、提示資訊等）均已翻譯為中文，方便中文使用者使用。
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/ricks774/ccstatusline-zh-tw/blob/main/LICENSE)
 [![Node.js Version](https://img.shields.io/node/v/ccstatusline.svg)](https://nodejs.org)
@@ -31,7 +31,7 @@ _在終端中顯示模型資訊、Git 分支、Token 用量及其他實時指標
 
 ccstatusline 是一個優秀的 Claude Code CLI 狀態列格式化工具，支援 80+ 種可定製元件、Powerline 主題、互動式 TUI 配置介面等豐富功能。本專案在其基礎上，將所有使用者可見的英文文字直接替換為中文，包括：
 
-- **87 個元件**的名稱、描述、分類標籤（含 v2.2.13 新增的 Voice Status / 周 Sonnet 用量 / 周 Opus 用量，v2.2.17 新增的超額用量佔比 / 超額用量剩餘，v2.2.20 新增的 Remote Control Status，v2.2.22 新增的快取命中率 / 快取讀取 / 快取寫入 / 超額已用，v2.2.24 新增的快取計時器 / Git CI 狀態 / 沙箱狀態，v2.2.26 新增的周 Fable 用量）
+- **88 個元件**的名稱、描述、分類標籤（含 v2.2.13 新增的 Voice Status / 周 Sonnet 用量 / 周 Opus 用量，v2.2.17 新增的超額用量佔比 / 超額用量剩餘，v2.2.20 新增的 Remote Control Status，v2.2.22 新增的快取命中率 / 快取讀取 / 快取寫入 / 超額已用，v2.2.24 新增的快取計時器 / Git CI 狀態 / 沙箱狀態，v2.2.26 新增的周 Fable 用量，v2.2.29 新增的 Claude 狀態）
 - **TUI 配置介面**的全部選單項、幫助文字、提示資訊、對話方塊
 - **佈局元件**（分隔符、彈性分隔符）的名稱和描述
 - **極簡模式 / Minimalist Mode**、**模糊搜尋元件選擇器**、**Powerline 主題色延續**（v2.2.8）
@@ -45,6 +45,8 @@ ccstatusline 是一個優秀的 Claude Code CLI 狀態列格式化工具，支�
 - **快取命中率 / 快取讀取 / 快取寫入**（Cache Hit Rate / Cache Read / Cache Write）、**超額已用元件**（Extra Usage Used）、**壓縮計數改用 compact_boundary 標記精準檢測**（不再依賴上下文百分比推斷）、**彈性分隔符 Powerline 路徑修復**、**可覆蓋字元字形（Glyph override）**、**每元件暗淡樣式**（整體暗淡 / 括號暗淡）、**invalid settings.json 非破壞性恢復與警告**（v2.2.21–v2.2.22）
 - **快取計時器 / Git CI 狀態 / 沙箱狀態元件**、**單側預設內邊距**、**選擇性 Powerline 對齊**、**Git 分支與根目錄寬度限制**、**當前目錄字元**、**可配置上下文視窗兜底值**、**可組合壓縮指標**、**`--version` 引數**、**用量快取與載入態修復**、**非同步 Git PR/CI 檢查重新整理**（v2.2.23–v2.2.25）
 - **周 Fable 用量元件**、**設定匯入/匯出**（含變更預覽與全部取代/合併模式）、**用量 API `limits[]` 陣列解析**（相容遷移帳戶）、**每模型周用量改讀 `limits[]`**、**壓縮後上下文長度改由 `compact_boundary` 回報**、**渲染器隱藏元件後分隔符保留修復**（v2.2.26–v2.2.27）
+- **統一的元件隱藏狀態系統**（`getHideableStates()` + 共用隱藏設定選單，取代各元件各自的隱藏切換鍵）、**Nerd 字型切換邏輯去重**（v2.2.28）
+- **可設定數字精度**（per-widget、依數字型別、可選全域性覆蓋：精確 / 精簡 / 整數）、**Git 衝突元件零時顯示選項**、**Claude 狀態元件**（含 48 小時事件歷史記錄條）、**彈性分隔符相鄰時的多餘間距修復**（v2.2.29）
 - **確認對話方塊** "是 / 否"
 - **分類篩選** "全部" 等介面元素
 
@@ -57,7 +59,7 @@ ccstatusline 是一個優秀的 Claude Code CLI 狀態列格式化工具，支�
 | 介面語言   | 英文         | 中文                      |
 | 配置相容性 | —            | ✅ 共用相同 settings.json |
 | 功能差異   | —            | 無，功能完全一致          |
-| 同步版本   | 最新         | v2.2.27（+ 周 Fable 用量 / 設定匯入匯出 / 用量 limits[] 解析 / 壓縮上下文修復 / 中文化覆蓋） |
+| 同步版本   | 最新         | v2.2.29（+ 統一隱藏狀態系統 / 可設定數字精度 / Claude 狀態元件 / 中文化覆蓋） |
 
 ---
 
@@ -228,6 +230,7 @@ ccstatusline-zh-tw --config /path/to/custom-settings.json
 | Vim 模式 | 顯示當前 Vim 模式                                     |
 | 語音狀態 | 顯示 Claude Code 語音輸入是否啟用（4 種格式 + Nerd 字型） |
 | 沙箱狀態 | 顯示 Claude Code Bash 沙箱模式是否啟用                |
+| Claude 狀態 | 顯示 status.claude.com 的 Claude 服務狀態，可選 48 小時事件歷史記錄條 |
 
 ### Git
 
@@ -335,7 +338,7 @@ ccstatusline-zh-tw --config /path/to/custom-settings.json
 
 - **編輯狀態列** — 新增、刪除、移動、配置元件
 - **Powerline 設定** — 選擇主題和自定義分隔符
-- **全域性樣式覆蓋** — 設定全域性顏色、樣式及預設內邊距方向
+- **全域性樣式覆蓋** — 設定全域性顏色、樣式、預設內邊距方向及數字精度（依數字型別：Token / 速度 / 百分比 / 記憶體 / 費用）
 - **終端選項** — 配置終端寬度和顏色級別
 - **配置狀態行** — 配置 Claude Code 狀態行重新整理間隔（Claude Code ≥ 2.1.97）
 - **匯出設定** — 將目前設定儲存為 JSON 檔案以便備份或分享
