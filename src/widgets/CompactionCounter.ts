@@ -1,3 +1,4 @@
+import type { NumberFormat } from '../types/NumberFormat';
 import type {
     CompactionData,
     RenderContext
@@ -5,6 +6,7 @@ import type {
 import type { Settings } from '../types/Settings';
 import type {
     CustomKeybind,
+    HideableState,
     Widget,
     WidgetEditorDisplay,
     WidgetEditorProps,
@@ -12,10 +14,16 @@ import type {
 } from '../types/Widget';
 import { ZERO_COMPACTION_STATS } from '../utils/compaction';
 import { formatTokens } from '../utils/format-tokens';
+import { resolveNumberFormat } from '../utils/number-format';
 
+import { isHidden } from './shared/hideable';
 import {
     isMetadataFlagEnabled,
-    toggleMetadataFlag
+    isNerdFontEnabled,
+    setNerdFontFormat,
+    toggleMetadataFlag,
+    toggleNerdFont,
+    type NerdFontFormats
 } from './shared/metadata';
 import {
     getSlotSymbol,
@@ -25,16 +33,13 @@ import {
 } from './shared/symbol-override';
 
 const COMPACTION_ICON = '↻';
-const COMPACTION_NERD_FONT_ICON = '\uF021';
+const COMPACTION_NERD_FONT_ICON = '';
 const FORMATS = ['icon-space-number', 'text-and-number', 'number'] as const;
 type CompactionCounterFormat = typeof FORMATS[number];
 
 const DEFAULT_FORMAT: CompactionCounterFormat = 'icon-space-number';
 const CYCLE_FORMAT_ACTION = 'cycle-format';
-const TOGGLE_HIDE_ZERO_ACTION = 'toggle-hide-zero';
 const TOGGLE_NERD_FONT_ACTION = 'toggle-nerd-font';
-const HIDE_ZERO_METADATA_KEY = 'hideZero';
-const NERD_FONT_METADATA_KEY = 'nerdFont';
 const TOGGLE_TRIGGERS_ACTION = 'toggle-triggers';
 const SHOW_TRIGGERS_METADATA_KEY = 'showTriggers';
 const TOGGLE_RECLAIMED_ACTION = 'toggle-reclaimed';
@@ -56,6 +61,7 @@ const METRIC_LABELS: Record<CompactionMetric, string> = {
     reclaimed: '已回收'
 };
 const RECLAIMED_SLOT: SymbolSlot = { id: 'symbolReclaimed', label: '已回收', defaultSymbol: '↓' };
+const ZERO_HIDEABLE_STATE: HideableState = { key: 'zero', label: '計數為零時' };
 const SAMPLE_STATS: CompactionData = Object.freeze({
     count: 2,
     byTrigger: Object.freeze({ auto: 1, manual: 1, unknown: 0 }),
@@ -67,56 +73,15 @@ function getFormat(item: WidgetItem): CompactionCounterFormat {
     return (FORMATS as readonly string[]).includes(format ?? '') ? (format as CompactionCounterFormat) : DEFAULT_FORMAT;
 }
 
-function removeNerdFont(item: WidgetItem): WidgetItem {
-    const { [NERD_FONT_METADATA_KEY]: removedNerdFont, ...restMetadata } = item.metadata ?? {};
-    void removedNerdFont;
-
-    return {
-        ...item,
-        metadata: Object.keys(restMetadata).length > 0 ? restMetadata : undefined
-    };
+// Only the icon format draws a glyph; the other two are text.
+function canUseNerdFont(item: WidgetItem): boolean {
+    return getFormat(item) === DEFAULT_FORMAT;
 }
 
-function setFormat(item: WidgetItem, format: CompactionCounterFormat): WidgetItem {
-    if (format === DEFAULT_FORMAT) {
-        const { format: removedFormat, ...restMetadata } = item.metadata ?? {};
-        void removedFormat;
-
-        return {
-            ...item,
-            metadata: Object.keys(restMetadata).length > 0 ? restMetadata : undefined
-        };
-    }
-
-    const { [NERD_FONT_METADATA_KEY]: removedNerdFont, ...restMetadata } = item.metadata ?? {};
-    void removedNerdFont;
-
-    return {
-        ...item,
-        metadata: {
-            ...restMetadata,
-            format
-        }
-    };
-}
-
-function isNerdFontEnabled(item: WidgetItem): boolean {
-    return item.metadata?.[NERD_FONT_METADATA_KEY] === 'true' && getFormat(item) === DEFAULT_FORMAT;
-}
-
-function isHideZeroEnabled(item: WidgetItem): boolean {
-    return item.metadata?.[HIDE_ZERO_METADATA_KEY] === 'true';
-}
-
-function toggleHideZero(item: WidgetItem): WidgetItem {
-    return {
-        ...item,
-        metadata: {
-            ...(item.metadata ?? {}),
-            [HIDE_ZERO_METADATA_KEY]: (!isHideZeroEnabled(item)).toString()
-        }
-    };
-}
+const NERD_FONT_FORMATS: NerdFontFormats<CompactionCounterFormat> = {
+    defaultFormat: DEFAULT_FORMAT,
+    canUseNerdFont
+};
 
 function getMetric(item: WidgetItem): CompactionMetric {
     const metric = item.metadata?.[METRIC_METADATA_KEY];
@@ -153,12 +118,12 @@ function getMetricValue(data: CompactionData, metric: CompactionMetric): number 
     }
 }
 
-function formatReclaimedSuffix(tokensReclaimed: number, item: WidgetItem): string {
+function formatReclaimedSuffix(tokensReclaimed: number, item: WidgetItem, format: NumberFormat): string {
     if (tokensReclaimed <= 0) {
         return '';
     }
     const symbol = getSlotSymbol(item, RECLAIMED_SLOT);
-    return symbol.length > 0 ? ` ${symbol}${formatTokens(tokensReclaimed)}` : ` ${formatTokens(tokensReclaimed)}`;
+    return symbol.length > 0 ? ` ${symbol}${formatTokens(tokensReclaimed, format)}` : ` ${formatTokens(tokensReclaimed, format)}`;
 }
 
 function formatTriggerSuffix(byTrigger: CompactionData['byTrigger']): string {
@@ -175,33 +140,15 @@ function formatTriggerSuffix(byTrigger: CompactionData['byTrigger']): string {
     return parts.length > 0 ? ` (${parts.join(', ')})` : '';
 }
 
-function formatStats(data: CompactionData, item: WidgetItem, icon: string): string {
+function formatStats(data: CompactionData, item: WidgetItem, icon: string, format: NumberFormat): string {
     let out = formatCount(data.count, getFormat(item), icon);
     if (isMetadataFlagEnabled(item, SHOW_TRIGGERS_METADATA_KEY)) {
         out += formatTriggerSuffix(data.byTrigger);
     }
     if (isMetadataFlagEnabled(item, SHOW_RECLAIMED_METADATA_KEY)) {
-        out += formatReclaimedSuffix(data.tokensReclaimed, item);
+        out += formatReclaimedSuffix(data.tokensReclaimed, item, format);
     }
     return out;
-}
-
-function toggleNerdFont(item: WidgetItem): WidgetItem {
-    if (getFormat(item) !== DEFAULT_FORMAT) {
-        return removeNerdFont(item);
-    }
-
-    if (!isNerdFontEnabled(item)) {
-        return {
-            ...item,
-            metadata: {
-                ...(item.metadata ?? {}),
-                [NERD_FONT_METADATA_KEY]: 'true'
-            }
-        };
-    }
-
-    return removeNerdFont(item);
 }
 
 function formatCount(count: number, format: CompactionCounterFormat, icon: string): string {
@@ -237,7 +184,7 @@ export class CompactionCounterWidget implements Widget {
             modifiers.push(`${METRIC_LABELS[metric]}值`);
         } else {
             modifiers.push(getFormat(item));
-            if (isNerdFontEnabled(item)) {
+            if (isNerdFontEnabled(item, NERD_FONT_FORMATS)) {
                 modifiers.push('Nerd 字型');
             }
             if (isMetadataFlagEnabled(item, SHOW_TRIGGERS_METADATA_KEY)) {
@@ -247,14 +194,15 @@ export class CompactionCounterWidget implements Widget {
                 modifiers.push('已回收');
             }
         }
-        if (isHideZeroEnabled(item)) {
-            modifiers.push('零時隱藏');
-        }
 
         return {
             displayText: '壓縮計數',
             modifierText: `(${modifiers.join(', ')})`
         };
+    }
+
+    getHideableStates(): HideableState[] {
+        return [ZERO_HIDEABLE_STATE];
     }
 
     handleEditorAction(action: string, item: WidgetItem): WidgetItem | null {
@@ -269,15 +217,11 @@ export class CompactionCounterWidget implements Widget {
             const currentFormat = getFormat(item);
             const nextFormat = FORMATS[(FORMATS.indexOf(currentFormat) + 1) % FORMATS.length] ?? DEFAULT_FORMAT;
 
-            return setFormat(item, nextFormat);
-        }
-
-        if (action === TOGGLE_HIDE_ZERO_ACTION) {
-            return toggleHideZero(item);
+            return setNerdFontFormat(item, nextFormat, NERD_FONT_FORMATS);
         }
 
         if (action === TOGGLE_NERD_FONT_ACTION) {
-            return toggleNerdFont(item);
+            return toggleNerdFont(item, NERD_FONT_FORMATS);
         }
 
         if (action === TOGGLE_TRIGGERS_ACTION) {
@@ -292,24 +236,24 @@ export class CompactionCounterWidget implements Widget {
     }
 
     render(item: WidgetItem, context: RenderContext, settings: Settings): string | null {
-        void settings;
+        const format = resolveNumberFormat('token', item, settings);
         const data = context.isPreview ? SAMPLE_STATS : (context.compactionData ?? ZERO_COMPACTION_STATS);
         const metric = getMetric(item);
 
         if (metric !== DEFAULT_METRIC) {
             const value = getMetricValue(data, metric);
-            if (value === 0 && isHideZeroEnabled(item) && !context.isPreview) {
+            if (value === 0 && isHidden(item, ZERO_HIDEABLE_STATE.key) && !context.isPreview) {
                 return null;
             }
-            return metric === 'reclaimed' ? formatTokens(value) : String(value);
+            return metric === 'reclaimed' ? formatTokens(value, format) : String(value);
         }
 
-        if (data.count === 0 && isHideZeroEnabled(item) && !context.isPreview) {
+        if (data.count === 0 && isHidden(item, ZERO_HIDEABLE_STATE.key) && !context.isPreview) {
             return null;
         }
 
-        const icon = isNerdFontEnabled(item) ? COMPACTION_NERD_FONT_ICON : COMPACTION_ICON;
-        return formatStats(data, item, icon);
+        const icon = isNerdFontEnabled(item, NERD_FONT_FORMATS) ? COMPACTION_NERD_FONT_ICON : COMPACTION_ICON;
+        return formatStats(data, item, icon, format);
     }
 
     getCustomKeybinds(item?: WidgetItem): CustomKeybind[] {
@@ -318,19 +262,18 @@ export class CompactionCounterWidget implements Widget {
         ];
 
         // The format / glyph / trigger toggles only shape the composite 'count'
-        // display; a single-metric value just needs the metric and hide-zero.
+        // display; a single-metric value just needs the metric selector, since
+        // hide-zero is one of the states in the shared hide checklist.
         if (item !== undefined && getMetric(item) !== DEFAULT_METRIC) {
-            keybinds.push({ key: 'h', label: '(h)零時隱藏', action: TOGGLE_HIDE_ZERO_ACTION });
             return keybinds;
         }
 
         keybinds.push({ key: 'f', label: '(f)格式切換', action: CYCLE_FORMAT_ACTION });
-        if (item === undefined || getFormat(item) === DEFAULT_FORMAT) {
+        if (item === undefined || canUseNerdFont(item)) {
             keybinds.push({ key: 'n', label: '(n)Nerd 字型', action: TOGGLE_NERD_FONT_ACTION });
         }
         keybinds.push({ key: 's', label: '(s)觸發器分類', action: TOGGLE_TRIGGERS_ACTION });
         keybinds.push({ key: 't', label: '(t)已回收令牌', action: TOGGLE_RECLAIMED_ACTION });
-        keybinds.push({ key: 'h', label: '(h)零時隱藏', action: TOGGLE_HIDE_ZERO_ACTION });
         keybinds.push(getSymbolKeybind());
 
         return keybinds;
@@ -342,4 +285,5 @@ export class CompactionCounterWidget implements Widget {
 
     supportsRawValue(): boolean { return false; }
     supportsColors(item: WidgetItem): boolean { return true; }
+    supportsNumberFormat(): boolean { return true; }
 }
