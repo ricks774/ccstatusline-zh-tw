@@ -1,21 +1,19 @@
 import type { RenderContext } from '../types/RenderContext';
 import type { Settings } from '../types/Settings';
 import type {
-    CustomKeybind,
+    HideableState,
     Widget,
     WidgetEditorDisplay,
     WidgetItem
 } from '../types/Widget';
+import { resolveNumberFormat } from '../utils/number-format';
 import { getUsageErrorMessage } from '../utils/usage';
 
 import { formatUsageCurrency } from './shared/currency';
-import {
-    appendHideDisabledModifier,
-    getHideExtraUsageDisabledKeybind,
-    handleToggleExtraUsageDisabledAction,
-    isHideExtraUsageDisabledEnabled
-} from './shared/extra-usage-disabled';
+import { EXTRA_USAGE_DISABLED_HIDEABLE_STATE } from './shared/extra-usage-disabled';
+import { isHidden } from './shared/hideable';
 import { formatRawOrLabeledValue } from './shared/raw-or-labeled';
+import { USAGE_NO_DATA_HIDEABLE_STATE } from './shared/usage-display';
 
 export class ExtraUsageRemainingWidget implements Widget {
     getDefaultColor(): string { return 'green'; }
@@ -24,30 +22,31 @@ export class ExtraUsageRemainingWidget implements Widget {
     getCategory(): string { return '用量'; }
 
     getEditorDisplay(item: WidgetItem): WidgetEditorDisplay {
-        return {
-            displayText: this.getDisplayName(),
-            modifierText: appendHideDisabledModifier(undefined, item)
-        };
+        return { displayText: this.getDisplayName() };
     }
 
-    handleEditorAction(action: string, item: WidgetItem): WidgetItem | null {
-        return handleToggleExtraUsageDisabledAction(action, item);
+    getHideableStates(): HideableState[] {
+        return [EXTRA_USAGE_DISABLED_HIDEABLE_STATE, USAGE_NO_DATA_HIDEABLE_STATE];
     }
 
     render(item: WidgetItem, context: RenderContext, settings: Settings): string | null {
+        const format = resolveNumberFormat('cost', item, settings);
         if (context.isPreview) {
-            return formatRawOrLabeledValue(item, '超額剩餘: ', '$3,894.00');
+            return formatRawOrLabeledValue(item, '超額剩餘: ', formatUsageCurrency(3894, undefined, format));
         }
 
         const data = context.usageData ?? {};
         if (data.extraUsageEnabled === false) {
-            return isHideExtraUsageDisabledEnabled(item)
+            return isHidden(item, EXTRA_USAGE_DISABLED_HIDEABLE_STATE.key)
                 ? null
                 : formatRawOrLabeledValue(item, '超額剩餘: ', 'n/a');
         }
         if (data.extraUsageEnabled !== true || data.extraUsageLimit === undefined || data.extraUsageUsed === undefined) {
-            if (data.error)
-                return getUsageErrorMessage(data.error);
+            if (data.error) {
+                return isHidden(item, USAGE_NO_DATA_HIDEABLE_STATE.key)
+                    ? null
+                    : getUsageErrorMessage(data.error);
+            }
             return null;
         }
 
@@ -55,15 +54,12 @@ export class ExtraUsageRemainingWidget implements Widget {
         const limitDollars = data.extraUsageLimit / 100;
         const usedDollars = data.extraUsageUsed / 100;
         const remaining = Math.max(0, limitDollars - usedDollars);
-        const formatted = formatUsageCurrency(remaining, data.extraUsageCurrency);
+        const formatted = formatUsageCurrency(remaining, data.extraUsageCurrency, format);
 
         return formatRawOrLabeledValue(item, '超額剩餘: ', formatted);
     }
 
-    getCustomKeybinds(): CustomKeybind[] {
-        return [getHideExtraUsageDisabledKeybind()];
-    }
-
     supportsRawValue(): boolean { return true; }
     supportsColors(item: WidgetItem): boolean { return true; }
+    supportsNumberFormat(): boolean { return true; }
 }

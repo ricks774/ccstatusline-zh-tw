@@ -10,6 +10,10 @@ import type {
     WidgetItem
 } from '../types/Widget';
 import {
+    formatPercent,
+    resolveNumberFormat
+} from '../utils/number-format';
+import {
     formatUsageDuration,
     formatUsageResetAt,
     getUsageErrorMessage,
@@ -25,6 +29,7 @@ import {
     isMetadataFlagEnabled,
     toggleMetadataFlag
 } from './shared/metadata';
+import { makeTimerProgressBar } from './shared/progress-bar';
 import { formatRawOrLabeledValue } from './shared/raw-or-labeled';
 import {
     TIMEZONE_EDITOR_ACTION,
@@ -44,20 +49,15 @@ import {
     isUsageDateMode,
     isUsageInverted,
     isUsageProgressMode,
+    isUsageSliderMode,
     isUsageWeekdayEnabled,
+    makeSliderBar,
     toggleUsageCompact,
     toggleUsageDateMode,
     toggleUsageHourFormat,
     toggleUsageInverted,
     toggleUsageWeekday
 } from './shared/usage-display';
-
-function makeTimerProgressBar(percent: number, width: number): string {
-    const clampedPercent = Math.max(0, Math.min(100, percent));
-    const filledWidth = Math.floor((clampedPercent / 100) * width);
-    const emptyWidth = width - filledWidth;
-    return '█'.repeat(filledWidth) + '░'.repeat(emptyWidth);
-}
 
 const WEEKLY_PREVIEW_DURATION_MS = 36.5 * 60 * 60 * 1000;
 const WEEKLY_RESET_PREVIEW_AT = '2026-03-15T08:30:00.000Z';
@@ -170,6 +170,7 @@ export class WeeklyResetTimerWidget implements Widget {
         const compact = isUsageCompact(item);
         const dateMode = isUsageDateMode(item);
         const useDays = !isWeeklyResetHoursOnly(item);
+        const format = resolveNumberFormat('percent', item, settings);
 
         if (context.isPreview) {
             const previewPercent = inverted ? 90.0 : 10.0;
@@ -177,7 +178,15 @@ export class WeeklyResetTimerWidget implements Widget {
             if (isUsageProgressMode(displayMode)) {
                 const barWidth = getUsageProgressBarWidth(displayMode);
                 const progressBar = makeTimerProgressBar(previewPercent, barWidth);
-                return formatRawOrLabeledValue(item, '周重置 ', `[${progressBar}] ${previewPercent.toFixed(1)}%`);
+                return formatRawOrLabeledValue(item, '周重置 ', `[${progressBar}] ${formatPercent(previewPercent, format)}`);
+            }
+
+            if (isUsageSliderMode(displayMode)) {
+                const slider = makeSliderBar(previewPercent);
+                const sliderDisplay = displayMode === 'slider'
+                    ? `${slider} ${formatPercent(previewPercent, format)}`
+                    : slider;
+                return formatRawOrLabeledValue(item, '周重置 ', sliderDisplay);
             }
 
             if (dateMode) {
@@ -214,8 +223,16 @@ export class WeeklyResetTimerWidget implements Widget {
             const barWidth = getUsageProgressBarWidth(displayMode);
             const percent = inverted ? window.remainingPercent : window.elapsedPercent;
             const progressBar = makeTimerProgressBar(percent, barWidth);
-            const percentage = percent.toFixed(1);
-            return formatRawOrLabeledValue(item, '周重置 ', `[${progressBar}] ${percentage}%`);
+            return formatRawOrLabeledValue(item, '周重置 ', `[${progressBar}] ${formatPercent(percent, format)}`);
+        }
+
+        if (isUsageSliderMode(displayMode)) {
+            const percent = inverted ? window.remainingPercent : window.elapsedPercent;
+            const slider = makeSliderBar(percent);
+            const sliderDisplay = displayMode === 'slider'
+                ? `${slider} ${formatPercent(percent, format)}`
+                : slider;
+            return formatRawOrLabeledValue(item, '周重置 ', sliderDisplay);
         }
 
         if (dateMode) {
@@ -261,4 +278,5 @@ export class WeeklyResetTimerWidget implements Widget {
 
     supportsRawValue(): boolean { return true; }
     supportsColors(item: WidgetItem): boolean { return true; }
+    supportsNumberFormat(): boolean { return true; }
 }
