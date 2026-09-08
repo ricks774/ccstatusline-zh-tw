@@ -49,14 +49,14 @@ function getIndicatorColorKey(indicator: string): ClaudeStatusColorKey {
 
 export class ClaudeStatusWidget implements Widget {
     getDefaultColor(): string { return 'green'; }
-    getDescription(): string { return 'Shows Claude service status from status.claude.com with an optional 48h incident history strip'; }
-    getDisplayName(): string { return 'Claude Status'; }
-    getCategory(): string { return 'Core'; }
+    getDescription(): string { return '顯示來自 status.claude.com 的 Claude 服務狀態，可選顯示 48 小時事件歷史條'; }
+    getDisplayName(): string { return 'Claude 狀態'; }
+    getCategory(): string { return '核心'; }
 
     getEditorDisplay(item: WidgetItem): WidgetEditorDisplay {
         return {
             displayText: this.getDisplayName(),
-            modifierText: isClaudeStatusHistoryEnabled(item) ? '(history)' : undefined
+            modifierText: isClaudeStatusHistoryEnabled(item) ? '(歷史)' : undefined
         };
     }
 
@@ -126,7 +126,7 @@ export class ClaudeStatusWidget implements Widget {
 
     getCustomKeybinds(): CustomKeybind[] {
         return [
-            { key: 'h', label: '(h)istory toggle', action: 'toggle-history' }
+            { key: 'h', label: '(h)歷史條切換', action: 'toggle-history' }
         ];
     }
 

@@ -175,16 +175,16 @@ describe('ContextBarWidget', () => {
             id: 'length',
             type: 'context-length',
             numberFormat: { style: 'whole' }
-        }, context, DEFAULT_SETTINGS)).toBe('Ctx: 19k');
+        }, context, DEFAULT_SETTINGS)).toBe('上下文: 19k');
         expect(new ContextWindowWidget().render({
             id: 'window',
             type: 'context-window',
             numberFormat: { decimals: 2 }
-        }, context, DEFAULT_SETTINGS)).toBe('Win: 200.00k');
+        }, context, DEFAULT_SETTINGS)).toBe('視窗: 200.00k');
         expect(new ContextBarWidget().render({
             id: 'bar',
             type: 'context-bar',
             numberFormat: { decimals: 2 }
-        }, context, DEFAULT_SETTINGS)).toBe('Context: [bar:25.0:16] 50.00k/200.00k (25.00%)');
+        }, context, DEFAULT_SETTINGS)).toBe('上下文: [bar:25.0:16] 50.00k/200.00k (25.00%)');
     });
 });

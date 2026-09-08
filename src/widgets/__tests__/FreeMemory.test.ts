@@ -88,7 +88,7 @@ describe('FreeMemoryWidget', () => {
                 numberFormat: { style: 'whole' }
             };
 
-            expect(widget.render(item, context, DEFAULT_SETTINGS)).toBe('Mem: 12G/16G');
+            expect(widget.render(item, context, DEFAULT_SETTINGS)).toBe('記憶體: 12G/16G');
         });
     });
 

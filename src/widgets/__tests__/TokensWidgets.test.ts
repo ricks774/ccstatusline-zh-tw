@@ -150,7 +150,7 @@ describe('Token widgets', () => {
             }
         };
 
-        expect(new TokensInputWidget().render({ id: 'in', type: 'tokens-input' }, context, DEFAULT_SETTINGS)).toBe('In: fmt:0');
+        expect(new TokensInputWidget().render({ id: 'in', type: 'tokens-input' }, context, DEFAULT_SETTINGS)).toBe('輸入: fmt:0');
         expect(new TokensInputWidget().render({ id: 'in', type: 'tokens-input', metadata: { hide: 'zero' } }, context, DEFAULT_SETTINGS)).toBeNull();
         expect(new TokensOutputWidget().render({ id: 'out', type: 'tokens-output', metadata: { hide: 'zero' } }, context, DEFAULT_SETTINGS)).toBeNull();
         expect(new TokensCachedWidget().render({ id: 'cached', type: 'tokens-cached', metadata: { hide: 'zero' } }, context, DEFAULT_SETTINGS)).toBeNull();

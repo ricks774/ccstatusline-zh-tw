@@ -87,11 +87,11 @@ describe('ExtraUsageUsedWidget', () => {
             id: 'extra',
             type: 'extra-usage-used',
             numberFormat: { decimals: 3 }
-        }, context, settings)).toBe('Overage Used: €5');
+        }, context, settings)).toBe('超額已用: €5');
         expect(widget.render({
             id: 'extra',
             type: 'extra-usage-used'
-        }, { isPreview: true }, settings)).toBe('Overage Used: $106');
+        }, { isPreview: true }, settings)).toBe('超額已用: $106');
         expect(widget.supportsNumberFormat()).toBe(true);
     });
 

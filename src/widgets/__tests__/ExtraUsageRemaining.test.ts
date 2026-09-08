@@ -78,11 +78,11 @@ describe('ExtraUsageRemainingWidget', () => {
         expect(widget.render({
             id: 'extra',
             type: 'extra-usage-remaining'
-        }, context, settings)).toBe('Overage Left: €3,894');
+        }, context, settings)).toBe('超額剩餘: €3,894');
         expect(widget.render({
             id: 'extra',
             type: 'extra-usage-remaining'
-        }, { isPreview: true }, settings)).toBe('Overage Left: $3,894');
+        }, { isPreview: true }, settings)).toBe('超額剩餘: $3,894');
         expect(widget.supportsNumberFormat()).toBe(true);
     });
 

@@ -130,7 +130,7 @@ describe('GitCiStatusWidget', () => {
     });
 
     it('keeps rendering (no git) when only the no-data state is enabled', () => {
-        expect(render({ cwd: '/x', hide: 'no-data' }, { isInsideGitWorkTree: () => false })).toBe('(no git)');
+        expect(render({ cwd: '/x', hide: 'no-data' }, { isInsideGitWorkTree: () => false })).toBe('(無 Git)');
     });
 
     it.each([

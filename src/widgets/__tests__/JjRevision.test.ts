@@ -95,7 +95,7 @@ describe('JjRevisionWidget', () => {
     it('should render no jj when not in jj repo', () => {
         mockExecFileSync.mockImplementation(() => { throw new Error('Not a jj repo'); });
 
-        expect(render()).toBe(' no jj');
+        expect(render()).toBe(' 無 JJ');
     });
 
     it('should hide no jj when configured', () => {
@@ -108,6 +108,6 @@ describe('JjRevisionWidget', () => {
         mockExecFileSync.mockReturnValueOnce('/tmp/repo\n');
         mockExecFileSync.mockReturnValueOnce('');
 
-        expect(render()).toBe(' no jj');
+        expect(render()).toBe(' 無 JJ');
     });
 });

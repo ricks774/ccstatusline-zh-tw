@@ -89,7 +89,7 @@ describe('BlockTimerWidget', () => {
         });
 
         // 73.9% of 32 cells is 23.648, past the half-cell mark, so the 24th cell fills.
-        expect(render(widget, item, { usageData: {} })).toBe(`Block [${'█'.repeat(24)}${'░'.repeat(8)}] 73.9%`);
+        expect(render(widget, item, { usageData: {} })).toBe(`時段 [${'█'.repeat(24)}${'░'.repeat(8)}] 73.9%`);
     });
 
     it('renders empty values when no usage or fallback data exists', () => {

@@ -98,7 +98,7 @@ describe('BlockResetTimerWidget', () => {
         });
 
         // 10% of 16 cells is 1.6, past the half-cell mark, so the 2nd cell fills.
-        expect(render(widget, item, { usageData: {} })).toBe('Reset [██░░░░░░░░░░░░░░] 10.0%');
+        expect(render(widget, item, { usageData: {} })).toBe('重置 [██░░░░░░░░░░░░░░] 10.0%');
     });
 
     it('returns usage error when no timer data is available', () => {

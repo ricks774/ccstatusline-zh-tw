@@ -242,7 +242,7 @@ describe('ThinkingEffortWidget', () => {
                 settingsValue: { effortLevel: 'low' }
             });
 
-            expect(result).toBe('Thinking: high');
+            expect(result).toBe('思考: high');
         });
     });
 
