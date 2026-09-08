@@ -11,16 +11,16 @@ export const EDIT_HIDE_STATES_ACTION = 'edit-hide-states';
 
 const HIDE_KEYBIND: CustomKeybind = {
     key: 'h',
-    label: '(h)ide…',
+    label: '(h)隱藏…',
     action: EDIT_HIDE_STATES_ACTION
 };
 
 // States shared verbatim by several widgets
-export const NO_GIT_HIDEABLE_STATE: HideableState = { key: 'no-git', label: 'when not in a git repo' };
-export const NO_JJ_HIDEABLE_STATE: HideableState = { key: 'no-jj', label: 'when not in a jj repo' };
-export const NO_REMOTE_HIDEABLE_STATE: HideableState = { key: 'no-remote', label: 'when there is no remote' };
-export const NO_UPSTREAM_HIDEABLE_STATE: HideableState = { key: 'no-upstream', label: 'when there is no upstream' };
-export const MERGE_TARGET_HIDDEN_HIDEABLE_STATE: HideableState = { key: 'merge-target-hidden', label: 'when merge target is hidden' };
+export const NO_GIT_HIDEABLE_STATE: HideableState = { key: 'no-git', label: '不在 git 儲存庫中時' };
+export const NO_JJ_HIDEABLE_STATE: HideableState = { key: 'no-jj', label: '不在 jj 儲存庫中時' };
+export const NO_REMOTE_HIDEABLE_STATE: HideableState = { key: 'no-remote', label: '沒有遠端時' };
+export const NO_UPSTREAM_HIDEABLE_STATE: HideableState = { key: 'no-upstream', label: '沒有上游時' };
+export const MERGE_TARGET_HIDDEN_HIDEABLE_STATE: HideableState = { key: 'merge-target-hidden', label: '合併目標已隱藏時' };
 
 export function parseHideStates(value: string | undefined): string[] {
     if (value === undefined) {
@@ -90,5 +90,5 @@ export function getHideKeybind(): CustomKeybind {
 
 export function getHideModifierText(item: WidgetItem, states: HideableState[]): string | undefined {
     const enabled = getEnabledHideStates(item, states);
-    return enabled.length > 0 ? `(hide: ${enabled.join(', ')})` : undefined;
+    return enabled.length > 0 ? `(隱藏: ${enabled.join(', ')})` : undefined;
 }
