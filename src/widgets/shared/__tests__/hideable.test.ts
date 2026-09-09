@@ -18,12 +18,12 @@ import {
 } from '../hideable';
 
 const STATES: HideableState[] = [
-    { key: 'no-git', label: 'when not in a git repo' },
-    { key: 'zero', label: 'when count is zero' }
+    { key: 'no-git', label: '不在 Git 倉庫中時' },
+    { key: 'zero', label: '計數為零時' }
 ];
 
 const STATES_WITH_DEFAULT: HideableState[] = [
-    { key: 'no-git', label: 'when not in a git repo' },
+    { key: 'no-git', label: '不在 Git 倉庫中時' },
     { key: 'zero', label: 'when not diverged', defaultEnabled: true }
 ];
 
@@ -116,11 +116,11 @@ describe('setEnabledHideStates', () => {
 
 describe('editor helpers', () => {
     it('uses h for the shared hide keybind', () => {
-        expect(getHideKeybind()).toEqual({ key: 'h', label: '(h)ide…', action: 'edit-hide-states' });
+        expect(getHideKeybind()).toEqual({ key: 'h', label: '(h)隱藏…', action: 'edit-hide-states' });
     });
 
     it('formats the hide modifier text from enabled state keys', () => {
-        expect(getHideModifierText(makeItem({ hide: 'no-git,zero' }), STATES)).toBe('(hide: no-git, zero)');
+        expect(getHideModifierText(makeItem({ hide: 'no-git,zero' }), STATES)).toBe('(隱藏: no-git, zero)');
         expect(getHideModifierText(makeItem(), STATES)).toBeUndefined();
     });
 });

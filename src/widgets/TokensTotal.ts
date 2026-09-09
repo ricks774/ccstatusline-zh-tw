@@ -12,13 +12,13 @@ import { formatTokens } from '../utils/renderer';
 import { isHidden } from './shared/hideable';
 import { formatRawOrLabeledValue } from './shared/raw-or-labeled';
 
-const ZERO_HIDEABLE_STATE: HideableState = { key: 'zero', label: 'when token count is zero' };
+const ZERO_HIDEABLE_STATE: HideableState = { key: 'zero', label: 'Token 數為零時' };
 
 export class TokensTotalWidget implements Widget {
     getDefaultColor(): string { return 'cyan'; }
-    getDescription(): string { return 'Shows total token count (input + output + cache) for the current session'; }
-    getDisplayName(): string { return 'Tokens Total'; }
-    getCategory(): string { return 'Tokens'; }
+    getDescription(): string { return '顯示當前會話的總 Token 數（輸入 + 輸出 + 快取）'; }
+    getDisplayName(): string { return '總 Token'; }
+    getCategory(): string { return 'Token'; }
     getEditorDisplay(item: WidgetItem): WidgetEditorDisplay {
         return { displayText: this.getDisplayName() };
     }
@@ -30,14 +30,14 @@ export class TokensTotalWidget implements Widget {
     render(item: WidgetItem, context: RenderContext, settings: Settings): string | null {
         const format = resolveNumberFormat('token', item, settings);
         if (context.isPreview) {
-            return formatRawOrLabeledValue(item, 'Total: ', formatTokens(30600, format));
+            return formatRawOrLabeledValue(item, '合計: ', formatTokens(30600, format));
         }
 
         if (context.tokenMetrics) {
             if (context.tokenMetrics.totalTokens === 0 && isHidden(item, ZERO_HIDEABLE_STATE.key)) {
                 return null;
             }
-            return formatRawOrLabeledValue(item, 'Total: ', formatTokens(context.tokenMetrics.totalTokens, format));
+            return formatRawOrLabeledValue(item, '合計: ', formatTokens(context.tokenMetrics.totalTokens, format));
         }
         return null;
     }

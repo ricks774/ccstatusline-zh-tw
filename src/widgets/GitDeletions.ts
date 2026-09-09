@@ -16,7 +16,7 @@ import {
     isHidden
 } from './shared/hideable';
 
-const ZERO_HIDEABLE_STATE: HideableState = { key: 'zero', label: 'when the deletion count is zero' };
+const ZERO_HIDEABLE_STATE: HideableState = { key: 'zero', label: '刪除行數為零時' };
 
 export class GitDeletionsWidget implements Widget {
     getDefaultColor(): string { return 'red'; }

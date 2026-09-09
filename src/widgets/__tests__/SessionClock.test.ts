@@ -45,7 +45,7 @@ describe('SessionClockWidget', () => {
     it('hides sub-minute durations only when the zero hide state is enabled', () => {
         const context: RenderContext = { data: { cost: { total_duration_ms: 30 * 1000 } } };
 
-        expect(render({ id: 'session-clock', type: 'session-clock' }, context)).toBe('Session: <1m');
+        expect(render({ id: 'session-clock', type: 'session-clock' }, context)).toBe('會話: <1分');
         expect(render({
             id: 'session-clock',
             type: 'session-clock',
@@ -55,7 +55,7 @@ describe('SessionClockWidget', () => {
             id: 'session-clock',
             type: 'session-clock',
             metadata: { hide: 'zero' }
-        }, { data: { cost: { total_duration_ms: 90 * 1000 } } })).toBe('Session: 1m');
+        }, { data: { cost: { total_duration_ms: 90 * 1000 } } })).toBe('會話: 1分');
     });
 
     it('hides the 0m fallback duration when the zero hide state is enabled', () => {
@@ -67,9 +67,9 @@ describe('SessionClockWidget', () => {
     });
 
     it('hides transcript-derived sub-minute durations when the zero hide state is enabled', () => {
-        const context: RenderContext = { sessionDuration: '<1m' };
+        const context: RenderContext = { sessionDuration: '<1分' };
 
-        expect(render({ id: 'session-clock', type: 'session-clock' }, context)).toBe('Session: <1m');
+        expect(render({ id: 'session-clock', type: 'session-clock' }, context)).toBe('會話: <1分');
         expect(render({
             id: 'session-clock',
             type: 'session-clock',

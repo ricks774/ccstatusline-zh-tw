@@ -98,14 +98,14 @@ describe('StatusLinePreview helpers', () => {
             {
                 id: 'w1',
                 type: 'custom-text',
-                customText: 'Cache Hit: 87.0%',
+                customText: '快取命中: 87.0%',
                 color: 'hex:282C34',
                 backgroundColor: 'hex:61AFEF'
             },
             {
                 id: 'w2',
                 type: 'custom-text',
-                customText: 'Cache Read: 12k (64.0%)',
+                customText: '快取讀取: 12k (64.0%)',
                 color: 'hex:ABB2BF',
                 backgroundColor: 'hex:3E4452',
                 dim: 'parens'
@@ -113,7 +113,7 @@ describe('StatusLinePreview helpers', () => {
             {
                 id: 'w3',
                 type: 'custom-text',
-                customText: 'Cache Write: 3k (16.0%)',
+                customText: '快取寫入: 3k (16.0%)',
                 color: 'hex:282C34',
                 backgroundColor: 'hex:98C379'
             }
@@ -140,7 +140,7 @@ describe('StatusLinePreview helpers', () => {
             const output = stdout.getOutput();
             const dimIndex = output.indexOf('\x1b[2m(64.0%)');
             const resetIndex = output.indexOf('\x1b[22;1m', dimIndex);
-            const nextWidgetIndex = output.indexOf('Cache Write');
+            const nextWidgetIndex = output.indexOf('快取寫入');
 
             expect(dimIndex).toBeGreaterThanOrEqual(0);
             expect(resetIndex).toBeGreaterThan(dimIndex);

@@ -18,8 +18,8 @@ import {
 
 export class JjDeletionsWidget implements Widget {
     getDefaultColor(): string { return 'red'; }
-    getDescription(): string { return 'Shows jujutsu deletions count'; }
-    getDisplayName(): string { return 'JJ Deletions'; }
+    getDescription(): string { return '顯示 Jujutsu 刪除行數'; }
+    getDisplayName(): string { return 'JJ 刪除行數'; }
     getCategory(): string { return 'Jujutsu'; }
     getEditorDisplay(item: WidgetItem): WidgetEditorDisplay {
         return { displayText: this.getDisplayName() };
@@ -37,7 +37,7 @@ export class JjDeletionsWidget implements Widget {
         }
 
         if (!isInsideJjRepo(context)) {
-            return hideNoJj ? null : '(no jj)';
+            return hideNoJj ? null : '(無 JJ)';
         }
 
         const changes = getJjChangeCounts(context);

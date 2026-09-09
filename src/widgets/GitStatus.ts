@@ -24,15 +24,15 @@ import {
     type SymbolSlot
 } from './shared/symbol-override';
 
-const CONFLICTS_SLOT: SymbolSlot = { id: 'symbolConflicts', label: 'Conflicts', defaultSymbol: '!' };
-const STAGED_SLOT: SymbolSlot = { id: 'symbolStaged', label: 'Staged', defaultSymbol: '+' };
-const UNSTAGED_SLOT: SymbolSlot = { id: 'symbolUnstaged', label: 'Unstaged', defaultSymbol: '*' };
-const UNTRACKED_SLOT: SymbolSlot = { id: 'symbolUntracked', label: 'Untracked', defaultSymbol: '?' };
+const CONFLICTS_SLOT: SymbolSlot = { id: 'symbolConflicts', label: '衝突', defaultSymbol: '!' };
+const STAGED_SLOT: SymbolSlot = { id: 'symbolStaged', label: '已暫存', defaultSymbol: '+' };
+const UNSTAGED_SLOT: SymbolSlot = { id: 'symbolUnstaged', label: '未暫存', defaultSymbol: '*' };
+const UNTRACKED_SLOT: SymbolSlot = { id: 'symbolUntracked', label: '未追蹤', defaultSymbol: '?' };
 
 export class GitStatusWidget implements Widget {
     getDefaultColor(): string { return 'yellow'; }
-    getDescription(): string { return 'Shows git status indicators: + staged, * unstaged, ? untracked, ! conflicts'; }
-    getDisplayName(): string { return 'Git Status'; }
+    getDescription(): string { return '顯示 Git 狀態指示：+ 已暫存, * 未暫存, ? 未跟蹤, ! 衝突'; }
+    getDisplayName(): string { return 'Git 狀態'; }
     getCategory(): string { return 'Git'; }
 
     getEditorDisplay(item: WidgetItem): WidgetEditorDisplay {
@@ -51,7 +51,7 @@ export class GitStatusWidget implements Widget {
         }
 
         if (!isInsideGitWorkTree(context)) {
-            return hideNoGit ? null : '(no git)';
+            return hideNoGit ? null : '（無 Git）';
         }
 
         const status = getGitStatus(context);

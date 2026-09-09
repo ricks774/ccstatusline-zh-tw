@@ -68,7 +68,7 @@ describe('GitAheadBehindWidget', () => {
 
     it('renders no git outside a work tree and hides via the unified state', () => {
         mockExecFileSync.mockReturnValue('false\n');
-        expect(render()).toBe('(no git)');
+        expect(render()).toBe('（無 Git）');
 
         clearGitCache();
         mockExecFileSync.mockReturnValue('false\n');

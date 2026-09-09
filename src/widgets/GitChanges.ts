@@ -16,7 +16,7 @@ import {
     isHidden
 } from './shared/hideable';
 
-const ZERO_HIDEABLE_STATE: HideableState = { key: 'zero', label: 'when there are no changes' };
+const ZERO_HIDEABLE_STATE: HideableState = { key: 'zero', label: '沒有變更時' };
 
 export class GitChangesWidget implements Widget {
     getDefaultColor(): string { return 'yellow'; }

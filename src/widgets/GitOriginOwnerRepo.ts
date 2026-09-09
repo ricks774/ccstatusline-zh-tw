@@ -34,8 +34,8 @@ const TOGGLE_OWNER_ONLY_ACTION = 'toggle-owner-only';
 
 export class GitOriginOwnerRepoWidget implements Widget {
     getDefaultColor(): string { return 'cyan'; }
-    getDescription(): string { return 'Shows the origin remote as owner/repo'; }
-    getDisplayName(): string { return 'Git Origin Owner/Repo'; }
+    getDescription(): string { return '以 所有者/倉庫 形式顯示 origin 遠端'; }
+    getDisplayName(): string { return 'Git Origin 所有者/倉庫'; }
     getCategory(): string { return 'Git'; }
 
     getEditorDisplay(item: WidgetItem): WidgetEditorDisplay {
@@ -45,7 +45,7 @@ export class GitOriginOwnerRepoWidget implements Widget {
             modifiers.push('link');
         }
         if (isMetadataFlagEnabled(item, OWNER_ONLY_WHEN_FORK_KEY)) {
-            modifiers.push('owner only when fork');
+            modifiers.push('Fork 時僅顯示所有者');
         }
 
         return {
@@ -95,7 +95,7 @@ export class GitOriginOwnerRepoWidget implements Widget {
     getCustomKeybinds(): CustomKeybind[] {
         return [
             ...getRemoteWidgetKeybinds(),
-            { key: 'o', label: '(o)wner only when fork', action: TOGGLE_OWNER_ONLY_ACTION }
+            { key: 'o', label: '(o)Fork 時僅顯示 owner', action: TOGGLE_OWNER_ONLY_ACTION }
         ];
     }
 

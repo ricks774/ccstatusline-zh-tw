@@ -40,7 +40,7 @@ export type SpeedWidgetKind = 'input' | 'output' | 'total';
 
 const WINDOW_EDITOR_ACTION = 'edit-window';
 
-const NO_DATA_HIDEABLE_STATE: HideableState = { key: 'no-data', label: 'when there is no speed data (—)' };
+const NO_DATA_HIDEABLE_STATE: HideableState = { key: 'no-data', label: '沒有速度資料（—）時' };
 
 interface SpeedWidgetKindConfig {
     label: string;
@@ -52,23 +52,23 @@ interface SpeedWidgetKindConfig {
 
 const SPEED_WIDGET_CONFIG: Record<SpeedWidgetKind, SpeedWidgetKindConfig> = {
     input: {
-        label: 'In: ',
-        displayName: 'Input Speed',
-        description: 'Shows session-average input token speed (tokens/sec). Optional window: 0-120 seconds (0 = full-session average).',
+        label: '輸入: ',
+        displayName: '輸入速度',
+        description: '顯示會話平均輸入 Token 速度（tokens/sec）。可選視窗：0-120 秒（0 = 全會話平均）。',
         sessionPreview: 85.2,
         windowedPreview: 31.5
     },
     output: {
-        label: 'Out: ',
-        displayName: 'Output Speed',
-        description: 'Shows session-average output token speed (tokens/sec). Optional window: 0-120 seconds (0 = full-session average).',
+        label: '輸出: ',
+        displayName: '輸出速度',
+        description: '顯示會話平均輸出 Token 速度（tokens/sec）。可選視窗：0-120 秒（0 = 全會話平均）。',
         sessionPreview: 42.5,
         windowedPreview: 26.8
     },
     total: {
-        label: 'Total: ',
-        displayName: 'Total Speed',
-        description: 'Shows session-average total token speed (tokens/sec). Optional window: 0-120 seconds (0 = full-session average).',
+        label: '合計: ',
+        displayName: '總速度',
+        description: '顯示會話平均總 Token 速度（tokens/sec）。可選視窗：0-120 秒（0 = 全會話平均）。',
         sessionPreview: 127.7,
         windowedPreview: 58.3
     }
@@ -104,8 +104,8 @@ export function getSpeedWidgetDescription(kind: SpeedWidgetKind): string {
 export function getSpeedWidgetEditorDisplay(kind: SpeedWidgetKind, item: WidgetItem): WidgetEditorDisplay {
     const windowSeconds = getWidgetSpeedWindowSeconds(item);
     const modifiers = windowSeconds > 0
-        ? [`${windowSeconds}s window`]
-        : ['session avg'];
+        ? [`${windowSeconds}秒視窗`]
+        : ['全會話平均'];
 
     return {
         displayText: getSpeedWidgetDisplayName(kind),
@@ -147,7 +147,7 @@ export function getSpeedWidgetHideableStates(): HideableState[] {
 export function getSpeedWidgetCustomKeybinds(): CustomKeybind[] {
     return [{
         key: 'w',
-        label: '(w)indow',
+        label: '(w)時間視窗',
         action: WINDOW_EDITOR_ACTION
     }];
 }

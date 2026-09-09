@@ -18,8 +18,8 @@ import {
 
 export class JjChangesWidget implements Widget {
     getDefaultColor(): string { return 'yellow'; }
-    getDescription(): string { return 'Shows jujutsu changes count (+insertions, -deletions)'; }
-    getDisplayName(): string { return 'JJ Changes'; }
+    getDescription(): string { return '顯示 Jujutsu 變更數（+新增, -刪除）'; }
+    getDisplayName(): string { return 'JJ 變更數'; }
     getCategory(): string { return 'Jujutsu'; }
     getEditorDisplay(item: WidgetItem): WidgetEditorDisplay {
         return { displayText: this.getDisplayName() };
@@ -37,7 +37,7 @@ export class JjChangesWidget implements Widget {
         }
 
         if (!isInsideJjRepo(context)) {
-            return hideNoJj ? null : '(no jj)';
+            return hideNoJj ? null : '(無 JJ)';
         }
 
         const changes = this.getJjChanges(context);
@@ -45,7 +45,7 @@ export class JjChangesWidget implements Widget {
             return `(+${changes.insertions},-${changes.deletions})`;
         }
 
-        return hideNoJj ? null : '(no jj)';
+        return hideNoJj ? null : '(無 JJ)';
     }
 
     private getJjChanges(context: RenderContext): { insertions: number; deletions: number } | null {

@@ -53,8 +53,15 @@ type CompactionMetric = typeof METRICS[number];
 const DEFAULT_METRIC: CompactionMetric = 'count';
 const METRIC_METADATA_KEY = 'metric';
 const CYCLE_METRIC_ACTION = 'cycle-metric';
-const RECLAIMED_SLOT: SymbolSlot = { id: 'symbolReclaimed', label: 'Reclaimed', defaultSymbol: '↓' };
-const ZERO_HIDEABLE_STATE: HideableState = { key: 'zero', label: 'when count is zero' };
+const METRIC_LABELS: Record<CompactionMetric, string> = {
+    count: '計數',
+    auto: '自動',
+    manual: '手動',
+    unknown: '未知',
+    reclaimed: '已回收'
+};
+const RECLAIMED_SLOT: SymbolSlot = { id: 'symbolReclaimed', label: '已回收', defaultSymbol: '↓' };
+const ZERO_HIDEABLE_STATE: HideableState = { key: 'zero', label: '計數為零時' };
 const SAMPLE_STATS: CompactionData = Object.freeze({
     count: 2,
     byTrigger: Object.freeze({ auto: 1, manual: 1, unknown: 0 }),
@@ -147,7 +154,7 @@ function formatStats(data: CompactionData, item: WidgetItem, icon: string, forma
 function formatCount(count: number, format: CompactionCounterFormat, icon: string): string {
     switch (format) {
         case 'icon-space-number': return `${icon} ${count}`;
-        case 'text-and-number': return `Compactions: ${count}`;
+        case 'text-and-number': return `壓縮次數: ${count}`;
         case 'number': return String(count);
     }
 }
@@ -166,30 +173,30 @@ function formatCount(count: number, format: CompactionCounterFormat, icon: strin
  */
 export class CompactionCounterWidget implements Widget {
     getDefaultColor(): string { return 'yellow'; }
-    getDescription(): string { return 'Count of context compaction events in the current session.'; }
-    getDisplayName(): string { return 'Compaction Counter'; }
-    getCategory(): string { return 'Context'; }
+    getDescription(): string { return '統計當前會話中上下文壓縮（compaction）發生的次數'; }
+    getDisplayName(): string { return '壓縮計數'; }
+    getCategory(): string { return '上下文'; }
     getEditorDisplay(item: WidgetItem): WidgetEditorDisplay {
         const metric = getMetric(item);
         const modifiers: string[] = [];
 
         if (metric !== DEFAULT_METRIC) {
-            modifiers.push(`${metric} value`);
+            modifiers.push(`${METRIC_LABELS[metric]}值`);
         } else {
             modifiers.push(getFormat(item));
             if (isNerdFontEnabled(item, NERD_FONT_FORMATS)) {
-                modifiers.push('nerd font');
+                modifiers.push('Nerd 字型');
             }
             if (isMetadataFlagEnabled(item, SHOW_TRIGGERS_METADATA_KEY)) {
-                modifiers.push('trigger split');
+                modifiers.push('觸發器分類');
             }
             if (isMetadataFlagEnabled(item, SHOW_RECLAIMED_METADATA_KEY)) {
-                modifiers.push('reclaimed');
+                modifiers.push('已回收');
             }
         }
 
         return {
-            displayText: 'Compaction Counter',
+            displayText: '壓縮計數',
             modifierText: `(${modifiers.join(', ')})`
         };
     }
@@ -251,7 +258,7 @@ export class CompactionCounterWidget implements Widget {
 
     getCustomKeybinds(item?: WidgetItem): CustomKeybind[] {
         const keybinds: CustomKeybind[] = [
-            { key: 'v', label: '(v)alue', action: CYCLE_METRIC_ACTION }
+            { key: 'v', label: '(v)指標', action: CYCLE_METRIC_ACTION }
         ];
 
         // The format / glyph / trigger toggles only shape the composite 'count'
@@ -261,12 +268,12 @@ export class CompactionCounterWidget implements Widget {
             return keybinds;
         }
 
-        keybinds.push({ key: 'f', label: '(f)ormat', action: CYCLE_FORMAT_ACTION });
+        keybinds.push({ key: 'f', label: '(f)格式切換', action: CYCLE_FORMAT_ACTION });
         if (item === undefined || canUseNerdFont(item)) {
-            keybinds.push({ key: 'n', label: '(n)erd font', action: TOGGLE_NERD_FONT_ACTION });
+            keybinds.push({ key: 'n', label: '(n)Nerd 字型', action: TOGGLE_NERD_FONT_ACTION });
         }
-        keybinds.push({ key: 's', label: '(s)plit by trigger', action: TOGGLE_TRIGGERS_ACTION });
-        keybinds.push({ key: 't', label: '(t)okens reclaimed', action: TOGGLE_RECLAIMED_ACTION });
+        keybinds.push({ key: 's', label: '(s)觸發器分類', action: TOGGLE_TRIGGERS_ACTION });
+        keybinds.push({ key: 't', label: '(t)已回收令牌', action: TOGGLE_RECLAIMED_ACTION });
         keybinds.push(getSymbolKeybind());
 
         return keybinds;

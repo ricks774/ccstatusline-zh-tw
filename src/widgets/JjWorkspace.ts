@@ -28,8 +28,8 @@ const DEFAULT_SYMBOL = '◆';
 
 export class JjWorkspaceWidget implements Widget {
     getDefaultColor(): string { return 'blue'; }
-    getDescription(): string { return 'Shows the current jujutsu workspace name'; }
-    getDisplayName(): string { return 'JJ Workspace'; }
+    getDescription(): string { return '顯示當前 Jujutsu 工作區名'; }
+    getDisplayName(): string { return 'JJ 工作區'; }
     getCategory(): string { return 'Jujutsu'; }
     getEditorDisplay(item: WidgetItem): WidgetEditorDisplay {
         return { displayText: this.getDisplayName() };
@@ -48,7 +48,7 @@ export class JjWorkspaceWidget implements Widget {
         }
 
         if (!isInsideJjRepo(context)) {
-            return hideNoJj ? null : `${prefix}no jj`;
+            return hideNoJj ? null : '◆ 無 JJ';
         }
 
         const workspace = this.getJjWorkspace(context);
@@ -56,7 +56,7 @@ export class JjWorkspaceWidget implements Widget {
             return item.rawValue ? workspace : `${prefix}${workspace}`;
         }
 
-        return hideNoJj ? null : `${prefix}no jj`;
+        return hideNoJj ? null : '◆ 無 JJ';
     }
 
     private getJjWorkspace(context: RenderContext): string | null {

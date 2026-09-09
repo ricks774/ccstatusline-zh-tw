@@ -73,7 +73,7 @@ describe('OutputSpeedWidget', () => {
         const context: RenderContext = { isPreview: true };
         const item = createItem('output-speed', { numberFormat: { style: 'whole' } });
 
-        expect(widget.render(item, context, DEFAULT_SETTINGS)).toBe('Out: 43 t/s');
+        expect(widget.render(item, context, DEFAULT_SETTINGS)).toBe('輸出: 43 t/s');
     });
 
     it('should render window preview when window metadata is enabled', () => {
@@ -106,7 +106,7 @@ describe('speed widget hideable states', () => {
         const widget = new OutputSpeedWidget();
         const context: RenderContext = { speedMetrics: createSpeedMetrics({ totalDurationMs: 0 }) };
 
-        expect(widget.render(createItem('output-speed'), context, DEFAULT_SETTINGS)).toBe('Out: —');
+        expect(widget.render(createItem('output-speed'), context, DEFAULT_SETTINGS)).toBe('輸出: —');
         expect(widget.render(createItem('output-speed', { metadata: { hide: 'no-data' } }), context, DEFAULT_SETTINGS)).toBeNull();
     });
 
@@ -116,7 +116,7 @@ describe('speed widget hideable states', () => {
         const speedContext: RenderContext = { speedMetrics: createSpeedMetrics({ outputTokens: 500, totalDurationMs: 10000 }) };
         const noDataContext: RenderContext = { speedMetrics: createSpeedMetrics({ totalDurationMs: 0 }) };
 
-        expect(widget.render(createItem('output-speed', { numberFormat }), speedContext, DEFAULT_SETTINGS)).toBe('Out: 50 t/s');
+        expect(widget.render(createItem('output-speed', { numberFormat }), speedContext, DEFAULT_SETTINGS)).toBe('輸出: 50 t/s');
         expect(widget.render(createItem('output-speed', {
             metadata: { hide: 'no-data' },
             numberFormat

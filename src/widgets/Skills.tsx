@@ -24,11 +24,11 @@ import { removeMetadataKeys } from './shared/metadata';
 
 type Mode = 'current' | 'count' | 'list';
 const MODES: Mode[] = ['current', 'count', 'list'];
-const MODE_LABELS: Record<Mode, string> = { current: 'last used', count: 'total count', list: 'unique list' };
+const MODE_LABELS: Record<Mode, string> = { current: '最近使用', count: '總計數', list: '唯一列表' };
 const LIST_LIMIT_KEY = 'listLimit';
 const EDIT_LIST_LIMIT_ACTION = 'edit-list-limit';
 
-const EMPTY_HIDEABLE_STATE: HideableState = { key: 'empty', label: 'when no skills have been used' };
+const EMPTY_HIDEABLE_STATE: HideableState = { key: 'empty', label: '尚未使用任何技能時' };
 
 function parseListLimit(item: WidgetItem): number {
     const parsed = parseInt(item.metadata?.[LIST_LIMIT_KEY] ?? '0', 10);
@@ -59,9 +59,9 @@ function setListLimit(item: WidgetItem, limit: number): WidgetItem {
 
 export class SkillsWidget implements Widget {
     getDefaultColor(): string { return 'magenta'; }
-    getDescription(): string { return 'Shows Claude Code skill invocations from hook data'; }
-    getDisplayName(): string { return 'Skills'; }
-    getCategory(): string { return 'Session'; }
+    getDescription(): string { return '顯示來自 Hook 資料的 Claude Code 技能呼叫'; }
+    getDisplayName(): string { return '技能'; }
+    getCategory(): string { return '會話'; }
     supportsRawValue(): boolean { return true; }
     supportsColors(): boolean { return true; }
 
@@ -74,11 +74,11 @@ export class SkillsWidget implements Widget {
 
     getCustomKeybinds(item?: WidgetItem): CustomKeybind[] {
         const keybinds: CustomKeybind[] = [
-            { key: 'v', label: '(v)iew: last/count/list', action: 'cycle-mode' }
+            { key: 'v', label: '(v)檢視切換', action: 'cycle-mode' }
         ];
 
         if (item && this.getMode(item) === 'list') {
-            keybinds.push({ key: 'l', label: '(l)imit', action: EDIT_LIST_LIMIT_ACTION });
+            keybinds.push({ key: 'l', label: '(l)數量限制', action: EDIT_LIST_LIMIT_ACTION });
         }
 
         return keybinds;
@@ -93,10 +93,10 @@ export class SkillsWidget implements Widget {
         if (this.getMode(item) === 'list') {
             const limit = parseListLimit(item);
             if (limit > 0) {
-                modifiers.push(`limit: ${limit}`);
+                modifiers.push(`數量限制: ${limit}`);
             }
         }
-        return { displayText: 'Skills', modifierText: makeModifierText(modifiers) };
+        return { displayText: '技能', modifierText: makeModifierText(modifiers) };
     }
 
     handleEditorAction(action: string, item: WidgetItem): WidgetItem | null {
@@ -119,12 +119,12 @@ export class SkillsWidget implements Widget {
 
         if (context.isPreview) {
             if (mode === 'current') {
-                return raw ? 'commit' : 'Skill: commit';
+                return raw ? 'commit' : '技能: commit';
             }
             if (mode === 'count') {
-                return raw ? '5' : 'Skills: 5';
+                return raw ? '5' : '技能: 5';
             }
-            return raw ? 'commit, review-pr' : 'Skills: commit, review-pr';
+            return raw ? 'commit, review-pr' : '技能: commit, review-pr';
         }
 
         if (mode === 'current') {
@@ -133,16 +133,16 @@ export class SkillsWidget implements Widget {
                 if (hideWhenEmpty) {
                     return null;
                 }
-                return raw ? 'none' : 'Skill: none';
+                return raw ? 'none' : '技能: 無';
             }
-            return raw ? currentSkill : `Skill: ${currentSkill}`;
+            return raw ? currentSkill : `技能: ${currentSkill}`;
         }
         if (mode === 'count') {
             const total = context.skillsMetrics?.totalInvocations ?? 0;
             if (hideWhenEmpty && total === 0) {
                 return null;
             }
-            return raw ? String(total) : `Skills: ${total}`;
+            return raw ? String(total) : `技能: ${total}`;
         }
 
         const uniqueSkills = context.skillsMetrics?.uniqueSkills ?? [];
@@ -150,13 +150,13 @@ export class SkillsWidget implements Widget {
             if (hideWhenEmpty) {
                 return null;
             }
-            return raw ? 'none' : 'Skills: none';
+            return raw ? 'none' : '技能: 無';
         }
 
         const limit = parseListLimit(item);
         const visibleSkills = limit > 0 ? uniqueSkills.slice(0, limit) : uniqueSkills;
         const list = visibleSkills.join(', ');
-        return raw ? list : `Skills: ${list}`;
+        return raw ? list : `技能: ${list}`;
     }
 
     private getMode(item: WidgetItem): Mode {

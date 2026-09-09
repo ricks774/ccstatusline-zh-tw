@@ -13,13 +13,13 @@ import { formatTokens } from '../utils/renderer';
 import { isHidden } from './shared/hideable';
 import { formatRawOrLabeledValue } from './shared/raw-or-labeled';
 
-const ZERO_HIDEABLE_STATE: HideableState = { key: 'zero', label: 'when token count is zero' };
+const ZERO_HIDEABLE_STATE: HideableState = { key: 'zero', label: 'Token 數為零時' };
 
 export class TokensInputWidget implements Widget {
     getDefaultColor(): string { return 'blue'; }
-    getDescription(): string { return 'Shows input token count for the current session'; }
-    getDisplayName(): string { return 'Tokens Input'; }
-    getCategory(): string { return 'Tokens'; }
+    getDescription(): string { return '顯示當前會話的輸入 Token 數'; }
+    getDisplayName(): string { return '輸入 Token'; }
+    getCategory(): string { return 'Token'; }
     getEditorDisplay(item: WidgetItem): WidgetEditorDisplay {
         return { displayText: this.getDisplayName() };
     }
@@ -31,7 +31,7 @@ export class TokensInputWidget implements Widget {
     render(item: WidgetItem, context: RenderContext, settings: Settings): string | null {
         const format = resolveNumberFormat('token', item, settings);
         if (context.isPreview) {
-            return formatRawOrLabeledValue(item, 'In: ', formatTokens(15200, format));
+            return formatRawOrLabeledValue(item, '輸入: ', formatTokens(15200, format));
         }
 
         const inputTotalTokens = context.tokenMetrics?.inputTokens
@@ -45,7 +45,7 @@ export class TokensInputWidget implements Widget {
             return null;
         }
 
-        return formatRawOrLabeledValue(item, 'In: ', formatTokens(inputTotalTokens, format));
+        return formatRawOrLabeledValue(item, '輸入: ', formatTokens(inputTotalTokens, format));
     }
 
     supportsRawValue(): boolean { return true; }

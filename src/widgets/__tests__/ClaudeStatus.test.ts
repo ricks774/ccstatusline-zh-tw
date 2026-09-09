@@ -153,10 +153,10 @@ describe('ClaudeStatusWidget', () => {
     it('toggles history mode through the editor action and reports it in the editor display', () => {
         const widget = new ClaudeStatusWidget();
 
-        expect(widget.getEditorDisplay(baseItem)).toEqual({ displayText: 'Claude Status', modifierText: undefined });
-        expect(widget.getEditorDisplay(historyItem)).toEqual({ displayText: 'Claude Status', modifierText: '(history)' });
+        expect(widget.getEditorDisplay(baseItem)).toEqual({ displayText: 'Claude 狀態', modifierText: undefined });
+        expect(widget.getEditorDisplay(historyItem)).toEqual({ displayText: 'Claude 狀態', modifierText: '(歷史)' });
         expect(widget.getCustomKeybinds()).toEqual([
-            { key: 'h', label: '(h)istory toggle', action: 'toggle-history' }
+            { key: 'h', label: '(h)歷史記錄切換', action: 'toggle-history' }
         ]);
 
         const enabled = widget.handleEditorAction('toggle-history', baseItem);

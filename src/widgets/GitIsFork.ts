@@ -10,12 +10,12 @@ import { getForkStatus } from '../utils/git-remote';
 
 import { isHidden } from './shared/hideable';
 
-const NOT_FORK_HIDEABLE_STATE: HideableState = { key: 'not-fork', label: 'when repo is not a fork' };
+const NOT_FORK_HIDEABLE_STATE: HideableState = { key: 'not-fork', label: '倉庫不是 fork 時' };
 
 export class GitIsForkWidget implements Widget {
     getDefaultColor(): string { return 'yellow'; }
-    getDescription(): string { return 'Shows fork indicator when repo is a fork of upstream'; }
-    getDisplayName(): string { return 'Git Is Fork'; }
+    getDescription(): string { return '當倉庫是 upstream 的 fork 時顯示標識'; }
+    getDisplayName(): string { return 'Git 是否 Fork'; }
     getCategory(): string { return 'Git'; }
 
     getEditorDisplay(item: WidgetItem): WidgetEditorDisplay {

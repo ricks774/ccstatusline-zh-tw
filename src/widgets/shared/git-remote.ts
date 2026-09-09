@@ -14,7 +14,7 @@ const TOGGLE_LINK_ACTION = 'toggle-link';
 
 const LINK_TO_REPO_KEYBIND: CustomKeybind = {
     key: 'l',
-    label: '(l)ink to repo',
+    label: '(l)連結到倉庫',
     action: TOGGLE_LINK_ACTION
 };
 

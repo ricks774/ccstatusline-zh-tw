@@ -18,8 +18,8 @@ import {
 
 export class JjRootDirWidget implements Widget {
     getDefaultColor(): string { return 'cyan'; }
-    getDescription(): string { return 'Shows the jujutsu repository root directory name'; }
-    getDisplayName(): string { return 'JJ Root Dir'; }
+    getDescription(): string { return '顯示 Jujutsu 倉庫根目錄名'; }
+    getDisplayName(): string { return 'JJ 根目錄'; }
     getCategory(): string { return 'Jujutsu'; }
     getEditorDisplay(item: WidgetItem): WidgetEditorDisplay {
         return { displayText: this.getDisplayName() };
@@ -37,7 +37,7 @@ export class JjRootDirWidget implements Widget {
         }
 
         if (!isInsideJjRepo(context)) {
-            return hideNoJj ? null : 'no jj';
+            return hideNoJj ? null : '無 JJ';
         }
 
         const rootDir = runJjArgs(['root'], context);
@@ -45,7 +45,7 @@ export class JjRootDirWidget implements Widget {
             return this.getRootDirName(rootDir);
         }
 
-        return hideNoJj ? null : 'no jj';
+        return hideNoJj ? null : '無 JJ';
     }
 
     private getRootDirName(rootDir: string): string {

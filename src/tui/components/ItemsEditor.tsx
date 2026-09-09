@@ -69,7 +69,7 @@ export const ItemsEditor: React.FC<ItemsEditorProps> = ({ widgets, onUpdate, onB
     const separatorChars = ['|', '-', ',', ' '];
 
     const widgetCatalog = getWidgetCatalog(settings);
-    const widgetCategories = ['All', ...getWidgetCatalogCategories(widgetCatalog)];
+    const widgetCategories = ['全部', ...getWidgetCatalogCategories(widgetCatalog)];
 
     // Get a unique background color for powerline mode
     const getUniqueBackgroundColor = (insertIndex: number): string | undefined => {
@@ -146,7 +146,7 @@ export const ItemsEditor: React.FC<ItemsEditorProps> = ({ widgets, onUpdate, onB
         setWidgetPicker(normalizePickerState({
             action,
             level: 'category',
-            selectedCategory: 'All',
+            selectedCategory: '全部',
             categoryQuery: '',
             widgetQuery: '',
             selectedType
@@ -267,11 +267,11 @@ export const ItemsEditor: React.FC<ItemsEditorProps> = ({ widgets, onUpdate, onB
         // Special handling for separators (not widgets)
         if (widget.type === 'separator') {
             const char = widget.character ?? '|';
-            const charDisplay = char === ' ' ? '(space)' : char;
-            return `Separator ${charDisplay}`;
+            const charDisplay = char === ' ' ? '(空格)' : char;
+            return `分隔符 ${charDisplay}`;
         }
         if (widget.type === 'flex-separator') {
-            return 'Flex Separator';
+            return '彈性分隔符';
         }
 
         // Handle regular widgets - delegate to widget for display
@@ -282,7 +282,7 @@ export const ItemsEditor: React.FC<ItemsEditorProps> = ({ widgets, onUpdate, onB
             return displayText + (modifierText ? ` ${modifierText}` : '');
         }
         // Unknown widget type
-        return `Unknown: ${widget.type}`;
+        return `未知: ${widget.type}`;
     };
 
     const hasFlexSeparator = widgets.some(widget => widget.type === 'flex-separator');
@@ -296,13 +296,13 @@ export const ItemsEditor: React.FC<ItemsEditorProps> = ({ widgets, onUpdate, onB
             : (pickerCategories[0] ?? null))
         : null;
     const topLevelSearchEntries = widgetPicker?.level === 'category' && widgetPicker.categoryQuery.trim().length > 0
-        ? filterWidgetCatalog(widgetCatalog, 'All', widgetPicker.categoryQuery)
+        ? filterWidgetCatalog(widgetCatalog, '全部', widgetPicker.categoryQuery)
         : [];
     const selectedTopLevelSearchEntry = widgetPicker
         ? (topLevelSearchEntries.find(entry => entry.type === widgetPicker.selectedType) ?? topLevelSearchEntries[0])
         : null;
     const pickerEntries = widgetPicker
-        ? filterWidgetCatalog(widgetCatalog, selectedPickerCategory ?? 'All', widgetPicker.widgetQuery)
+        ? filterWidgetCatalog(widgetCatalog, selectedPickerCategory ?? '全部', widgetPicker.widgetQuery)
         : [];
     const selectedPickerEntry = widgetPicker
         ? (pickerEntries.find(entry => entry.type === widgetPicker.selectedType) ?? pickerEntries[0])
@@ -310,32 +310,32 @@ export const ItemsEditor: React.FC<ItemsEditorProps> = ({ widgets, onUpdate, onB
 
     // Build main help text (without custom keybinds)
     let helpText = hasWidgets
-        ? '↑↓ select, ←→ open type picker'
-        : '(a)dd via picker, (i)nsert via picker';
+        ? '↑↓ 選擇, ←→ 開啟型別選擇器'
+        : '(a)新增, (i)插入';
     if (isSeparator) {
-        helpText += ', Space edit separator';
+        helpText += ', 空格編輯分隔符';
     }
     if (hasWidgets) {
-        helpText += ', Enter to move, (a)dd via picker, (i)nsert via picker, (k) clone, (d)elete, (c)lear line';
+        helpText += ', Enter 移動, (a)新增, (i)插入, (k)克隆, (d)刪除, (c)清空行';
     }
     if (canToggleRaw) {
-        helpText += ', (r)aw value';
+        helpText += ', (r)純值';
     }
     if (canMerge) {
-        helpText += ', (m)erge';
+        helpText += ', (m)合併';
     }
     if (canExcludeAlign) {
-        helpText += ', e(x)clude align';
+        helpText += ', (x)不參與對齊';
     }
-    helpText += ', ESC back';
+    helpText += ', ESC 返回';
 
     // Build custom keybinds text
     const customKeybindsText = customKeybinds.map(kb => kb.label).join(', ');
     const pickerActionLabel = widgetPicker?.action === 'add'
-        ? 'Add Widget'
+        ? '新增元件'
         : widgetPicker?.action === 'insert'
-            ? 'Insert Widget'
-            : 'Change Widget Type';
+            ? '插入元件'
+            : '更改元件型別';
 
     // The hide-state checklist is shared across all widgets that declare
     // hideable states, so it renders here rather than via widget renderEditor
@@ -410,8 +410,8 @@ export const ItemsEditor: React.FC<ItemsEditorProps> = ({ widgets, onUpdate, onB
                             ⚠
                             {' '}
                             {settings.powerline.enabled
-                                ? 'Powerline mode active: manual separators disabled'
-                                : 'Default separator active: manual separators disabled'}
+                                ? 'Powerline 模式已啟用：分隔符由 Powerline 設定控制'
+                                : '預設分隔符已啟用：手動分隔符已禁用'}
                         </Text>
                     </Box>
                 )}
@@ -431,7 +431,7 @@ export const ItemsEditor: React.FC<ItemsEditorProps> = ({ widgets, onUpdate, onB
                             )}
                             <Box>
                                 <Text dimColor>Search: </Text>
-                                <Text color='cyan'>{widgetPicker.categoryQuery || '(none)'}</Text>
+                                <Text color='cyan'>{widgetPicker.categoryQuery || '（無）'}</Text>
                             </Box>
                         </>
                     ) : (
@@ -441,12 +441,12 @@ export const ItemsEditor: React.FC<ItemsEditorProps> = ({ widgets, onUpdate, onB
                                 <Text dimColor>
                                     Category:
                                     {' '}
-                                    {selectedPickerCategory ?? '(none)'}
+                                    {selectedPickerCategory ?? '（無）'}
                                     {' '}
                                     | Search:
                                     {' '}
                                 </Text>
-                                <Text color='cyan'>{widgetPicker.widgetQuery || '(none)'}</Text>
+                                <Text color='cyan'>{widgetPicker.widgetQuery || '（無）'}</Text>
                             </Box>
                         </>
                     )}
@@ -521,7 +521,7 @@ export const ItemsEditor: React.FC<ItemsEditorProps> = ({ widgets, onUpdate, onB
                                             </Box>
                                         );
                                     })}
-                                    {selectedPickerCategory === 'All' && (
+                                    {selectedPickerCategory === '全部' && (
                                         <Box marginTop={1} paddingLeft={2}>
                                             <Text dimColor>Search across all widget categories.</Text>
                                         </Box>
@@ -624,12 +624,12 @@ export const ItemsEditor: React.FC<ItemsEditorProps> = ({ widgets, onUpdate, onB
                                     <Text dimColor>
                                         {(() => {
                                             if (currentWidget.type === 'separator') {
-                                                return 'A separator character between status line widgets';
+                                                return '狀態列元件之間的分隔符';
                                             } else if (currentWidget.type === 'flex-separator') {
-                                                return 'Expands to fill available terminal width';
+                                                return '擴充套件以填充可用終端寬度';
                                             } else {
                                                 const widgetImpl = getWidget(currentWidget.type);
-                                                return widgetImpl ? widgetImpl.getDescription() : 'Unknown widget type';
+                                                return widgetImpl ? widgetImpl.getDescription() : '未知元件型別';
                                             }
                                         })()}
                                     </Text>

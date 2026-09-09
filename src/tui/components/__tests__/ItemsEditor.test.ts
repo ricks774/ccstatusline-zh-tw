@@ -96,23 +96,23 @@ describe('ItemsEditor', () => {
 
         try {
             await flushInk();
-            expect(stripAnsi(stdout.getOutput())).toContain('1. Tokens Input');
+            expect(stripAnsi(stdout.getOutput())).toContain('1. 輸入 Token');
             expect(stripAnsi(stdout.getOutput())).not.toContain('(compact)');
 
             stdout.clearOutput();
             stdin.write('.');
             await flushInk();
-            expect(stripAnsi(stdout.getOutput())).toContain('1. Tokens Input (compact)');
+            expect(stripAnsi(stdout.getOutput())).toContain('1. 輸入 Token (compact)');
 
             stdout.clearOutput();
             stdin.write('.');
             await flushInk();
-            expect(stripAnsi(stdout.getOutput())).toContain('1. Tokens Input (whole)');
+            expect(stripAnsi(stdout.getOutput())).toContain('1. 輸入 Token (whole)');
 
             stdout.clearOutput();
             stdin.write('.');
             await flushInk();
-            expect(stripAnsi(stdout.getOutput())).toContain('1. Tokens Input');
+            expect(stripAnsi(stdout.getOutput())).toContain('1. 輸入 Token');
             expect(stripAnsi(stdout.getOutput())).not.toContain('(compact)');
             expect(stripAnsi(stdout.getOutput())).not.toContain('(whole)');
         } finally {
@@ -154,7 +154,7 @@ describe('ItemsEditor', () => {
 
         try {
             await flushInk();
-            expect(stripAnsi(stdout.getOutput())).toContain('1. Cache Read (session) (compact)');
+            expect(stripAnsi(stdout.getOutput())).toContain('1. 快取讀取 (session) (compact)');
         } finally {
             instance.unmount();
             instance.cleanup();

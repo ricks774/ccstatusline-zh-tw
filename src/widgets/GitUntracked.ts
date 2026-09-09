@@ -27,8 +27,8 @@ const DEFAULT_SYMBOL = '?';
 
 export class GitUntrackedWidget implements Widget {
     getDefaultColor(): string { return 'red'; }
-    getDescription(): string { return 'Shows ? when there are untracked files'; }
-    getDisplayName(): string { return 'Git Untracked'; }
+    getDescription(): string { return '存在未跟蹤檔案時顯示 ?'; }
+    getDisplayName(): string { return 'Git 未跟蹤'; }
     getCategory(): string { return 'Git'; }
 
     getEditorDisplay(item: WidgetItem): WidgetEditorDisplay {
@@ -47,7 +47,7 @@ export class GitUntrackedWidget implements Widget {
         }
 
         if (!isInsideGitWorkTree(context)) {
-            return hideNoGit ? null : '(no git)';
+            return hideNoGit ? null : '（無 Git）';
         }
 
         const status = getGitStatus(context);

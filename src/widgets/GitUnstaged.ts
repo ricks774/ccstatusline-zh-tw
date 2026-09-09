@@ -27,8 +27,8 @@ const DEFAULT_SYMBOL = '*';
 
 export class GitUnstagedWidget implements Widget {
     getDefaultColor(): string { return 'yellow'; }
-    getDescription(): string { return 'Shows * when there are unstaged changes'; }
-    getDisplayName(): string { return 'Git Unstaged'; }
+    getDescription(): string { return '存在未暫存變更時顯示 *'; }
+    getDisplayName(): string { return 'Git 未暫存'; }
     getCategory(): string { return 'Git'; }
 
     getEditorDisplay(item: WidgetItem): WidgetEditorDisplay {
@@ -47,7 +47,7 @@ export class GitUnstagedWidget implements Widget {
         }
 
         if (!isInsideGitWorkTree(context)) {
-            return hideNoGit ? null : '(no git)';
+            return hideNoGit ? null : '（無 Git）';
         }
 
         const status = getGitStatus(context);

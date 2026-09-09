@@ -14,7 +14,7 @@ import type {
 // widget needs no keybind wiring of its own. '.' reads as the decimal point and
 // keeps every letter free for widget-specific binds.
 export const CYCLE_NUMBER_STYLE_ACTION = 'cycle-number-style';
-const NUMBER_FORMAT_KEYBIND: CustomKeybind = { key: '.', label: '(.) precision', action: CYCLE_NUMBER_STYLE_ACTION };
+const NUMBER_FORMAT_KEYBIND: CustomKeybind = { key: '.', label: '(.) 精度', action: CYCLE_NUMBER_STYLE_ACTION };
 
 export function getNumberFormatKeybind(): CustomKeybind {
     return NUMBER_FORMAT_KEYBIND;

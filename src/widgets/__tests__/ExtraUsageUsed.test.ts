@@ -38,7 +38,7 @@ describe('ExtraUsageUsedWidget', () => {
             }
         };
 
-        expect(render(widget, { id: 'extra', type: 'extra-usage-used' }, context)).toBe('Overage Used: $106.00');
+        expect(render(widget, { id: 'extra', type: 'extra-usage-used' }, context)).toBe('超額已用: $106.00');
         expect(render(widget, {
             id: 'extra',
             rawValue: true,
@@ -54,7 +54,7 @@ describe('ExtraUsageUsedWidget', () => {
                 extraUsageEnabled: true,
                 extraUsageUsed: 542
             }
-        })).toBe('Overage Used: $5.42');
+        })).toBe('超額已用: $5.42');
     });
 
     it('formats used budget in the currency reported by the API', () => {
@@ -66,7 +66,7 @@ describe('ExtraUsageUsedWidget', () => {
                 extraUsageEnabled: true,
                 extraUsageUsed: 542
             }
-        })).toBe('Overage Used: €5.42');
+        })).toBe('超額已用: €5.42');
     });
 
     it('applies the global cost style while preserving the reported currency', () => {
@@ -87,11 +87,11 @@ describe('ExtraUsageUsedWidget', () => {
             id: 'extra',
             type: 'extra-usage-used',
             numberFormat: { decimals: 3 }
-        }, context, settings)).toBe('Overage Used: €5');
+        }, context, settings)).toBe('超額已用: €5');
         expect(widget.render({
             id: 'extra',
             type: 'extra-usage-used'
-        }, { isPreview: true }, settings)).toBe('Overage Used: $106');
+        }, { isPreview: true }, settings)).toBe('超額已用: $106');
         expect(widget.supportsNumberFormat()).toBe(true);
     });
 
@@ -111,7 +111,7 @@ describe('ExtraUsageUsedWidget', () => {
                 extraUsageEnabled: true,
                 extraUsageUsed: 10600
             }
-        })).toBe('Overage Used: $106.00');
+        })).toBe('超額已用: $106.00');
     });
 
     it('shows usage errors only when required extra usage data is missing', () => {
@@ -132,7 +132,7 @@ describe('ExtraUsageUsedWidget', () => {
                 extraUsageEnabled: false,
                 extraUsageUsed: 10600
             }
-        })).toBe('Overage Used: n/a');
+        })).toBe('超額已用: n/a');
         expect(render(widget, { id: 'extra', rawValue: true, type: 'extra-usage-used' }, { usageData: { extraUsageEnabled: false } })).toBe('n/a');
     });
 

@@ -73,14 +73,14 @@ function toggleLink(item: WidgetItem): WidgetItem {
 
 export class GitBranchWidget implements Widget {
     getDefaultColor(): string { return 'magenta'; }
-    getDescription(): string { return 'Shows the current git branch name'; }
-    getDisplayName(): string { return 'Git Branch'; }
+    getDescription(): string { return '顯示當前 Git 分支名'; }
+    getDisplayName(): string { return 'Git 分支'; }
     getCategory(): string { return 'Git'; }
     getEditorDisplay(item: WidgetItem): WidgetEditorDisplay {
         const isLink = isLinkEnabled(item);
         const modifiers: string[] = [];
         if (isLink)
-            modifiers.push('repo link');
+            modifiers.push('倉庫連結');
         const maxWidthText = getMaxWidthModifier(item);
         if (maxWidthText)
             modifiers.push(maxWidthText);
@@ -113,12 +113,12 @@ export class GitBranchWidget implements Widget {
         }
 
         if (!isInsideGitWorkTree(context)) {
-            return hideNoGit ? null : `${prefix}no git`;
+            return hideNoGit ? null : '⎇ 無 Git';
         }
 
         const branch = this.getGitBranch(context);
         if (!branch) {
-            return hideNoGit ? null : `${prefix}no git`;
+            return hideNoGit ? null : '⎇ 無 Git';
         }
 
         const displayText = applyMaxWidth(item.rawValue ? branch : `${prefix}${branch}`, item.maxWidth);
@@ -142,7 +142,7 @@ export class GitBranchWidget implements Widget {
 
     getCustomKeybinds(): CustomKeybind[] {
         return [
-            { key: 'l', label: '(l)ink to repo', action: TOGGLE_LINK_ACTION },
+            { key: 'l', label: '(l)倉庫連結', action: TOGGLE_LINK_ACTION },
             getMaxWidthKeybind(),
             getSymbolKeybind()
         ];

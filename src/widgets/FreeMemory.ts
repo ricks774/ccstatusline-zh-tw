@@ -68,9 +68,9 @@ function getUsedMemoryMacOS(): number | null {
 
 export class FreeMemoryWidget implements Widget {
     getDefaultColor(): string { return 'cyan'; }
-    getDescription(): string { return 'Shows system memory usage (used/total)'; }
-    getDisplayName(): string { return 'Memory Usage'; }
-    getCategory(): string { return 'Environment'; }
+    getDescription(): string { return '顯示系統記憶體使用情況（已用/總量）'; }
+    getDisplayName(): string { return '記憶體用量'; }
+    getCategory(): string { return '環境'; }
     getEditorDisplay(item: WidgetItem): WidgetEditorDisplay {
         return { displayText: this.getDisplayName() };
     }
@@ -79,7 +79,7 @@ export class FreeMemoryWidget implements Widget {
         const format = resolveNumberFormat('memory', item, settings);
         if (context.isPreview) {
             const value = `${formatBytes(12.4 * 1024 ** 3, format)}/${formatBytes(16 * 1024 ** 3, format)}`;
-            return item.rawValue ? value : `Mem: ${value}`;
+            return item.rawValue ? value : `記憶體: ${value}`;
         }
 
         const total = os.totalmem();
@@ -95,7 +95,7 @@ export class FreeMemoryWidget implements Widget {
 
         const value = `${formatBytes(used, format)}/${formatBytes(total, format)}`;
 
-        return item.rawValue ? value : `Mem: ${value}`;
+        return item.rawValue ? value : `記憶體: ${value}`;
     }
 
     supportsRawValue(): boolean { return true; }

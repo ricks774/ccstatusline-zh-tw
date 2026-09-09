@@ -43,8 +43,8 @@ const IDE_LINK_LABELS: Record<IdeLinkMode, string> = {
 
 export class GitRootDirWidget implements Widget {
     getDefaultColor(): string { return 'cyan'; }
-    getDescription(): string { return 'Shows the git repository root directory name'; }
-    getDisplayName(): string { return 'Git Root Dir'; }
+    getDescription(): string { return '顯示 Git 倉庫根目錄名'; }
+    getDisplayName(): string { return 'Git 根目錄'; }
     getCategory(): string { return 'Git'; }
     getEditorDisplay(item: WidgetItem): WidgetEditorDisplay {
         const ideLinkMode = this.getIdeLinkMode(item);
@@ -81,12 +81,12 @@ export class GitRootDirWidget implements Widget {
         }
 
         if (!isInsideGitWorkTree(context)) {
-            return hideNoGit ? null : 'no git';
+            return hideNoGit ? null : '無 Git';
         }
 
         const rootDir = this.getGitRootDir(context);
         if (!rootDir) {
-            return hideNoGit ? null : 'no git';
+            return hideNoGit ? null : '無 Git';
         }
 
         const name = applyMaxWidth(this.getRootDirName(rootDir), item.maxWidth);
@@ -112,7 +112,7 @@ export class GitRootDirWidget implements Widget {
 
     getCustomKeybinds(): CustomKeybind[] {
         return [
-            { key: 'l', label: '(l)ink to IDE', action: TOGGLE_LINK_ACTION },
+            { key: 'l', label: '(l)IDE 連結', action: TOGGLE_LINK_ACTION },
             getMaxWidthKeybind()
         ];
     }

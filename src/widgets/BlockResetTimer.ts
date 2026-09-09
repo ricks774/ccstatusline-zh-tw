@@ -52,13 +52,13 @@ import {
 } from './shared/usage-display';
 
 const BLOCK_RESET_PREVIEW_AT = '2026-03-12T08:30:00.000Z';
-const USAGE_TIMER_LOADING_MESSAGE = '[Loading]';
+const USAGE_TIMER_LOADING_MESSAGE = '[載入中]';
 
 export class BlockResetTimerWidget implements Widget {
     getDefaultColor(): string { return 'brightBlue'; }
-    getDescription(): string { return 'Shows time remaining until current 5hr block reset window'; }
-    getDisplayName(): string { return 'Block Reset Timer'; }
-    getCategory(): string { return 'Usage'; }
+    getDescription(): string { return '顯示當前 5 時時段重置視窗的剩餘時間'; }
+    getDisplayName(): string { return '時段重置計時'; }
+    getCategory(): string { return '用量'; }
 
     getEditorDisplay(item: WidgetItem): WidgetEditorDisplay {
         return {
@@ -104,7 +104,7 @@ export class BlockResetTimerWidget implements Widget {
             if (isUsageProgressMode(displayMode)) {
                 const barWidth = getUsageProgressBarWidth(displayMode);
                 const progressBar = makeTimerProgressBar(previewPercent, barWidth);
-                return formatRawOrLabeledValue(item, 'Reset ', `[${progressBar}] ${formatPercent(previewPercent, format)}`);
+                return formatRawOrLabeledValue(item, '重置 ', `[${progressBar}] ${formatPercent(previewPercent, format)}`);
             }
 
             if (isUsageSliderMode(displayMode)) {
@@ -112,7 +112,7 @@ export class BlockResetTimerWidget implements Widget {
                 const sliderDisplay = displayMode === 'slider'
                     ? `${slider} ${formatPercent(previewPercent, format)}`
                     : slider;
-                return formatRawOrLabeledValue(item, 'Reset ', sliderDisplay);
+                return formatRawOrLabeledValue(item, '重置 ', sliderDisplay);
             }
 
             if (dateMode) {
@@ -123,10 +123,10 @@ export class BlockResetTimerWidget implements Widget {
                     getUsageLocale(item),
                     isUsage12HourClock(item)
                 );
-                return formatRawOrLabeledValue(item, 'Reset: ', resetAt ?? (compact ? '03-12 08:30Z' : '2026-03-12 08:30 UTC'));
+                return formatRawOrLabeledValue(item, '重置: ', resetAt ?? (compact ? '03-12 08:30Z' : '2026-03-12 08:30 UTC'));
             }
 
-            return formatRawOrLabeledValue(item, 'Reset: ', compact ? '4h30m' : '4hr 30m');
+            return formatRawOrLabeledValue(item, '重置: ', compact ? '4時30分' : '4時 30分');
         }
 
         const usageData = context.usageData ?? {};
@@ -137,14 +137,14 @@ export class BlockResetTimerWidget implements Widget {
                 return getUsageErrorMessage(usageData.error);
             }
 
-            return formatRawOrLabeledValue(item, 'Reset: ', USAGE_TIMER_LOADING_MESSAGE);
+            return formatRawOrLabeledValue(item, '重置: ', USAGE_TIMER_LOADING_MESSAGE);
         }
 
         if (isUsageProgressMode(displayMode)) {
             const barWidth = getUsageProgressBarWidth(displayMode);
             const percent = inverted ? window.remainingPercent : window.elapsedPercent;
             const progressBar = makeTimerProgressBar(percent, barWidth);
-            return formatRawOrLabeledValue(item, 'Reset ', `[${progressBar}] ${formatPercent(percent, format)}`);
+            return formatRawOrLabeledValue(item, '重置 ', `[${progressBar}] ${formatPercent(percent, format)}`);
         }
 
         if (isUsageSliderMode(displayMode)) {
@@ -153,7 +153,7 @@ export class BlockResetTimerWidget implements Widget {
             const sliderDisplay = displayMode === 'slider'
                 ? `${slider} ${formatPercent(percent, format)}`
                 : slider;
-            return formatRawOrLabeledValue(item, 'Reset ', sliderDisplay);
+            return formatRawOrLabeledValue(item, '重置 ', sliderDisplay);
         }
 
         if (dateMode) {
@@ -161,12 +161,12 @@ export class BlockResetTimerWidget implements Widget {
             const locale = getUsageLocale(item);
             const resetAt = formatUsageResetAt(usageData.sessionResetAt, compact, timezone, locale, isUsage12HourClock(item));
             if (resetAt) {
-                return formatRawOrLabeledValue(item, 'Reset: ', resetAt);
+                return formatRawOrLabeledValue(item, '重置: ', resetAt);
             }
         }
 
         const remainingTime = formatUsageDuration(window.remainingMs, compact);
-        return formatRawOrLabeledValue(item, 'Reset: ', remainingTime);
+        return formatRawOrLabeledValue(item, '重置: ', remainingTime);
     }
 
     getCustomKeybinds(item?: WidgetItem): CustomKeybind[] {

@@ -36,20 +36,20 @@ function isBarSliderMode(mode: DisplayMode): boolean {
 
 export class ContextBarWidget implements Widget {
     getDefaultColor(): string { return 'blue'; }
-    getDescription(): string { return 'Shows context usage as a progress bar'; }
-    getDisplayName(): string { return 'Context Bar'; }
-    getCategory(): string { return 'Context'; }
+    getDescription(): string { return '以進度條形式顯示上下文用量'; }
+    getDisplayName(): string { return '上下文進度條'; }
+    getCategory(): string { return '上下文'; }
 
     getEditorDisplay(item: WidgetItem): WidgetEditorDisplay {
         const mode = getDisplayMode(item);
         const modifiers: string[] = [];
 
         if (mode === 'progress-short') {
-            modifiers.push('medium bar');
+            modifiers.push('中進度條');
         } else if (mode === 'slider') {
-            modifiers.push('short bar');
+            modifiers.push('短進度條');
         } else if (mode === 'slider-only') {
-            modifiers.push('short bar only');
+            modifiers.push('僅短進度條');
         }
 
         return {
@@ -93,11 +93,11 @@ export class ContextBarWidget implements Widget {
             if (isBarSliderMode(displayMode)) {
                 const slider = makeSliderBar(25);
                 const sliderDisplay = displayMode === 'slider' ? `${slider} ${usedDisplay}/${totalDisplay} (${percentDisplay})` : slider;
-                return item.rawValue ? sliderDisplay : `Context: ${sliderDisplay}`;
+                return item.rawValue ? sliderDisplay : `上下文: ${sliderDisplay}`;
             }
             const barWidth = displayMode === 'progress' ? 32 : 16;
             const previewDisplay = `${makeUsageProgressBar(25, barWidth)} ${usedDisplay}/${totalDisplay} (${percentDisplay})`;
-            return item.rawValue ? previewDisplay : `Context: ${previewDisplay}`;
+            return item.rawValue ? previewDisplay : `上下文: ${previewDisplay}`;
         }
 
         const contextWindowMetrics = getContextWindowMetrics(context.data);
@@ -127,18 +127,18 @@ export class ContextBarWidget implements Widget {
         if (isBarSliderMode(displayMode)) {
             const slider = makeSliderBar(clampedPercent);
             const sliderDisplay = displayMode === 'slider' ? `${slider} ${usedDisplay}/${totalDisplay} (${percentDisplay})` : slider;
-            return item.rawValue ? sliderDisplay : `Context: ${sliderDisplay}`;
+            return item.rawValue ? sliderDisplay : `上下文: ${sliderDisplay}`;
         }
 
         const barWidth = displayMode === 'progress' ? 32 : 16;
         const display = `${makeUsageProgressBar(clampedPercent, barWidth)} ${usedDisplay}/${totalDisplay} (${percentDisplay})`;
 
-        return item.rawValue ? display : `Context: ${display}`;
+        return item.rawValue ? display : `上下文: ${display}`;
     }
 
     getCustomKeybinds(): CustomKeybind[] {
         return [
-            { key: 'p', label: '(p)rogress toggle', action: 'toggle-progress' }
+            { key: 'p', label: '(p)進度條切換', action: 'toggle-progress' }
         ];
     }
 

@@ -13,13 +13,13 @@ import {
 
 import { isHidden } from './shared/hideable';
 
-const ZERO_HIDEABLE_STATE: HideableState = { key: 'zero', label: 'when cost is $0.00' };
+const ZERO_HIDEABLE_STATE: HideableState = { key: 'zero', label: '費用為 $0.00 時' };
 
 export class SessionCostWidget implements Widget {
     getDefaultColor(): string { return 'green'; }
-    getDescription(): string { return 'Shows the total session cost in USD'; }
-    getDisplayName(): string { return 'Session Cost'; }
-    getCategory(): string { return 'Session'; }
+    getDescription(): string { return '顯示當前會話總費用（美元）'; }
+    getDisplayName(): string { return '會話費用'; }
+    getCategory(): string { return '會話'; }
     getEditorDisplay(item: WidgetItem): WidgetEditorDisplay {
         return { displayText: this.getDisplayName() };
     }
@@ -32,7 +32,7 @@ export class SessionCostWidget implements Widget {
         const format = resolveNumberFormat('cost', item, settings);
         if (context.isPreview) {
             const value = formatCost(2.45, format);
-            return item.rawValue ? value : `Cost: ${value}`;
+            return item.rawValue ? value : `費用: ${value}`;
         }
 
         const totalCost = context.data?.cost?.total_cost_usd;
@@ -48,7 +48,7 @@ export class SessionCostWidget implements Widget {
         }
 
         const formattedCost = formatCost(totalCost, format);
-        return item.rawValue ? formattedCost : `Cost: ${formattedCost}`;
+        return item.rawValue ? formattedCost : `費用: ${formattedCost}`;
     }
 
     supportsRawValue(): boolean { return true; }

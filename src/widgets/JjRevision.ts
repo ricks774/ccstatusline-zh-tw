@@ -18,8 +18,8 @@ import {
 
 export class JjRevisionWidget implements Widget {
     getDefaultColor(): string { return 'green'; }
-    getDescription(): string { return 'Shows the current jujutsu change ID (short)'; }
-    getDisplayName(): string { return 'JJ Revision'; }
+    getDescription(): string { return '顯示當前 Jujutsu 變更 ID（短）'; }
+    getDisplayName(): string { return 'JJ 修訂'; }
     getCategory(): string { return 'Jujutsu'; }
     getEditorDisplay(item: WidgetItem): WidgetEditorDisplay {
         return { displayText: this.getDisplayName() };

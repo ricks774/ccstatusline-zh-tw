@@ -9,33 +9,33 @@ import type {
 
 import { isHidden } from './shared/hideable';
 
-const ZERO_HIDEABLE_STATE: HideableState = { key: 'zero', label: 'when under 1 minute' };
+const ZERO_HIDEABLE_STATE: HideableState = { key: 'zero', label: '不足 1 分鐘時' };
 
 function formatDurationFromMs(durationMs: number): string {
     const totalMinutes = Math.floor(durationMs / (1000 * 60));
 
     if (totalMinutes < 1) {
-        return '<1m';
+        return '<1分';
     }
 
     const hours = Math.floor(totalMinutes / 60);
     const minutes = totalMinutes % 60;
 
     if (hours === 0) {
-        return `${minutes}m`;
+        return `${minutes}分`;
     }
     if (minutes === 0) {
-        return `${hours}hr`;
+        return `${hours}時`;
     }
 
-    return `${hours}hr ${minutes}m`;
+    return `${hours}時 ${minutes}分`;
 }
 
 export class SessionClockWidget implements Widget {
     getDefaultColor(): string { return 'yellow'; }
-    getDescription(): string { return 'Shows elapsed time since current session started'; }
-    getDisplayName(): string { return 'Session Clock'; }
-    getCategory(): string { return 'Session'; }
+    getDescription(): string { return '顯示當前會話已經過的時間'; }
+    getDisplayName(): string { return '會話時鐘'; }
+    getCategory(): string { return '會話'; }
     getEditorDisplay(item: WidgetItem): WidgetEditorDisplay {
         return { displayText: this.getDisplayName() };
     }
@@ -46,7 +46,7 @@ export class SessionClockWidget implements Widget {
 
     render(item: WidgetItem, context: RenderContext, settings: Settings): string | null {
         if (context.isPreview) {
-            return item.rawValue ? '2hr 15m' : 'Session: 2hr 15m';
+            return item.rawValue ? '2時 15分' : '會話: 2時 15分';
         }
 
         const hideZero = isHidden(item, ZERO_HIDEABLE_STATE.key);
@@ -57,14 +57,14 @@ export class SessionClockWidget implements Widget {
                 return null;
             }
             const formatted = formatDurationFromMs(durationMs);
-            return item.rawValue ? formatted : `Session: ${formatted}`;
+            return item.rawValue ? formatted : `會話: ${formatted}`;
         }
 
-        const duration = context.sessionDuration ?? '0m';
-        if ((duration === '0m' || duration === '<1m') && hideZero) {
+        const duration = context.sessionDuration ?? '0分';
+        if ((duration === '0分' || duration === '<1分') && hideZero) {
             return null;
         }
-        return item.rawValue ? duration : `Session: ${duration}`;
+        return item.rawValue ? duration : `會話: ${duration}`;
     }
 
     supportsRawValue(): boolean { return true; }

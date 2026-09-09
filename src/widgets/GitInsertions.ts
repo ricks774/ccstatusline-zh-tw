@@ -16,7 +16,7 @@ import {
     isHidden
 } from './shared/hideable';
 
-const ZERO_HIDEABLE_STATE: HideableState = { key: 'zero', label: 'when the insertion count is zero' };
+const ZERO_HIDEABLE_STATE: HideableState = { key: 'zero', label: '新增行數為零時' };
 
 export class GitInsertionsWidget implements Widget {
     getDefaultColor(): string { return 'green'; }

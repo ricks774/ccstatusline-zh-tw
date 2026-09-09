@@ -27,8 +27,8 @@ const DEFAULT_SYMBOL = '🔖';
 
 export class JjBookmarksWidget implements Widget {
     getDefaultColor(): string { return 'magenta'; }
-    getDescription(): string { return 'Shows the current jujutsu bookmark(s)'; }
-    getDisplayName(): string { return 'JJ Bookmarks'; }
+    getDescription(): string { return '顯示當前的 Jujutsu 書籤'; }
+    getDisplayName(): string { return 'JJ 書籤'; }
     getCategory(): string { return 'Jujutsu'; }
     getEditorDisplay(item: WidgetItem): WidgetEditorDisplay {
         return { displayText: this.getDisplayName() };
@@ -47,7 +47,7 @@ export class JjBookmarksWidget implements Widget {
         }
 
         if (!isInsideJjRepo(context)) {
-            return hideNoJj ? null : `${prefix}no jj`;
+            return hideNoJj ? null : '🔖 無 JJ';
         }
 
         const bookmarks = this.getJjBookmarks(context);

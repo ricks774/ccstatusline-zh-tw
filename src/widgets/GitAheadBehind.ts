@@ -25,15 +25,15 @@ import {
     type SymbolSlot
 } from './shared/symbol-override';
 
-const AHEAD_SLOT: SymbolSlot = { id: 'symbolAhead', label: 'Ahead', defaultSymbol: '↑' };
-const BEHIND_SLOT: SymbolSlot = { id: 'symbolBehind', label: 'Behind', defaultSymbol: '↓' };
+const AHEAD_SLOT: SymbolSlot = { id: 'symbolAhead', label: '超前', defaultSymbol: '↑' };
+const BEHIND_SLOT: SymbolSlot = { id: 'symbolBehind', label: '落後', defaultSymbol: '↓' };
 
-const ZERO_HIDEABLE_STATE: HideableState = { key: 'zero', label: 'when not diverged (↑0↓0)', defaultEnabled: true };
+const ZERO_HIDEABLE_STATE: HideableState = { key: 'zero', label: '未分岔（↑0↓0）時', defaultEnabled: true };
 
 export class GitAheadBehindWidget implements Widget {
     getDefaultColor(): string { return 'cyan'; }
-    getDescription(): string { return 'Shows commits ahead/behind upstream (↑2↓3)'; }
-    getDisplayName(): string { return 'Git Ahead/Behind'; }
+    getDescription(): string { return '顯示相對於 upstream 的提交領先/落後數（↑2↓3）'; }
+    getDisplayName(): string { return 'Git 超前/滯後'; }
     getCategory(): string { return 'Git'; }
 
     getEditorDisplay(item: WidgetItem): WidgetEditorDisplay {
@@ -55,7 +55,7 @@ export class GitAheadBehindWidget implements Widget {
         }
 
         if (!isInsideGitWorkTree(context)) {
-            return isHidden(item, NO_GIT_HIDEABLE_STATE.key) ? null : '(no git)';
+            return isHidden(item, NO_GIT_HIDEABLE_STATE.key) ? null : '（無 Git）';
         }
 
         const result = getGitAheadBehind(context);

@@ -37,9 +37,9 @@ import {
 
 export class SessionUsageWidget implements Widget {
     getDefaultColor(): string { return 'brightBlue'; }
-    getDescription(): string { return 'Shows daily/session API usage percentage'; }
-    getDisplayName(): string { return 'Session Usage'; }
-    getCategory(): string { return 'Usage'; }
+    getDescription(): string { return '顯示每日/會話 API 用量百分比'; }
+    getDisplayName(): string { return '會話用量'; }
+    getCategory(): string { return '用量'; }
 
     getEditorDisplay(item: WidgetItem): WidgetEditorDisplay {
         return {
@@ -82,16 +82,16 @@ export class SessionUsageWidget implements Widget {
                 const width = getUsageProgressBarWidth(displayMode);
                 const progressBar = makeTimerProgressBar(renderedPercent, width, showCursor ? { cursorPercent: 50 } : undefined);
                 const progressDisplay = `[${progressBar}] ${formatPercent(renderedPercent, format)}`;
-                return formatRawOrLabeledValue(item, 'Session: ', progressDisplay);
+                return formatRawOrLabeledValue(item, '會話: ', progressDisplay);
             }
 
             if (isUsageSliderMode(displayMode)) {
                 const slider = makeSliderBar(renderedPercent, undefined, showCursor ? { cursorPercent: 50 } : undefined);
                 const sliderDisplay = displayMode === 'slider' ? `${slider} ${formatPercent(renderedPercent, format)}` : slider;
-                return formatRawOrLabeledValue(item, 'Session: ', sliderDisplay);
+                return formatRawOrLabeledValue(item, '會話: ', sliderDisplay);
             }
 
-            return formatRawOrLabeledValue(item, 'Session: ', formatPercent(renderedPercent, format));
+            return formatRawOrLabeledValue(item, '會話: ', formatPercent(renderedPercent, format));
         }
 
         const data = context.usageData ?? {};
@@ -120,16 +120,16 @@ export class SessionUsageWidget implements Widget {
 
             const progressBar = makeTimerProgressBar(renderedPercent, width, getCursorOptions());
             const progressDisplay = `[${progressBar}] ${formatPercent(renderedPercent, format)}`;
-            return formatRawOrLabeledValue(item, 'Session: ', progressDisplay);
+            return formatRawOrLabeledValue(item, '會話: ', progressDisplay);
         }
 
         if (isUsageSliderMode(displayMode)) {
             const slider = makeSliderBar(renderedPercent, undefined, getCursorOptions());
             const sliderDisplay = displayMode === 'slider' ? `${slider} ${formatPercent(renderedPercent, format)}` : slider;
-            return formatRawOrLabeledValue(item, 'Session: ', sliderDisplay);
+            return formatRawOrLabeledValue(item, '會話: ', sliderDisplay);
         }
 
-        return formatRawOrLabeledValue(item, 'Session: ', formatPercent(renderedPercent, format));
+        return formatRawOrLabeledValue(item, '會話: ', formatPercent(renderedPercent, format));
     }
 
     getCustomKeybinds(item?: WidgetItem): CustomKeybind[] {

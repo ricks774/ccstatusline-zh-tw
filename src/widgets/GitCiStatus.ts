@@ -19,7 +19,7 @@ import {
 } from './shared/hideable';
 
 const NO_CHECKS = '-';
-const NO_DATA_HIDEABLE_STATE: HideableState = { key: 'no-data', label: 'when there is no check data' };
+const NO_DATA_HIDEABLE_STATE: HideableState = { key: 'no-data', label: '沒有檢查資料時' };
 const SYMBOLS = {
     success: '✓',
     passing: '✓',
@@ -71,11 +71,11 @@ export class GitCiStatusWidget implements Widget {
     }
 
     getDescription(): string {
-        return 'Shows CI check status for the current branch\'s PR (GitHub only)';
+        return '顯示當前分支 PR 的 CI 檢查狀態（僅支援 GitHub）';
     }
 
     getDisplayName(): string {
-        return 'Git CI Status';
+        return 'Git CI 狀態';
     }
 
     getCategory(): string {
@@ -102,7 +102,7 @@ export class GitCiStatusWidget implements Widget {
         }
 
         if (!this.deps.isInsideGitWorkTree(context)) {
-            return isHidden(item, NO_GIT_HIDEABLE_STATE.key) ? null : '(no git)';
+            return isHidden(item, NO_GIT_HIDEABLE_STATE.key) ? null : '(無 Git)';
         }
 
         const cwd = this.deps.resolveGitCwd(context) ?? this.deps.getProcessCwd();

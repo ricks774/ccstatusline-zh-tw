@@ -39,7 +39,7 @@ describe('ExtraUsageRemainingWidget', () => {
             }
         };
 
-        expect(render(widget, { id: 'extra', type: 'extra-usage-remaining' }, context)).toBe('Overage Left: $3,894.00');
+        expect(render(widget, { id: 'extra', type: 'extra-usage-remaining' }, context)).toBe('超額剩餘: $3,894.00');
         expect(render(widget, {
             id: 'extra',
             rawValue: true,
@@ -57,7 +57,7 @@ describe('ExtraUsageRemainingWidget', () => {
                 extraUsageLimit: 400000,
                 extraUsageUsed: 10600
             }
-        })).toBe('Overage Left: €3,894.00');
+        })).toBe('超額剩餘: €3,894.00');
     });
 
     it('applies the global cost style while preserving the reported currency', () => {
@@ -78,11 +78,11 @@ describe('ExtraUsageRemainingWidget', () => {
         expect(widget.render({
             id: 'extra',
             type: 'extra-usage-remaining'
-        }, context, settings)).toBe('Overage Left: €3,894');
+        }, context, settings)).toBe('超額剩餘: €3,894');
         expect(widget.render({
             id: 'extra',
             type: 'extra-usage-remaining'
-        }, { isPreview: true }, settings)).toBe('Overage Left: $3,894');
+        }, { isPreview: true }, settings)).toBe('超額剩餘: $3,894');
         expect(widget.supportsNumberFormat()).toBe(true);
     });
 
@@ -95,7 +95,7 @@ describe('ExtraUsageRemainingWidget', () => {
                 extraUsageLimit: 1000,
                 extraUsageUsed: 1500
             }
-        })).toBe('Overage Left: $0.00');
+        })).toBe('超額剩餘: $0.00');
     });
 
     it('declares the disabled and no-data hideable states', () => {
@@ -128,15 +128,15 @@ describe('ExtraUsageRemainingWidget', () => {
                 extraUsageLimit: 400000,
                 extraUsageUsed: 10600
             }
-        })).toBe('Overage Left: $3,894.00');
+        })).toBe('超額剩餘: $3,894.00');
     });
 
     it('shows usage errors only when required extra usage data is missing', () => {
         const widget = new ExtraUsageRemainingWidget();
 
-        mockGetUsageErrorMessage.mockReturnValue('[Timeout]');
+        mockGetUsageErrorMessage.mockReturnValue('[超時]');
 
-        expect(render(widget, { id: 'extra', type: 'extra-usage-remaining' }, { usageData: { error: 'timeout' } })).toBe('[Timeout]');
+        expect(render(widget, { id: 'extra', type: 'extra-usage-remaining' }, { usageData: { error: 'timeout' } })).toBe('[超時]');
         expect(render(widget, { id: 'extra', type: 'extra-usage-remaining' }, {
             usageData: {
                 extraUsageEnabled: true,
@@ -148,7 +148,7 @@ describe('ExtraUsageRemainingWidget', () => {
     it('hides usage errors when the no-data state is enabled', () => {
         const widget = new ExtraUsageRemainingWidget();
 
-        mockGetUsageErrorMessage.mockReturnValue('[Timeout]');
+        mockGetUsageErrorMessage.mockReturnValue('[超時]');
 
         expect(render(widget, {
             id: 'extra',
@@ -167,7 +167,7 @@ describe('ExtraUsageRemainingWidget', () => {
                 extraUsageLimit: 400000,
                 extraUsageUsed: 10600
             }
-        })).toBe('Overage Left: n/a');
+        })).toBe('超額剩餘: n/a');
         expect(render(widget, { id: 'extra', rawValue: true, type: 'extra-usage-remaining' }, { usageData: { extraUsageEnabled: false } })).toBe('n/a');
     });
 

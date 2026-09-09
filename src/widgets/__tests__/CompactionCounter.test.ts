@@ -41,11 +41,11 @@ function render(options: {
 describe('CompactionCounterWidget', () => {
     describe('metadata', () => {
         it('has correct display name', () => {
-            expect(new CompactionCounterWidget().getDisplayName()).toBe('Compaction Counter');
+            expect(new CompactionCounterWidget().getDisplayName()).toBe('壓縮計數');
         });
 
         it('has correct category', () => {
-            expect(new CompactionCounterWidget().getCategory()).toBe('Context');
+            expect(new CompactionCounterWidget().getCategory()).toBe('上下文');
         });
 
         it('does not support raw value', () => {
@@ -74,7 +74,7 @@ describe('CompactionCounterWidget', () => {
             expect(render({
                 compactionData: { count: 3 },
                 item: { ...ITEM, metadata: { format: 'text-and-number' } }
-            })).toBe('Compactions: 3');
+            })).toBe('壓縮次數: 3');
             expect(render({
                 compactionData: { count: 3 },
                 item: { ...ITEM, metadata: { format: 'number' } }
@@ -103,7 +103,7 @@ describe('CompactionCounterWidget', () => {
             expect(render({
                 compactionData: { count: 3 },
                 item: { ...ITEM, metadata: { format: 'text-and-number', nerdFont: 'true' } }
-            })).toBe('Compactions: 3');
+            })).toBe('壓縮次數: 3');
             expect(render({
                 compactionData: { count: 3 },
                 item: { ...ITEM, metadata: { format: 'number', nerdFont: 'true' } }
@@ -144,7 +144,7 @@ describe('CompactionCounterWidget', () => {
             expect(render({
                 isPreview: true,
                 item: { ...ITEM, metadata: { format: 'text-and-number' } }
-            })).toBe('Compactions: 2');
+            })).toBe('壓縮次數: 2');
         });
 
         it('preview mode ignores live compactionData', () => {
@@ -254,12 +254,12 @@ describe('CompactionCounterWidget', () => {
     describe('editor', () => {
         it('uses metric, format, and toggle keybinds in count mode', () => {
             expect(new CompactionCounterWidget().getCustomKeybinds(ITEM)).toEqual([
-                { key: 'v', label: '(v)alue', action: 'cycle-metric' },
-                { key: 'f', label: '(f)ormat', action: 'cycle-format' },
-                { key: 'n', label: '(n)erd font', action: 'toggle-nerd-font' },
-                { key: 's', label: '(s)plit by trigger', action: 'toggle-triggers' },
-                { key: 't', label: '(t)okens reclaimed', action: 'toggle-reclaimed' },
-                { key: 'g', label: '(g)lyph', action: 'edit-symbol-override' }
+                { key: 'v', label: '(v)指標', action: 'cycle-metric' },
+                { key: 'f', label: '(f)格式切換', action: 'cycle-format' },
+                { key: 'n', label: '(n)Nerd 字型', action: 'toggle-nerd-font' },
+                { key: 's', label: '(s)觸發器分類', action: 'toggle-triggers' },
+                { key: 't', label: '(t)已回收令牌', action: 'toggle-reclaimed' },
+                { key: 'g', label: '(g)字元', action: 'edit-symbol-override' }
             ]);
         });
 
@@ -268,17 +268,17 @@ describe('CompactionCounterWidget', () => {
                 ...ITEM,
                 metadata: { format: 'text-and-number' }
             })).toEqual([
-                { key: 'v', label: '(v)alue', action: 'cycle-metric' },
-                { key: 'f', label: '(f)ormat', action: 'cycle-format' },
-                { key: 's', label: '(s)plit by trigger', action: 'toggle-triggers' },
-                { key: 't', label: '(t)okens reclaimed', action: 'toggle-reclaimed' },
-                { key: 'g', label: '(g)lyph', action: 'edit-symbol-override' }
+                { key: 'v', label: '(v)指標', action: 'cycle-metric' },
+                { key: 'f', label: '(f)格式切換', action: 'cycle-format' },
+                { key: 's', label: '(s)觸發器分類', action: 'toggle-triggers' },
+                { key: 't', label: '(t)已回收令牌', action: 'toggle-reclaimed' },
+                { key: 'g', label: '(g)字元', action: 'edit-symbol-override' }
             ]);
         });
 
         it('has correct editor display', () => {
             expect(new CompactionCounterWidget().getEditorDisplay(ITEM)).toEqual({
-                displayText: 'Compaction Counter',
+                displayText: '壓縮計數',
                 modifierText: '(icon-space-number)'
             });
         });
@@ -288,7 +288,7 @@ describe('CompactionCounterWidget', () => {
                 ...ITEM,
                 metadata: { format: 'number' }
             })).toEqual({
-                displayText: 'Compaction Counter',
+                displayText: '壓縮計數',
                 modifierText: '(number)'
             });
         });
@@ -298,8 +298,8 @@ describe('CompactionCounterWidget', () => {
                 ...ITEM,
                 metadata: { nerdFont: 'true' }
             })).toEqual({
-                displayText: 'Compaction Counter',
-                modifierText: '(icon-space-number, nerd font)'
+                displayText: '壓縮計數',
+                modifierText: '(icon-space-number, Nerd 字型)'
             });
         });
 
@@ -312,8 +312,8 @@ describe('CompactionCounterWidget', () => {
                 ...ITEM,
                 metadata: { format: 'icon-number', nerdFont: 'true' }
             })).toEqual({
-                displayText: 'Compaction Counter',
-                modifierText: '(icon-space-number, nerd font)'
+                displayText: '壓縮計數',
+                modifierText: '(icon-space-number, Nerd 字型)'
             });
         });
 
@@ -371,8 +371,8 @@ describe('CompactionCounterWidget', () => {
                 ...ITEM,
                 metadata: { showTriggers: 'true' }
             })).toEqual({
-                displayText: 'Compaction Counter',
-                modifierText: '(icon-space-number, trigger split)'
+                displayText: '壓縮計數',
+                modifierText: '(icon-space-number, 觸發器分類)'
             });
         });
 
@@ -390,8 +390,8 @@ describe('CompactionCounterWidget', () => {
                 ...ITEM,
                 metadata: { showReclaimed: 'true' }
             })).toEqual({
-                displayText: 'Compaction Counter',
-                modifierText: '(icon-space-number, reclaimed)'
+                displayText: '壓縮計數',
+                modifierText: '(icon-space-number, 已回收)'
             });
         });
     });
@@ -462,8 +462,8 @@ describe('CompactionCounterWidget', () => {
                 ...ITEM,
                 metadata: { metric: 'reclaimed', hide: 'zero' }
             })).toEqual({
-                displayText: 'Compaction Counter',
-                modifierText: '(reclaimed value)'
+                displayText: '壓縮計數',
+                modifierText: '(已回收值)'
             });
         });
 
@@ -472,7 +472,7 @@ describe('CompactionCounterWidget', () => {
                 ...ITEM,
                 metadata: { metric: 'auto' }
             })).toEqual([
-                { key: 'v', label: '(v)alue', action: 'cycle-metric' }
+                { key: 'v', label: '(v)指標', action: 'cycle-metric' }
             ]);
         });
 

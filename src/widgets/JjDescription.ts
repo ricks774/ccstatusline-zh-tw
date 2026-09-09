@@ -18,8 +18,8 @@ import {
 
 export class JjDescriptionWidget implements Widget {
     getDefaultColor(): string { return 'white'; }
-    getDescription(): string { return 'Shows the current jujutsu change description'; }
-    getDisplayName(): string { return 'JJ Description'; }
+    getDescription(): string { return '顯示當前 Jujutsu 變更描述'; }
+    getDisplayName(): string { return 'JJ 變更描述'; }
     getCategory(): string { return 'Jujutsu'; }
     getEditorDisplay(item: WidgetItem): WidgetEditorDisplay {
         return { displayText: this.getDisplayName() };
@@ -33,11 +33,11 @@ export class JjDescriptionWidget implements Widget {
         const hideNoJj = isHidden(item, NO_JJ_HIDEABLE_STATE.key);
 
         if (context.isPreview) {
-            return '(no description)';
+            return '(無描述)';
         }
 
         if (!isInsideJjRepo(context)) {
-            return hideNoJj ? null : 'no jj';
+            return hideNoJj ? null : '無 JJ';
         }
 
         const description = runJjArgs([
@@ -49,10 +49,10 @@ export class JjDescriptionWidget implements Widget {
             'description.first_line()'
         ], context, true);
         if (description === null) {
-            return hideNoJj ? null : 'no jj';
+            return hideNoJj ? null : '無 JJ';
         }
 
-        return description.length > 0 ? description : '(no description)';
+        return description.length > 0 ? description : '(無描述)';
     }
 
     supportsRawValue(): boolean { return false; }

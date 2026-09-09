@@ -45,9 +45,9 @@ describe('BlockTimerWidget', () => {
             elapsedPercent: 75,
             remainingPercent: 25
         });
-        mockFormatUsageDuration.mockReturnValue('3hr 45m');
+        mockFormatUsageDuration.mockReturnValue('3時 45分');
 
-        expect(render(widget, item, { usageData: {} })).toBe('Block: 3hr 45m');
+        expect(render(widget, item, { usageData: {} })).toBe('時段: 3時 45分');
     });
 
     it('renders short progress bar with inverted fill', () => {
@@ -69,7 +69,7 @@ describe('BlockTimerWidget', () => {
             remainingPercent: 25
         });
 
-        expect(render(widget, item, { usageData: {} })).toBe('Block [████░░░░░░░░░░░░] 25.0%');
+        expect(render(widget, item, { usageData: {} })).toBe('時段 [████░░░░░░░░░░░░] 25.0%');
     });
 
     it('rounds the progress bar fill to the nearest cell', () => {
@@ -89,7 +89,7 @@ describe('BlockTimerWidget', () => {
         });
 
         // 73.9% of 32 cells is 23.648, past the half-cell mark, so the 24th cell fills.
-        expect(render(widget, item, { usageData: {} })).toBe(`Block [${'█'.repeat(24)}${'░'.repeat(8)}] 73.9%`);
+        expect(render(widget, item, { usageData: {} })).toBe(`時段 [${'█'.repeat(24)}${'░'.repeat(8)}] 73.9%`);
     });
 
     it('renders empty values when no usage or fallback data exists', () => {
@@ -97,18 +97,18 @@ describe('BlockTimerWidget', () => {
 
         mockResolveUsageWindowWithFallback.mockReturnValue(null);
 
-        expect(render(widget, { id: 'block', type: 'block-timer' }, { usageData: { error: 'timeout' } })).toBe('Block: 0hr 0m');
+        expect(render(widget, { id: 'block', type: 'block-timer' }, { usageData: { error: 'timeout' } })).toBe('時段: 0時 0分');
         expect(render(widget, {
             id: 'block',
             type: 'block-timer',
             metadata: { display: 'progress' }
-        }, { usageData: { error: 'timeout' } })).toBe(`Block [${'░'.repeat(32)}] 0.0%`);
+        }, { usageData: { error: 'timeout' } })).toBe(`時段 [${'░'.repeat(32)}] 0.0%`);
         expect(render(widget, {
             id: 'block',
             type: 'block-timer',
             metadata: { display: 'progress' },
             numberFormat: { style: 'compact' }
-        }, { usageData: { error: 'timeout' } })).toBe(`Block [${'░'.repeat(32)}] 0%`);
+        }, { usageData: { error: 'timeout' } })).toBe(`時段 [${'░'.repeat(32)}] 0%`);
     });
 
     it('hides empty values when the no-data hide state is enabled', () => {
@@ -160,7 +160,7 @@ describe('BlockTimerWidget', () => {
             remainingPercent: 50
         });
 
-        expect(render(widget, item, { usageData: {} })).toBe('Block ▓▓▓▓▓░░░░░ 50.0%');
+        expect(render(widget, item, { usageData: {} })).toBe('時段 ▓▓▓▓▓░░░░░ 50.0%');
     });
 
     it('renders slider-only bar without percentage', () => {
@@ -179,7 +179,7 @@ describe('BlockTimerWidget', () => {
             remainingPercent: 50
         });
 
-        expect(render(widget, item, { usageData: {} })).toBe('Block ▓▓▓▓▓░░░░░');
+        expect(render(widget, item, { usageData: {} })).toBe('時段 ▓▓▓▓▓░░░░░');
     });
 
     it('renders inverted slider using remaining percent', () => {
@@ -198,7 +198,7 @@ describe('BlockTimerWidget', () => {
             remainingPercent: 20
         });
 
-        expect(render(widget, item, { usageData: {} })).toBe('Block ▓▓░░░░░░░░ 20.0%');
+        expect(render(widget, item, { usageData: {} })).toBe('時段 ▓▓░░░░░░░░ 20.0%');
     });
 
     it('renders empty slider when no usage or fallback data exists', () => {
@@ -210,18 +210,18 @@ describe('BlockTimerWidget', () => {
             id: 'block',
             type: 'block-timer',
             metadata: { display: 'slider' }
-        }, { usageData: { error: 'timeout' } })).toBe('Block ░░░░░░░░░░ 0.0%');
+        }, { usageData: { error: 'timeout' } })).toBe('時段 ░░░░░░░░░░ 0.0%');
         expect(render(widget, {
             id: 'block',
             type: 'block-timer',
             metadata: { display: 'slider' },
             numberFormat: { style: 'whole' }
-        }, { usageData: { error: 'timeout' } })).toBe('Block ░░░░░░░░░░ 0%');
+        }, { usageData: { error: 'timeout' } })).toBe('時段 ░░░░░░░░░░ 0%');
         expect(render(widget, {
             id: 'block',
             type: 'block-timer',
             metadata: { display: 'slider-only' }
-        }, { usageData: { error: 'timeout' } })).toBe('Block ░░░░░░░░░░');
+        }, { usageData: { error: 'timeout' } })).toBe('時段 ░░░░░░░░░░');
     });
 
     it('exposes invert keybind in slider mode', () => {
@@ -232,8 +232,8 @@ describe('BlockTimerWidget', () => {
             type: 'block-timer',
             metadata: { display: 'slider' }
         })).toEqual([
-            { key: 'p', label: '(p)rogress toggle', action: 'toggle-progress' },
-            { key: 'v', label: 'in(v)ert fill', action: 'toggle-invert' }
+            { key: 'p', label: '(p)進度條切換', action: 'toggle-progress' },
+            { key: 'v', label: '(v)反轉填充', action: 'toggle-invert' }
         ]);
     });
 
@@ -244,20 +244,20 @@ describe('BlockTimerWidget', () => {
             id: 'block',
             type: 'block-timer',
             metadata: { display: 'slider' }
-        }).modifierText).toBe('(short bar)');
+        }).modifierText).toBe('(短進度條)');
         expect(widget.getEditorDisplay({
             id: 'block',
             type: 'block-timer',
             metadata: { display: 'slider-only' }
-        }).modifierText).toBe('(short bar only)');
+        }).modifierText).toBe('(僅短進度條)');
     });
 
     runUsageTimerEditorSuite({
         baseItem: { id: 'block', type: 'block-timer' },
         createWidget: () => new BlockTimerWidget(),
-        expectedDisplayName: 'Block Timer',
+        expectedDisplayName: '時段計時器',
         supportsSliderMode: true,
-        expectedModifierText: '(long bar, inverted)',
+        expectedModifierText: '(長進度條, 反轉)',
         modifierItem: {
             id: 'block',
             type: 'block-timer',

@@ -172,7 +172,7 @@ describe('getNumberFormatKeybind', () => {
     it('binds the precision cycle to a key no widget uses', () => {
         expect(getNumberFormatKeybind()).toEqual({
             key: '.',
-            label: '(.) precision',
+            label: '(.) 精度',
             action: CYCLE_NUMBER_STYLE_ACTION
         });
     });

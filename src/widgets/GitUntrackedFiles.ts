@@ -16,7 +16,7 @@ import {
     isHidden
 } from './shared/hideable';
 
-const ZERO_HIDEABLE_STATE: HideableState = { key: 'zero', label: 'when the untracked file count is zero' };
+const ZERO_HIDEABLE_STATE: HideableState = { key: 'zero', label: '未跟蹤檔案數為零時' };
 
 export class GitUntrackedFilesWidget implements Widget {
     getDefaultColor(): string { return 'red'; }

@@ -24,9 +24,9 @@ import {
     isHidden
 } from './shared/hideable';
 
-const NO_DATA_HIDEABLE_STATE: HideableState = { key: 'no-data', label: 'when there is no PR/MR' };
-const STATUS_HIDEABLE_STATE: HideableState = { key: 'status', label: 'status segment' };
-const TITLE_HIDEABLE_STATE: HideableState = { key: 'title', label: 'title segment' };
+const NO_DATA_HIDEABLE_STATE: HideableState = { key: 'no-data', label: '沒有 PR/MR 時' };
+const STATUS_HIDEABLE_STATE: HideableState = { key: 'status', label: '狀態區段' };
+const TITLE_HIDEABLE_STATE: HideableState = { key: 'title', label: '標題區段' };
 
 export interface GitPrWidgetDeps {
     getCachedGitReviewData: typeof getCachedGitReviewData;
@@ -47,7 +47,7 @@ const DEFAULT_GIT_PR_WIDGET_DEPS: GitPrWidgetDeps = {
 const PREVIEW_PR: GitReviewData = {
     number: 42,
     url: 'https://github.com/owner/repo/pull/42',
-    title: 'Example PR title',
+    title: '示例 PR 標題',
     state: 'OPEN',
     reviewDecision: ''
 };
@@ -101,7 +101,7 @@ export class GitPrWidget implements Widget {
     constructor(private readonly deps: GitPrWidgetDeps = DEFAULT_GIT_PR_WIDGET_DEPS) {}
 
     getDefaultColor(): string { return 'cyan'; }
-    getDescription(): string { return 'Shows PR/MR info for the current branch (clickable link, status, title)'; }
+    getDescription(): string { return '顯示當前分支的 PR/MR 資訊（可點選連結、狀態、標題）'; }
     getDisplayName(): string { return 'Git PR/MR'; }
     getCategory(): string { return 'Git'; }
 
@@ -123,13 +123,13 @@ export class GitPrWidget implements Widget {
         }
 
         if (!this.deps.isInsideGitWorkTree(context)) {
-            return isHidden(item, NO_GIT_HIDEABLE_STATE.key) ? null : `(no ${resolvePrNoun(null, context, this.deps)})`;
+            return isHidden(item, NO_GIT_HIDEABLE_STATE.key) ? null : `(無 ${resolvePrNoun(null, context, this.deps)})`;
         }
 
         const cwd = this.deps.resolveGitCwd(context) ?? this.deps.getProcessCwd();
         const prData = this.deps.getCachedGitReviewData(cwd, { includeChecks: context.gitReviewNeedsChecks ?? false });
         if (!prData) {
-            return isHidden(item, NO_DATA_HIDEABLE_STATE.key) ? null : `(no ${resolvePrNoun(null, context, this.deps)})`;
+            return isHidden(item, NO_DATA_HIDEABLE_STATE.key) ? null : `(無 ${resolvePrNoun(null, context, this.deps)})`;
         }
 
         return buildDisplay(item, prData, showStatus, showTitle, resolvePrNoun(prData, context, this.deps));

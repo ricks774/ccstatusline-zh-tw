@@ -47,8 +47,8 @@ export const HideStatesEditor: React.FC<HideStatesEditorProps> = ({ widget, stat
 
     return (
         <Box flexDirection='column'>
-            <Text bold>Hide</Text>
-            <Text dimColor>↑↓ select, Space toggle, Enter save, ESC cancel</Text>
+            <Text bold>隱藏</Text>
+            <Text dimColor>↑↓ 選擇，空格切換，Enter 儲存，ESC 取消</Text>
             <Box marginTop={1} flexDirection='column'>
                 {states.map((state, index) => {
                     const isSelected = index === selectedIndex;
@@ -64,7 +64,7 @@ export const HideStatesEditor: React.FC<HideStatesEditorProps> = ({ widget, stat
                                 {`[${isEnabled ? 'x' : ' '}] ${state.label}`}
                             </Text>
                             {state.key === MERGE_TARGET_HIDDEN_HIDEABLE_STATE.key && !widget.merge && (
-                                <Text dimColor> (requires merge)</Text>
+                                <Text dimColor> （需要合併）</Text>
                             )}
                         </Box>
                     );

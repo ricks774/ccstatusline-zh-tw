@@ -303,13 +303,13 @@ export const GlobalOverridesMenu: React.FC<GlobalOverridesMenuProps> = ({ settin
     if (numberFormatMode) {
         return (
             <Box flexDirection='column'>
-                <Text bold>Global Number Formatting</Text>
+                <Text bold>全域性數字格式化</Text>
                 <Box marginTop={1}>
-                    <Text dimColor>↑↓ to select a number type, ←→ to cycle its style, ESC to go back</Text>
+                    <Text dimColor>↑↓ 選擇數字類型，←→ 切換其樣式，ESC 返回</Text>
                 </Box>
                 <Box marginTop={1} flexDirection='column'>
                     {NUMBER_KINDS.map((kind, idx) => {
-                        const style = settings.numberFormat?.[kind]?.style ?? 'precise (default)';
+                        const style = settings.numberFormat?.[kind]?.style ?? '精確（預設）';
                         return (
                             <Text key={kind} color={idx === numberFormatKindIndex ? 'cyan' : undefined}>
                                 {idx === numberFormatKindIndex ? '▶ ' : '  '}
@@ -321,8 +321,8 @@ export const GlobalOverridesMenu: React.FC<GlobalOverridesMenuProps> = ({ settin
                     })}
                 </Box>
                 <Box marginTop={1} flexDirection='column'>
-                    <Text dimColor>precise = keep trailing zeros (1.0M), compact = trim them (1M / 1.1M), whole = no decimals (1M).</Text>
-                    <Text dimColor>A global style forces that type across every widget. Decimal places are set per-widget or in settings.json.</Text>
+                    <Text dimColor>precise＝保留尾隨零（1.0M），compact＝去除（1M / 1.1M），whole＝無小數（1M）。</Text>
+                    <Text dimColor>全域性樣式會對所有元件強制套用該類型。小數位數在各元件或 settings.json 中設定。</Text>
                 </Box>
             </Box>
         );
@@ -334,12 +334,12 @@ export const GlobalOverridesMenu: React.FC<GlobalOverridesMenuProps> = ({ settin
         if (gradientCustomStep) {
             return (
                 <Box flexDirection='column'>
-                    <Text bold>Custom Gradient - Override FG Color</Text>
+                    <Text bold>自定義漸變色 - 覆蓋前景色</Text>
                     <Box marginTop={1} flexDirection='column'>
-                        <Text>{gradientCustomStep === 'start' ? 'Enter START hex color (without #):' : 'Enter END hex color (without #):'}</Text>
+                        <Text>{gradientCustomStep === 'start' ? '輸入起始十六進位制顏色（不含 #）：' : '輸入結束十六進位制顏色（不含 #）：'}</Text>
                         {gradientCustomStep === 'end' && (
                             <Text dimColor>
-                                Start: #
+                                起始：#
                                 {gradientStartHex}
                             </Text>
                         )}
@@ -349,7 +349,7 @@ export const GlobalOverridesMenu: React.FC<GlobalOverridesMenuProps> = ({ settin
                             <Text dimColor>{gradientHexInput.length < 6 ? '_'.repeat(6 - gradientHexInput.length) : ''}</Text>
                         </Text>
                         <Text> </Text>
-                        <Text dimColor>Press Enter when done, ESC to go back</Text>
+                        <Text dimColor>完成後按 Enter，ESC 返回</Text>
                     </Box>
                 </Box>
             );
@@ -357,9 +357,9 @@ export const GlobalOverridesMenu: React.FC<GlobalOverridesMenuProps> = ({ settin
 
         return (
             <Box flexDirection='column'>
-                <Text bold>Select Gradient - Override FG Color</Text>
+                <Text bold>選擇漸變色 - 覆蓋前景色</Text>
                 <Box marginTop={1}>
-                    <Text dimColor>↑↓ to select, Enter to apply, ESC to cancel</Text>
+                    <Text dimColor>↑↓ 選擇，Enter 套用，ESC 取消</Text>
                 </Box>
                 <Box marginTop={1} flexDirection='column'>
                     {GRADIENT_PRESET_NAMES.map((name, idx) => (
@@ -370,7 +370,7 @@ export const GlobalOverridesMenu: React.FC<GlobalOverridesMenuProps> = ({ settin
                     ))}
                     <Text key='custom'>
                         {gradientIndex === GRADIENT_PRESET_NAMES.length ? '▶ ' : '  '}
-                        Custom (enter two hex stops)
+                        自定義（輸入兩個十六進位制色標）
                     </Text>
                 </Box>
             </Box>
@@ -379,11 +379,11 @@ export const GlobalOverridesMenu: React.FC<GlobalOverridesMenuProps> = ({ settin
 
     return (
         <Box flexDirection='column'>
-            <Text bold>Global Overrides</Text>
-            <Text dimColor>Configure automatic padding and separators between widgets</Text>
+            <Text bold>全域性覆蓋</Text>
+            <Text dimColor>配置元件之間的自動內邊距和分隔符</Text>
             {isPowerlineEnabled && (
                 <Box marginTop={1}>
-                    <Text color='yellow'>⚠ Some options are disabled while Powerline mode is active</Text>
+                    <Text color='yellow'>⚠ Powerline 模式啟用時部分選項已禁用</Text>
                 </Box>
             )}
             <Box marginTop={1} />
@@ -391,30 +391,30 @@ export const GlobalOverridesMenu: React.FC<GlobalOverridesMenuProps> = ({ settin
             {editingPadding ? (
                 <Box flexDirection='column'>
                     <Box>
-                        <Text>Enter default padding (applied per the Padding Side setting): </Text>
-                        <Text color='cyan'>{paddingInput ? `"${paddingInput}"` : '(empty)'}</Text>
+                        <Text>輸入預設內邊距（按“內邊距方向”設定應用）：</Text>
+                        <Text color='cyan'>{paddingInput ? `"${paddingInput}"` : '（空）'}</Text>
                     </Box>
-                    <Text dimColor>Press Enter to save, ESC to cancel</Text>
+                    <Text dimColor>按 Enter 儲存，ESC 取消</Text>
                 </Box>
             ) : editingSeparator ? (
                 <Box flexDirection='column'>
                     <Box>
-                        <Text>Enter default separator (placed between widgets): </Text>
-                        <Text color='cyan'>{separatorInput ? `"${separatorInput}"` : '(empty - no separator will be added)'}</Text>
+                        <Text>輸入預設分隔符（放置在元件之間）：</Text>
+                        <Text color='cyan'>{separatorInput ? `"${separatorInput}"` : '（空 - 不新增分隔符）'}</Text>
                     </Box>
-                    <Text dimColor>Press Enter to save, ESC to cancel</Text>
+                    <Text dimColor>按 Enter 儲存，ESC 取消</Text>
                 </Box>
             ) : confirmingSeparator ? (
                 <Box flexDirection='column'>
                     <Box marginBottom={1}>
-                        <Text color='yellow'>⚠ Warning: Setting a default separator will remove all existing manual separators from your status lines.</Text>
+                        <Text color='yellow'>⚠ 警告：設定預設分隔符將移除狀態列中所有現有的手動分隔符。</Text>
                     </Box>
                     <Box>
-                        <Text>New default separator: </Text>
-                        <Text color='cyan'>{separatorInput ? `"${separatorInput}"` : '(empty)'}</Text>
+                        <Text>新預設分隔符：</Text>
+                        <Text color='cyan'>{separatorInput ? `"${separatorInput}"` : '（空）'}</Text>
                     </Box>
                     <Box marginTop={1}>
-                        <Text>Do you want to continue? </Text>
+                        <Text>是否要繼續？</Text>
                     </Box>
                     <Box marginTop={1}>
                         <ConfirmDialog
@@ -441,37 +441,37 @@ export const GlobalOverridesMenu: React.FC<GlobalOverridesMenuProps> = ({ settin
             ) : (
                 <>
                     <Box>
-                        <Text>      Global Bold: </Text>
-                        <Text color={globalBold ? 'green' : 'red'}>{globalBold ? '✓ Enabled' : '✗ Disabled'}</Text>
-                        <Text dimColor> - Press (o) to toggle</Text>
+                        <Text>      全域性加粗: </Text>
+                        <Text color={globalBold ? 'green' : 'red'}>{globalBold ? '✓ 已啟用' : '✗ 已禁用'}</Text>
+                        <Text dimColor> - 按 (o) 切換</Text>
                     </Box>
 
                     <Box>
-                        <Text>  Minimalist Mode: </Text>
-                        <Text color={minimalistMode ? 'green' : 'red'}>{minimalistMode ? '✓ Enabled' : '✗ Disabled'}</Text>
-                        <Text dimColor> - Press (m) to toggle</Text>
+                        <Text>  極簡模式: </Text>
+                        <Text color={minimalistMode ? 'green' : 'red'}>{minimalistMode ? '✓ 已啟用' : '✗ 已禁用'}</Text>
+                        <Text dimColor> - 按 (m) 切換</Text>
                     </Box>
 
                     <Box>
-                        <Text>Number Formatting: </Text>
-                        <Text color='cyan'>{settings.numberFormat ? 'customized' : '(defaults)'}</Text>
-                        <Text dimColor> - Press (n) to configure per-type</Text>
+                        <Text>數字格式化: </Text>
+                        <Text color='cyan'>{settings.numberFormat ? '已自定義' : '（預設）'}</Text>
+                        <Text dimColor> - 按 (n) 按類型配置</Text>
                     </Box>
 
                     <Box>
-                        <Text>  Default Padding: </Text>
-                        <Text color='cyan'>{settings.defaultPadding ? `"${settings.defaultPadding}"` : '(none)'}</Text>
-                        <Text dimColor> - Press (p) to edit</Text>
+                        <Text>  預設內邊距: </Text>
+                        <Text color='cyan'>{settings.defaultPadding ? `"${settings.defaultPadding}"` : '（無）'}</Text>
+                        <Text dimColor> - 按 (p) 編輯</Text>
                     </Box>
 
                     <Box>
-                        <Text>     Padding Side: </Text>
-                        <Text color='cyan'>{settings.defaultPaddingSide === 'left' ? 'Left only' : settings.defaultPaddingSide === 'right' ? 'Right only' : 'Both'}</Text>
-                        <Text dimColor> - Press (d) to cycle</Text>
+                        <Text>     內邊距方向: </Text>
+                        <Text color='cyan'>{settings.defaultPaddingSide === 'left' ? '僅左側' : settings.defaultPaddingSide === 'right' ? '僅右側' : '兩側'}</Text>
+                        <Text dimColor> - 按 (d) 切換</Text>
                     </Box>
 
                     <Box>
-                        <Text>Override FG Color: </Text>
+                        <Text>覆蓋前景色: </Text>
                         {(() => {
                             const fgColor = settings.overrideForegroundColor ?? 'none';
                             if (fgColor === 'none') {
@@ -479,8 +479,8 @@ export const GlobalOverridesMenu: React.FC<GlobalOverridesMenuProps> = ({ settin
                             } else if (fgColor.startsWith('gradient:')) {
                                 const body = fgColor.substring(9);
                                 const displayName = GRADIENT_PRESET_NAMES.includes(body.toLowerCase())
-                                    ? `Gradient: ${body.toLowerCase()}`
-                                    : `Gradient: ${body}`;
+                                    ? `漸變色: ${body.toLowerCase()}`
+                                    : `漸變色: ${body}`;
                                 const level = getColorLevelString(settings.colorLevel);
                                 return <Text>{applyColors(displayName, fgColor, undefined, false, level)}</Text>;
                             } else {
@@ -490,13 +490,13 @@ export const GlobalOverridesMenu: React.FC<GlobalOverridesMenuProps> = ({ settin
                                 return <Text>{display}</Text>;
                             }
                         })()}
-                        <Text dimColor> - (f) cycle, (g) gradient, (x) clear</Text>
+                        <Text dimColor> - (f) 切換，(g) 漸變色，(x) 清除</Text>
                     </Box>
 
                     <Box>
-                        <Text>Override BG Color: </Text>
+                        <Text>覆蓋背景色: </Text>
                         {isPowerlineEnabled ? (
-                            <Text dimColor>[disabled - Powerline active]</Text>
+                            <Text dimColor>[已禁用 - Powerline 啟用中]</Text>
                         ) : (
                             <>
                                 {(() => {
@@ -510,57 +510,57 @@ export const GlobalOverridesMenu: React.FC<GlobalOverridesMenuProps> = ({ settin
                                         return <Text>{display}</Text>;
                                     }
                                 })()}
-                                <Text dimColor> - (b) cycle, (c) clear</Text>
+                                <Text dimColor> - (b) 切換，(c) 清除</Text>
                             </>
                         )}
                     </Box>
 
                     <Box>
-                        <Text>   Inherit Colors: </Text>
+                        <Text>   繼承顏色: </Text>
                         {isPowerlineEnabled ? (
-                            <Text dimColor>[disabled - Powerline active]</Text>
+                            <Text dimColor>[已禁用 - Powerline 啟用中]</Text>
                         ) : (
                             <>
-                                <Text color={inheritColors ? 'green' : 'red'}>{inheritColors ? '✓ Enabled' : '✗ Disabled'}</Text>
-                                <Text dimColor> - Press (i) to toggle</Text>
+                                <Text color={inheritColors ? 'green' : 'red'}>{inheritColors ? '✓ 已啟用' : '✗ 已禁用'}</Text>
+                                <Text dimColor> - 按 (i) 切換</Text>
                             </>
                         )}
                     </Box>
 
                     <Box>
-                        <Text>Default Separator: </Text>
+                        <Text>預設分隔符: </Text>
                         {isPowerlineEnabled ? (
-                            <Text dimColor>[disabled - Powerline active]</Text>
+                            <Text dimColor>[已禁用 - Powerline 啟用中]</Text>
                         ) : (
                             <>
-                                <Text color='cyan'>{settings.defaultSeparator ? `"${settings.defaultSeparator}"` : '(none)'}</Text>
-                                <Text dimColor> - Press (s) to edit</Text>
+                                <Text color='cyan'>{settings.defaultSeparator ? `"${settings.defaultSeparator}"` : '（無）'}</Text>
+                                <Text dimColor> - 按 (s) 編輯</Text>
                             </>
                         )}
                     </Box>
 
                     <Box marginTop={2}>
-                        <Text dimColor>Press ESC to go back</Text>
+                        <Text dimColor>按 ESC 返回</Text>
                     </Box>
 
                     <Box marginTop={1} flexDirection='column'>
                         <Text dimColor wrap='wrap'>
-                            Note: These settings are applied during rendering and don't add widgets to your widget list.
+                            注意：這些設定在渲染時應用，不會向元件列表中新增元件。
                         </Text>
                         <Text dimColor wrap='wrap'>
-                            • Padding Side: Choose whether default padding applies to both sides, left only, or right only
+                            • 內邊距方向：選擇預設內邊距應用於兩側、僅左側或僅右側
                         </Text>
                         <Text dimColor wrap='wrap'>
-                            • Inherit colors: Separators will use colors from the preceding widget
+                            • 繼承顏色：分隔符將使用前一個元件的顏色
                         </Text>
                         <Text dimColor wrap='wrap'>
-                            • Global Bold: Makes all text bold regardless of individual settings
+                            • 全域性加粗：無論單個設定如何，所有文字都會加粗
                         </Text>
                         <Text dimColor wrap='wrap'>
-                            • Minimalist Mode: Strips decorative prefixes and labels from widgets
+                            • 極簡模式：去除元件的裝飾性字首和標籤
                         </Text>
                         <Text dimColor wrap='wrap'>
-                            • Override colors: All widgets will use these colors instead of their configured colors
+                            • 覆蓋顏色：所有元件將使用這些顏色而非其配置的顏色
                         </Text>
                     </Box>
                 </>

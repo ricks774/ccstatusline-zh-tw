@@ -134,7 +134,7 @@ describe('GlobalOverridesMenu', () => {
 
             const numberRows = stripAnsi(stdout.getOutput())
                 .split('\n')
-                .filter(line => /(?:token|speed|percent|memory|cost): precise/.test(line));
+                .filter(line => /(?:token|speed|percent|memory|cost): 精確/.test(line));
             const colonColumns = new Set(numberRows.map(line => line.indexOf(':')));
 
             expect(numberRows).toHaveLength(5);
@@ -366,7 +366,7 @@ describe('GlobalOverridesMenu', () => {
             await flushInk();
             stdin.write('g');
             await flushInk();
-            expect(stdout.getOutput()).toContain('Select Gradient - Override FG Color');
+            expect(stdout.getOutput()).toContain('選擇漸變色 - 覆蓋前景色');
 
             stdin.write('\r');
             await flushInk();

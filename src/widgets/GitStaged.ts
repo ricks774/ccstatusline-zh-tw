@@ -27,8 +27,8 @@ const DEFAULT_SYMBOL = '+';
 
 export class GitStagedWidget implements Widget {
     getDefaultColor(): string { return 'green'; }
-    getDescription(): string { return 'Shows + when there are staged changes'; }
-    getDisplayName(): string { return 'Git Staged'; }
+    getDescription(): string { return '存在已暫存變更時顯示 +'; }
+    getDisplayName(): string { return 'Git 已暫存'; }
     getCategory(): string { return 'Git'; }
 
     getEditorDisplay(item: WidgetItem): WidgetEditorDisplay {
@@ -47,7 +47,7 @@ export class GitStagedWidget implements Widget {
         }
 
         if (!isInsideGitWorkTree(context)) {
-            return hideNoGit ? null : '(no git)';
+            return hideNoGit ? null : '（無 Git）';
         }
 
         const status = getGitStatus(context);

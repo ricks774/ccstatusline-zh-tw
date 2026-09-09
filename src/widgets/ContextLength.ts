@@ -11,9 +11,9 @@ import { formatTokens } from '../utils/renderer';
 
 export class ContextLengthWidget implements Widget {
     getDefaultColor(): string { return 'brightBlack'; }
-    getDescription(): string { return 'Shows the current context window size in tokens'; }
-    getDisplayName(): string { return 'Context Length'; }
-    getCategory(): string { return 'Context'; }
+    getDescription(): string { return '顯示當前上下文視窗大小（Token 數）'; }
+    getDisplayName(): string { return '上下文長度'; }
+    getCategory(): string { return '上下文'; }
     getEditorDisplay(item: WidgetItem): WidgetEditorDisplay {
         return { displayText: this.getDisplayName() };
     }
@@ -22,16 +22,16 @@ export class ContextLengthWidget implements Widget {
         const format = resolveNumberFormat('token', item, settings);
         if (context.isPreview) {
             const value = formatTokens(18600, format);
-            return item.rawValue ? value : `Ctx: ${value}`;
+            return item.rawValue ? value : `上下文: ${value}`;
         }
 
         const contextLengthTokens = getContextWindowContextLengthTokens(context.data);
         if (contextLengthTokens !== null) {
-            return item.rawValue ? formatTokens(contextLengthTokens, format) : `Ctx: ${formatTokens(contextLengthTokens, format)}`;
+            return item.rawValue ? formatTokens(contextLengthTokens, format) : `上下文: ${formatTokens(contextLengthTokens, format)}`;
         }
 
         if (context.tokenMetrics) {
-            return item.rawValue ? formatTokens(context.tokenMetrics.contextLength, format) : `Ctx: ${formatTokens(context.tokenMetrics.contextLength, format)}`;
+            return item.rawValue ? formatTokens(context.tokenMetrics.contextLength, format) : `上下文: ${formatTokens(context.tokenMetrics.contextLength, format)}`;
         }
         return null;
     }

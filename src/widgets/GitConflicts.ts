@@ -25,7 +25,7 @@ import {
     type SymbolSlot
 } from './shared/symbol-override';
 
-const ZERO_HIDEABLE_STATE: HideableState = { key: 'zero', label: 'when there are no conflicts' };
+const ZERO_HIDEABLE_STATE: HideableState = { key: 'zero', label: '沒有衝突時' };
 const CONFLICT_SLOT: SymbolSlot = { id: 'character', label: 'Conflicts', defaultSymbol: '⚠' };
 const CLEAN_SLOT: SymbolSlot = { id: 'symbolClean', label: 'Clean', defaultSymbol: '✓' };
 
@@ -63,8 +63,8 @@ function cycleZeroDisplay(item: WidgetItem): WidgetItem {
 
 export class GitConflictsWidget implements Widget {
     getDefaultColor(): string { return 'red'; }
-    getDescription(): string { return 'Shows count of merge conflicts'; }
-    getDisplayName(): string { return 'Git Conflicts'; }
+    getDescription(): string { return '顯示合併衝突數量'; }
+    getDisplayName(): string { return 'Git 衝突'; }
     getCategory(): string { return 'Git'; }
 
     getEditorDisplay(item: WidgetItem): WidgetEditorDisplay {
@@ -97,7 +97,7 @@ export class GitConflictsWidget implements Widget {
         }
 
         if (!isInsideGitWorkTree(context)) {
-            return hideNoGit ? null : '(no git)';
+            return hideNoGit ? null : '（無 Git）';
         }
 
         const count = getGitConflictCount(context);

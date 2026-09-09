@@ -64,9 +64,9 @@ describe('Cache widgets', () => {
         };
 
         // context = 500 + 8000 + 2000 = 10500
-        expect(new w.CacheHitRateWidget().render(turnItem('cache-hit-rate'), context, DEFAULT_SETTINGS)).toBe('Cache Hit: 80.0%');
-        expect(new w.CacheReadWidget().render(turnItem('cache-read'), context, DEFAULT_SETTINGS)).toBe('Cache Read: fmt:8000 (76.2%)');
-        expect(new w.CacheWriteWidget().render(turnItem('cache-write'), context, DEFAULT_SETTINGS)).toBe('Cache Write: fmt:2000 (19.0%)');
+        expect(new w.CacheHitRateWidget().render(turnItem('cache-hit-rate'), context, DEFAULT_SETTINGS)).toBe('快取命中: 80.0%');
+        expect(new w.CacheReadWidget().render(turnItem('cache-read'), context, DEFAULT_SETTINGS)).toBe('快取讀取: fmt:8000 (76.2%)');
+        expect(new w.CacheWriteWidget().render(turnItem('cache-write'), context, DEFAULT_SETTINGS)).toBe('快取寫入: fmt:2000 (19.0%)');
     });
 
     it('renders session-scope values from tokenMetrics when the scope flag is set', async () => {
@@ -94,9 +94,9 @@ describe('Cache widgets', () => {
         };
 
         // session context = 1000 + 6000 + 4000 = 11000
-        expect(new w.CacheHitRateWidget().render(sessionItem('cache-hit-rate'), context, DEFAULT_SETTINGS)).toBe('Cache Hit: 60.0%');
-        expect(new w.CacheReadWidget().render(sessionItem('cache-read'), context, DEFAULT_SETTINGS)).toBe('Cache Read: fmt:6000 (54.5%)');
-        expect(new w.CacheWriteWidget().render(sessionItem('cache-write'), context, DEFAULT_SETTINGS)).toBe('Cache Write: fmt:4000 (36.4%)');
+        expect(new w.CacheHitRateWidget().render(sessionItem('cache-hit-rate'), context, DEFAULT_SETTINGS)).toBe('快取命中: 60.0%');
+        expect(new w.CacheReadWidget().render(sessionItem('cache-read'), context, DEFAULT_SETTINGS)).toBe('快取讀取: fmt:6000 (54.5%)');
+        expect(new w.CacheWriteWidget().render(sessionItem('cache-write'), context, DEFAULT_SETTINGS)).toBe('快取寫入: fmt:4000 (36.4%)');
     });
 
     it('renders raw values without labels', async () => {
@@ -122,9 +122,9 @@ describe('Cache widgets', () => {
         const w = await loadWidgets();
         const context: RenderContext = {};
 
-        expect(new w.CacheHitRateWidget().render(turnItem('cache-hit-rate'), context, DEFAULT_SETTINGS)).toBe('Cache Hit: n/a');
-        expect(new w.CacheReadWidget().render(turnItem('cache-read'), context, DEFAULT_SETTINGS)).toBe('Cache Read: n/a');
-        expect(new w.CacheWriteWidget().render(turnItem('cache-write'), context, DEFAULT_SETTINGS)).toBe('Cache Write: n/a');
+        expect(new w.CacheHitRateWidget().render(turnItem('cache-hit-rate'), context, DEFAULT_SETTINGS)).toBe('快取命中: n/a');
+        expect(new w.CacheReadWidget().render(turnItem('cache-read'), context, DEFAULT_SETTINGS)).toBe('快取讀取: n/a');
+        expect(new w.CacheWriteWidget().render(turnItem('cache-write'), context, DEFAULT_SETTINGS)).toBe('快取寫入: n/a');
         expect(new w.CacheHitRateWidget().render(turnItem('cache-hit-rate', { rawValue: true }), context, DEFAULT_SETTINGS)).toBe('n/a');
     });
 
@@ -153,10 +153,10 @@ describe('Cache widgets', () => {
         };
 
         // Token widgets drop percentages when there is no prompt-context denominator.
-        expect(new w.CacheHitRateWidget().render(turnItem('cache-hit-rate'), context, DEFAULT_SETTINGS)).toBe('Cache Hit: 0.0%');
-        expect(new w.CacheHitRateWidget().render(turnItem('cache-hit-rate', { numberFormat: { style: 'whole' } }), context, DEFAULT_SETTINGS)).toBe('Cache Hit: 0%');
-        expect(new w.CacheReadWidget().render(turnItem('cache-read'), context, DEFAULT_SETTINGS)).toBe('Cache Read: fmt:0');
-        expect(new w.CacheWriteWidget().render(turnItem('cache-write'), context, DEFAULT_SETTINGS)).toBe('Cache Write: fmt:0');
+        expect(new w.CacheHitRateWidget().render(turnItem('cache-hit-rate'), context, DEFAULT_SETTINGS)).toBe('快取命中: 0.0%');
+        expect(new w.CacheHitRateWidget().render(turnItem('cache-hit-rate', { numberFormat: { style: 'whole' } }), context, DEFAULT_SETTINGS)).toBe('快取命中: 0%');
+        expect(new w.CacheReadWidget().render(turnItem('cache-read'), context, DEFAULT_SETTINGS)).toBe('快取讀取: fmt:0');
+        expect(new w.CacheWriteWidget().render(turnItem('cache-write'), context, DEFAULT_SETTINGS)).toBe('快取寫入: fmt:0');
     });
 
     it('hides zero cache values when hide-when-empty is enabled', async () => {
@@ -196,14 +196,14 @@ describe('Cache widgets', () => {
 
         expect(new w.CacheHitRateWidget().render(turnItem('cache-hit-rate', hidden), context, DEFAULT_SETTINGS)).toBeNull();
         expect(new w.CacheReadWidget().render(turnItem('cache-read', hidden), context, DEFAULT_SETTINGS)).toBeNull();
-        expect(new w.CacheWriteWidget().render(turnItem('cache-write', hidden), context, DEFAULT_SETTINGS)).toBe('Cache Write: fmt:2000 (80.0%)');
+        expect(new w.CacheWriteWidget().render(turnItem('cache-write', hidden), context, DEFAULT_SETTINGS)).toBe('快取寫入: fmt:2000 (80.0%)');
     });
 
     it('exposes the scope keybind and the empty hideable state', async () => {
         const w = await loadWidgets();
         const widget = new w.CacheHitRateWidget();
         expect(widget.getCustomKeybinds()).toEqual([
-            { key: 't', label: '(t)urn/session', action: 'toggle-cache-scope' }
+            { key: 't', label: '(t)單次/會話', action: 'toggle-cache-scope' }
         ]);
         expect(widget.getHideableStates().map(state => state.key)).toEqual(['empty']);
 
@@ -218,9 +218,9 @@ describe('Cache widgets', () => {
         const w = await loadWidgets();
         const context: RenderContext = { isPreview: true };
 
-        expect(new w.CacheHitRateWidget().render(turnItem('cache-hit-rate'), context, DEFAULT_SETTINGS)).toBe('Cache Hit: 87.0%');
+        expect(new w.CacheHitRateWidget().render(turnItem('cache-hit-rate'), context, DEFAULT_SETTINGS)).toBe('快取命中: 87.0%');
         expect(new w.CacheReadWidget().render(turnItem('cache-read', { rawValue: true }), context, DEFAULT_SETTINGS)).toBe('fmt:12000 (64.0%)');
-        expect(new w.CacheWriteWidget().render(turnItem('cache-write'), context, DEFAULT_SETTINGS)).toBe('Cache Write: fmt:3000 (16.0%)');
+        expect(new w.CacheWriteWidget().render(turnItem('cache-write'), context, DEFAULT_SETTINGS)).toBe('快取寫入: fmt:3000 (16.0%)');
     });
 
     it('formats every preview sample with the selected styles', async () => {
@@ -228,9 +228,9 @@ describe('Cache widgets', () => {
         const context: RenderContext = { isPreview: true };
         const numberFormat = { style: 'whole' as const };
 
-        expect(new w.CacheHitRateWidget().render(turnItem('cache-hit-rate', { numberFormat }), context, DEFAULT_SETTINGS)).toBe('Cache Hit: 87%');
-        expect(new w.CacheReadWidget().render(turnItem('cache-read', { numberFormat }), context, DEFAULT_SETTINGS)).toBe('Cache Read: fmt:12000 (64%)');
-        expect(new w.CacheWriteWidget().render(turnItem('cache-write', { numberFormat }), context, DEFAULT_SETTINGS)).toBe('Cache Write: fmt:3000 (16%)');
+        expect(new w.CacheHitRateWidget().render(turnItem('cache-hit-rate', { numberFormat }), context, DEFAULT_SETTINGS)).toBe('快取命中: 87%');
+        expect(new w.CacheReadWidget().render(turnItem('cache-read', { numberFormat }), context, DEFAULT_SETTINGS)).toBe('快取讀取: fmt:12000 (64%)');
+        expect(new w.CacheWriteWidget().render(turnItem('cache-write', { numberFormat }), context, DEFAULT_SETTINGS)).toBe('快取寫入: fmt:3000 (16%)');
 
         expect(renderer.formatTokens).toHaveBeenNthCalledWith(1, 12000, numberFormat);
         expect(renderer.formatTokens).toHaveBeenNthCalledWith(2, 3000, numberFormat);

@@ -98,7 +98,7 @@ describe('BlockResetTimerWidget', () => {
         });
 
         // 10% of 16 cells is 1.6, past the half-cell mark, so the 2nd cell fills.
-        expect(render(widget, item, { usageData: {} })).toBe('Reset [██░░░░░░░░░░░░░░] 10.0%');
+        expect(render(widget, item, { usageData: {} })).toBe('重置 [██░░░░░░░░░░░░░░] 10.0%');
     });
 
     it('returns usage error when no timer data is available', () => {
@@ -116,7 +116,7 @@ describe('BlockResetTimerWidget', () => {
         mockResolveUsageWindowWithFallback.mockReturnValue(null);
 
         expect(render(widget, { id: 'reset', type: 'reset-timer' }, { usageData: {} })).toBe('重置: [載入中]');
-        expect(render(widget, { id: 'reset', type: 'reset-timer', rawValue: true }, { usageData: {} })).toBe('[Loading]');
+        expect(render(widget, { id: 'reset', type: 'reset-timer', rawValue: true }, { usageData: {} })).toBe('[載入中]');
     });
 
     it('shows raw value without label in time mode', () => {
@@ -210,6 +210,7 @@ describe('BlockResetTimerWidget', () => {
             { key: 't', label: '(t)時間戳', action: 'toggle-date' }
         ],
         supportsDateMode: true,
+        supportsSliderMode: true,
         expectedModifierText: '(中進度條, 反轉)',
         expectedProgressKeybinds: [
             { key: 'p', label: '(p)進度條切換', action: 'toggle-progress' },

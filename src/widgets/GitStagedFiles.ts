@@ -16,7 +16,7 @@ import {
     isHidden
 } from './shared/hideable';
 
-const ZERO_HIDEABLE_STATE: HideableState = { key: 'zero', label: 'when the staged file count is zero' };
+const ZERO_HIDEABLE_STATE: HideableState = { key: 'zero', label: '已暫存檔案數為零時' };
 
 export class GitStagedFilesWidget implements Widget {
     getDefaultColor(): string { return 'green'; }
