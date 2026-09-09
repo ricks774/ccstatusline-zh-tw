@@ -100,7 +100,7 @@ const COMMAND_TEXT = '$ npx ccstatusline-zh-tw@latest';
 
 const THEMES: Record<ThemeName, Theme> = {
     'custom': {
-        name: 'Custom',
+        name: '自定義',
         description: 'Uses individual widget background colors',
         swatches: [
             { foreground: '#F8FAFC', background: '#334155' },
@@ -1224,7 +1224,7 @@ function getPreviewLines(phase: Phase): string[][] {
 
 function getLineTwoPreviewSegments(phase: Phase): string[] {
     const segments = [
-        renderUsagePreview('Session', 20, phase.sessionUsageMode),
+        renderUsagePreview('會話', 20, phase.sessionUsageMode),
         renderUsagePreview('Weekly', 12, phase.weeklyUsageMode),
         'Reset: 4hr 30m',
         'Weekly Reset: 1d 12hr 30m'
@@ -1234,7 +1234,7 @@ function getLineTwoPreviewSegments(phase: Phase): string[] {
 }
 
 function renderUsagePreview(
-    label: 'Session' | 'Weekly',
+    label: '會話' | 'Weekly',
     percent: number,
     mode: UsageDisplayMode
 ): string {
@@ -1818,7 +1818,7 @@ function WidgetPicker({ phase }: { phase: Phase }) {
     const pickerLevel = phase.pickerLevel ?? 'category';
     const categoryQuery = phase.categoryQuery ?? '';
     const widgetQuery = phase.widgetQuery ?? '';
-    const selectedCategory = phase.selectedCategory ?? 'All';
+    const selectedCategory = phase.selectedCategory ?? '全部';
     const categoryIndex = Math.max(
         0,
         WIDGET_CATEGORIES.findIndex(category => category.label === selectedCategory)

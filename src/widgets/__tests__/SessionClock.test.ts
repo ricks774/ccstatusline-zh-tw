@@ -37,4 +37,43 @@ describe('SessionClockWidget', () => {
             { sessionDuration: '3時 20分' }
         )).toBe('會話: 3時 20分');
     });
+
+    it('declares the zero hideable state', () => {
+        expect(new SessionClockWidget().getHideableStates().map(state => state.key)).toEqual(['zero']);
+    });
+
+    it('hides sub-minute durations only when the zero hide state is enabled', () => {
+        const context: RenderContext = { data: { cost: { total_duration_ms: 30 * 1000 } } };
+
+        expect(render({ id: 'session-clock', type: 'session-clock' }, context)).toBe('會話: <1分');
+        expect(render({
+            id: 'session-clock',
+            type: 'session-clock',
+            metadata: { hide: 'zero' }
+        }, context)).toBeNull();
+        expect(render({
+            id: 'session-clock',
+            type: 'session-clock',
+            metadata: { hide: 'zero' }
+        }, { data: { cost: { total_duration_ms: 90 * 1000 } } })).toBe('會話: 1分');
+    });
+
+    it('hides the 0m fallback duration when the zero hide state is enabled', () => {
+        expect(render({
+            id: 'session-clock',
+            type: 'session-clock',
+            metadata: { hide: 'zero' }
+        }, {})).toBeNull();
+    });
+
+    it('hides transcript-derived sub-minute durations when the zero hide state is enabled', () => {
+        const context: RenderContext = { sessionDuration: '<1分' };
+
+        expect(render({ id: 'session-clock', type: 'session-clock' }, context)).toBe('會話: <1分');
+        expect(render({
+            id: 'session-clock',
+            type: 'session-clock',
+            metadata: { hide: 'zero' }
+        }, context)).toBeNull();
+    });
 });

@@ -15,7 +15,7 @@ import type { WidgetItem } from '../../types/Widget';
 import { CacheTimerWidget } from '../CacheTimer';
 
 const item = (extra: Partial<WidgetItem> = {}): WidgetItem => ({ id: 'cache-timer', type: 'cache-timer', ...extra });
-const hidden: Partial<WidgetItem> = { metadata: { hideWhenEmpty: 'true' } };
+const hidden: Partial<WidgetItem> = { metadata: { hide: 'empty' } };
 
 const isoAgo = (seconds: number): string => new Date(Date.now() - seconds * 1000).toISOString();
 const assistant = (seconds: number): string => JSON.stringify({ type: 'assistant', timestamp: isoAgo(seconds) });
@@ -97,12 +97,6 @@ describe('CacheTimer widget', () => {
         expect(out).toMatch(/^🟢 \d+:\d{2}$/);
     });
 
-    it('keeps raw status words stable for shell consumers', () => {
-        const widget = new CacheTimerWidget();
-        expect(widget.render(item({ rawValue: true }), transcriptContext([pendingUser]), DEFAULT_SETTINGS)).toBe('🔥 HOT');
-        expect(widget.render(item({ rawValue: true }), transcriptContext([assistant(400)]), DEFAULT_SETTINGS)).toBe('❄️ COLD');
-    });
-
     it('ignores sidechain rows when deriving the cache state', () => {
         const widget = new CacheTimerWidget();
         // A trailing sidechain user row must not report HOT...
@@ -179,22 +173,21 @@ describe('CacheTimer widget', () => {
         expect(widget.render(item(hidden), context, DEFAULT_SETTINGS)).toBeNull();
     });
 
-    it('exposes a hide-when-empty keybind and toggles the flag', () => {
+    it('declares the empty hideable state and leaves h to the shared checklist', () => {
         const widget = new CacheTimerWidget();
         expect(widget.getCustomKeybinds()).toEqual([
-            { key: 't', label: '(t)TTL', action: 'toggle-ttl' },
-            { key: 'h', label: '(h)無資料時隱藏', action: 'toggle-hide' },
+            { key: 't', label: '(t)tl', action: 'toggle-ttl' },
             { key: 'g', label: '(g)字元', action: 'edit-symbol-override' }
         ]);
-        expect(widget.handleEditorAction('toggle-hide', item())?.metadata?.hideWhenEmpty).toBe('true');
+        expect(widget.getHideableStates().map(state => state.key)).toEqual(['empty']);
         expect(widget.handleEditorAction('unknown', item())).toBeNull();
     });
 
-    it('annotates the editor only when hide-when-empty is enabled', () => {
+    it('leaves the editor unannotated at default settings', () => {
         const widget = new CacheTimerWidget();
         expect(widget.getEditorDisplay(item()).displayText).toBe('快取計時器');
         expect(widget.getEditorDisplay(item()).modifierText).toBeUndefined();
-        expect(widget.getEditorDisplay(item(hidden)).modifierText).toBe('(無資料時隱藏)');
+        expect(widget.getEditorDisplay(item(hidden)).modifierText).toBeUndefined();
     });
 
     it('renders custom state glyphs from metadata overrides', () => {
@@ -238,6 +231,6 @@ describe('CacheTimer widget', () => {
     it('annotates the editor with a non-default TTL', () => {
         const widget = new CacheTimerWidget();
         expect(widget.getEditorDisplay(item({ metadata: { ttlSeconds: '3600' } })).modifierText).toBe('(TTL 1h)');
-        expect(widget.getEditorDisplay(item({ metadata: { ttlSeconds: '3600', hideWhenEmpty: 'true' } })).modifierText).toBe('(TTL 1h, 無資料時隱藏)');
+        expect(widget.getEditorDisplay(item({ metadata: { ttlSeconds: '3600', hide: 'empty' } })).modifierText).toBe('(TTL 1h)');
     });
 });

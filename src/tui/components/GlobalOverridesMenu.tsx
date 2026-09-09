@@ -7,6 +7,12 @@ import React, { useState } from 'react';
 
 import { getColorLevelString } from '../../types/ColorLevel';
 import {
+    NUMBER_KINDS,
+    type GlobalNumberFormat,
+    type NumberFormat,
+    type NumberKind
+} from '../../types/NumberFormat';
+import {
     DefaultPaddingSideSchema,
     type Settings
 } from '../../types/Settings';
@@ -18,8 +24,36 @@ import {
 } from '../../utils/colors';
 import { GRADIENT_PRESET_NAMES } from '../../utils/gradient';
 import { shouldInsertInput } from '../../utils/input-guards';
+import { getNextNumberStyle } from '../../utils/number-format';
 
 import { ConfirmDialog } from './ConfirmDialog';
+
+const NUMBER_FORMAT_KIND_WIDTH = Math.max(...NUMBER_KINDS.map(kind => kind.length));
+
+// Cycle a number kind's global style: default (precise) -> compact -> whole -> default.
+// A global style forces that kind across all widgets (see resolveNumberFormat).
+function cycleGlobalNumberStyle(settings: Settings, kind: NumberKind): Settings {
+    const current = settings.numberFormat?.[kind]?.style;
+    const nextStyle = getNextNumberStyle(current);
+
+    const kindFormat: NumberFormat = { ...settings.numberFormat?.[kind] };
+    if (nextStyle === undefined) {
+        delete kindFormat.style;
+    } else {
+        kindFormat.style = nextStyle;
+    }
+
+    const { [kind]: removedKind, ...restGlobal } = settings.numberFormat ?? {};
+    void removedKind; // Intentionally unused
+    const nextGlobal: GlobalNumberFormat = Object.keys(kindFormat).length > 0
+        ? { ...restGlobal, [kind]: kindFormat }
+        : restGlobal;
+
+    return {
+        ...settings,
+        numberFormat: Object.keys(nextGlobal).length > 0 ? nextGlobal : undefined
+    };
+}
 
 export interface GlobalOverridesMenuProps {
     settings: Settings;
@@ -36,6 +70,8 @@ export const GlobalOverridesMenu: React.FC<GlobalOverridesMenuProps> = ({ settin
     const [inheritColors, setInheritColors] = useState(settings.inheritSeparatorColors);
     const [globalBold, setGlobalBold] = useState(settings.globalBold);
     const [minimalistMode, setMinimalistMode] = useState(settings.minimalistMode);
+    const [numberFormatMode, setNumberFormatMode] = useState(false);
+    const [numberFormatKindIndex, setNumberFormatKindIndex] = useState(0);
     const [gradientMode, setGradientMode] = useState(false);
     const [gradientIndex, setGradientIndex] = useState(0);
     const [gradientCustomStep, setGradientCustomStep] = useState<'start' | 'end' | null>(null);
@@ -162,6 +198,19 @@ export const GlobalOverridesMenu: React.FC<GlobalOverridesMenuProps> = ({ settin
                     setGradientCustomStep('start');
                 }
             }
+        } else if (numberFormatMode) {
+            if (key.escape) {
+                setNumberFormatMode(false);
+            } else if (key.upArrow) {
+                setNumberFormatKindIndex((numberFormatKindIndex - 1 + NUMBER_KINDS.length) % NUMBER_KINDS.length);
+            } else if (key.downArrow) {
+                setNumberFormatKindIndex((numberFormatKindIndex + 1) % NUMBER_KINDS.length);
+            } else if (key.leftArrow || key.rightArrow) {
+                const kind = NUMBER_KINDS[numberFormatKindIndex];
+                if (kind) {
+                    onUpdate(cycleGlobalNumberStyle(settings, kind));
+                }
+            }
         } else {
             if (key.escape) {
                 onBack();
@@ -211,6 +260,9 @@ export const GlobalOverridesMenu: React.FC<GlobalOverridesMenuProps> = ({ settin
                     minimalistMode: newMinimalistMode
                 };
                 onUpdate(updatedSettings);
+            } else if (input === 'n' || input === 'N') {
+                setNumberFormatMode(true);
+                setNumberFormatKindIndex(0);
             } else if (input === 'f' || input === 'F') {
                 // Cycle through foreground colors
                 const nextIndex = (currentFgIndex + 1) % fgColors.length;
@@ -248,18 +300,46 @@ export const GlobalOverridesMenu: React.FC<GlobalOverridesMenuProps> = ({ settin
         }
     });
 
+    if (numberFormatMode) {
+        return (
+            <Box flexDirection='column'>
+                <Text bold>全域性數字格式化</Text>
+                <Box marginTop={1}>
+                    <Text dimColor>↑↓ 選擇數字類型，←→ 切換其樣式，ESC 返回</Text>
+                </Box>
+                <Box marginTop={1} flexDirection='column'>
+                    {NUMBER_KINDS.map((kind, idx) => {
+                        const style = settings.numberFormat?.[kind]?.style ?? '精確（預設）';
+                        return (
+                            <Text key={kind} color={idx === numberFormatKindIndex ? 'cyan' : undefined}>
+                                {idx === numberFormatKindIndex ? '▶ ' : '  '}
+                                {kind.padStart(NUMBER_FORMAT_KIND_WIDTH)}
+                                {': '}
+                                {style}
+                            </Text>
+                        );
+                    })}
+                </Box>
+                <Box marginTop={1} flexDirection='column'>
+                    <Text dimColor>precise＝保留尾隨零（1.0M），compact＝去除（1M / 1.1M），whole＝無小數（1M）。</Text>
+                    <Text dimColor>全域性樣式會對所有元件強制套用該類型。小數位數在各元件或 settings.json 中設定。</Text>
+                </Box>
+            </Box>
+        );
+    }
+
     if (gradientMode) {
         const level = getColorLevelString(settings.colorLevel);
 
         if (gradientCustomStep) {
             return (
                 <Box flexDirection='column'>
-                    <Text bold>Custom Gradient - Override FG Color</Text>
+                    <Text bold>自定義漸變色 - 覆蓋前景色</Text>
                     <Box marginTop={1} flexDirection='column'>
-                        <Text>{gradientCustomStep === 'start' ? 'Enter START hex color (without #):' : 'Enter END hex color (without #):'}</Text>
+                        <Text>{gradientCustomStep === 'start' ? '輸入起始十六進位制顏色（不含 #）：' : '輸入結束十六進位制顏色（不含 #）：'}</Text>
                         {gradientCustomStep === 'end' && (
                             <Text dimColor>
-                                Start: #
+                                起始：#
                                 {gradientStartHex}
                             </Text>
                         )}
@@ -269,7 +349,7 @@ export const GlobalOverridesMenu: React.FC<GlobalOverridesMenuProps> = ({ settin
                             <Text dimColor>{gradientHexInput.length < 6 ? '_'.repeat(6 - gradientHexInput.length) : ''}</Text>
                         </Text>
                         <Text> </Text>
-                        <Text dimColor>Press Enter when done, ESC to go back</Text>
+                        <Text dimColor>完成後按 Enter，ESC 返回</Text>
                     </Box>
                 </Box>
             );
@@ -277,9 +357,9 @@ export const GlobalOverridesMenu: React.FC<GlobalOverridesMenuProps> = ({ settin
 
         return (
             <Box flexDirection='column'>
-                <Text bold>Select Gradient - Override FG Color</Text>
+                <Text bold>選擇漸變色 - 覆蓋前景色</Text>
                 <Box marginTop={1}>
-                    <Text dimColor>↑↓ to select, Enter to apply, ESC to cancel</Text>
+                    <Text dimColor>↑↓ 選擇，Enter 套用，ESC 取消</Text>
                 </Box>
                 <Box marginTop={1} flexDirection='column'>
                     {GRADIENT_PRESET_NAMES.map((name, idx) => (
@@ -290,7 +370,7 @@ export const GlobalOverridesMenu: React.FC<GlobalOverridesMenuProps> = ({ settin
                     ))}
                     <Text key='custom'>
                         {gradientIndex === GRADIENT_PRESET_NAMES.length ? '▶ ' : '  '}
-                        Custom (enter two hex stops)
+                        自定義（輸入兩個十六進位制色標）
                     </Text>
                 </Box>
             </Box>
@@ -367,9 +447,15 @@ export const GlobalOverridesMenu: React.FC<GlobalOverridesMenuProps> = ({ settin
                     </Box>
 
                     <Box>
-                        <Text>極簡模式: </Text>
+                        <Text>  極簡模式: </Text>
                         <Text color={minimalistMode ? 'green' : 'red'}>{minimalistMode ? '✓ 已啟用' : '✗ 已禁用'}</Text>
                         <Text dimColor> - 按 (m) 切換</Text>
+                    </Box>
+
+                    <Box>
+                        <Text>數字格式化: </Text>
+                        <Text color='cyan'>{settings.numberFormat ? '已自定義' : '（預設）'}</Text>
+                        <Text dimColor> - 按 (n) 按類型配置</Text>
                     </Box>
 
                     <Box>
@@ -393,8 +479,8 @@ export const GlobalOverridesMenu: React.FC<GlobalOverridesMenuProps> = ({ settin
                             } else if (fgColor.startsWith('gradient:')) {
                                 const body = fgColor.substring(9);
                                 const displayName = GRADIENT_PRESET_NAMES.includes(body.toLowerCase())
-                                    ? `Gradient: ${body.toLowerCase()}`
-                                    : `Gradient: ${body}`;
+                                    ? `漸變色: ${body.toLowerCase()}`
+                                    : `漸變色: ${body}`;
                                 const level = getColorLevelString(settings.colorLevel);
                                 return <Text>{applyColors(displayName, fgColor, undefined, false, level)}</Text>;
                             } else {

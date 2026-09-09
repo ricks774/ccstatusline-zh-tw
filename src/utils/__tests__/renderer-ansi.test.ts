@@ -216,7 +216,7 @@ describe('renderer minimalist mode', () => {
         const preRenderedLines = preRenderAllWidgets([widgets], settings, context);
         const content = preRenderedLines[0]?.[0]?.content;
 
-        // With minimalist mode, model widget should render raw value ('Claude') not 'Model: Claude'
+        // With minimalist mode, model widget should render raw value ('Claude') not '模型: Claude'
         expect(content).toBe('Claude');
     });
 
