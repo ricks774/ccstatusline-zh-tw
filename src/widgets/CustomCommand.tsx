@@ -178,7 +178,6 @@ const CustomCommandEditor: React.FC<WidgetEditorProps> = ({ widget, onComplete, 
                     onComplete({ ...widget, maxWidth: width });
                 } else {
                     const { maxWidth, ...rest } = widget;
-                    void maxWidth; // Intentionally unused
                     onComplete(rest);
                 }
             } else if (key.escape) {
@@ -195,7 +194,6 @@ const CustomCommandEditor: React.FC<WidgetEditorProps> = ({ widget, onComplete, 
                     onComplete({ ...widget, timeout });
                 } else {
                     const { timeout, ...rest } = widget;
-                    void timeout; // Intentionally unused
                     onComplete(rest);
                 }
             } else if (key.escape) {
