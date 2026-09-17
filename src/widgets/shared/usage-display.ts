@@ -17,9 +17,8 @@ import {
 
 export type UsageDisplayMode = 'time' | 'progress' | 'progress-short' | 'slider' | 'slider-only';
 
-// Shared by the usage percentage widgets. The reset timers render the same
-// error placeholders but cannot declare this state: they bind 'h' for the
-// hour-format toggle, which would shadow the shared hide keybind
+// Shared by the usage percentage widgets and the reset timers, which render the
+// same error placeholders
 export const USAGE_NO_DATA_HIDEABLE_STATE: HideableState = { key: 'no-data', label: '用量資料不可用時' };
 
 const SLIDER_WIDTH = 10;
@@ -29,7 +28,10 @@ const INVERT_TOGGLE_KEYBIND: CustomKeybind = { key: 'v', label: '(v)反轉填充
 const COMPACT_TOGGLE_KEYBIND: CustomKeybind = { key: 's', label: '(s)短時間', action: 'toggle-compact' };
 const CURSOR_TOGGLE_KEYBIND: CustomKeybind = { key: 't', label: '(t)時間遊標', action: 'toggle-cursor' };
 const DATE_TOGGLE_KEYBIND: CustomKeybind = { key: 't', label: '(t)時間戳', action: 'toggle-date' };
-const HOUR_FORMAT_TOGGLE_KEYBIND: CustomKeybind = { key: 'h', label: '12/24 小時(h)', action: 'toggle-hour-format' };
+// 'h' opens the shared hide checklist, and the items editor appends that bind
+// last while matching takes the first hit, so a widget-level 'h' would make the
+// checklist unreachable in the modes that offer this toggle.
+const HOUR_FORMAT_TOGGLE_KEYBIND: CustomKeybind = { key: 'f', label: '12/24 時制(f)', action: 'toggle-hour-format' };
 const WEEKDAY_TOGGLE_KEYBIND: CustomKeybind = { key: 'w', label: '(w)星期', action: 'toggle-weekday' };
 const TIMEZONE_KEYBIND: CustomKeybind = { key: 'z', label: '時區(z)', action: 'edit-timezone' };
 const LOCALE_KEYBIND: CustomKeybind = { key: 'l', label: '(l)地區', action: 'edit-locale' };
