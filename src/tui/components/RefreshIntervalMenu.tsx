@@ -12,7 +12,8 @@ import {
     type ListEntry
 } from './List';
 
-type ConfigureStatusLineValue = 'refreshInterval' | 'gitCacheTtl';
+type TtlField = 'gitCacheTtl' | 'customCommandCacheTtl';
+type ConfigureStatusLineValue = 'refreshInterval' | TtlField;
 
 function getRefreshInputValue(interval: number | null): string {
     return interval === null ? '' : String(interval);
@@ -36,10 +37,17 @@ function getGitCacheTtlSublabel(ttlSeconds: number): string {
         : `（${ttlSeconds} 秒）`;
 }
 
+function getCustomCommandCacheTtlSublabel(ttlSeconds: number): string {
+    return ttlSeconds === 0
+        ? '（已停用）'
+        : `（${ttlSeconds} 秒）`;
+}
+
 export function buildConfigureStatusLineItems(
     refreshInterval: number | null,
     supportsRefreshInterval: boolean,
-    gitCacheTtlSeconds: number
+    gitCacheTtlSeconds: number,
+    customCommandCacheTtlSeconds: number
 ): ListEntry<ConfigureStatusLineValue>[] {
     return [
         {
@@ -56,6 +64,12 @@ export function buildConfigureStatusLineItems(
             sublabel: getGitCacheTtlSublabel(gitCacheTtlSeconds),
             value: 'gitCacheTtl',
             description: 'Git 元件子程序輸出在 .git/HEAD 與 .git/index 未變動期間可複用的時長。輸入 0-60 秒；\n填 0 關閉按時長過期，快取輸出會一直複用，直到這些 git 後設資料 mtime 發生變化。'
+        },
+        {
+            label: '🔧 自定義命令快取 TTL',
+            sublabel: getCustomCommandCacheTtlSublabel(customCommandCacheTtlSeconds),
+            value: 'customCommandCacheTtl',
+            description: '自定義命令輸出可複用多久後才重新執行命令。輸入 0-60 秒；\n填 0 關閉快取，每次渲染狀態列都會重新執行命令。'
         }
     ];
 }
@@ -82,7 +96,7 @@ export function validateRefreshIntervalInput(value: string): string | null {
     return null;
 }
 
-export function validateGitCacheTtlInput(value: string): string | null {
+function validateTtlInput(value: string, label: string): string | null {
     const parsed = parseInt(value, 10);
 
     if (value === '' || isNaN(parsed)) {
@@ -90,22 +104,41 @@ export function validateGitCacheTtlInput(value: string): string | null {
     }
 
     if (parsed < 0) {
-        return `Git 快取 TTL 最小為 0 秒（輸入了 ${parsed} 秒）`;
+        return `${label}最小為 0 秒（輸入了 ${parsed} 秒）`;
     }
 
     if (parsed > 60) {
-        return `Git 快取 TTL 最大為 60 秒（輸入了 ${parsed} 秒）`;
+        return `${label}最大為 60 秒（輸入了 ${parsed} 秒）`;
     }
 
     return null;
+}
+
+export function validateGitCacheTtlInput(value: string): string | null {
+    return validateTtlInput(value, 'Git 快取 TTL');
+}
+
+export function validateCustomCommandCacheTtlInput(value: string): string | null {
+    return validateTtlInput(value, '自定義命令快取 TTL');
+}
+
+interface TtlFieldConfig {
+    currentValue: number;
+    prompt: string;
+    helperText: string;
+    hint: string;
+    validate: (value: string) => string | null;
+    onSave: (ttlSeconds: number) => void;
 }
 
 export interface RefreshIntervalMenuProps {
     currentInterval: number | null;
     supportsRefreshInterval: boolean;
     gitCacheTtlSeconds: number;
+    customCommandCacheTtlSeconds: number;
     onUpdate: (interval: number | null) => void;
     onGitCacheTtlUpdate: (ttlSeconds: number) => void;
+    onCustomCommandCacheTtlUpdate: (ttlSeconds: number) => void;
     onBack: () => void;
 }
 
@@ -113,15 +146,36 @@ export const RefreshIntervalMenu: React.FC<RefreshIntervalMenuProps> = ({
     currentInterval,
     supportsRefreshInterval,
     gitCacheTtlSeconds,
+    customCommandCacheTtlSeconds,
     onUpdate,
     onGitCacheTtlUpdate,
+    onCustomCommandCacheTtlUpdate,
     onBack
 }) => {
     const [editingRefreshInterval, setEditingRefreshInterval] = useState(false);
-    const [editingGitCacheTtl, setEditingGitCacheTtl] = useState(false);
+    const [editingTtlField, setEditingTtlField] = useState<TtlField | null>(null);
     const [refreshInput, setRefreshInput] = useState(() => getRefreshInputValue(currentInterval));
-    const [gitCacheTtlInput, setGitCacheTtlInput] = useState(() => String(gitCacheTtlSeconds));
+    const [ttlInput, setTtlInput] = useState(() => String(gitCacheTtlSeconds));
     const [validationError, setValidationError] = useState<string | null>(null);
+
+    const ttlFields: Record<TtlField, TtlFieldConfig> = {
+        gitCacheTtl: {
+            currentValue: gitCacheTtlSeconds,
+            prompt: '輸入 Git 快取 TTL（秒，0-60）:',
+            helperText: '此設定影響 Git 元件多快能察覺到未暫存和未跟蹤的工作區改動。',
+            hint: '填 0 關閉按時長過期；快取有效性僅依據 .git/HEAD 和 .git/index 的 mtime。',
+            validate: validateGitCacheTtlInput,
+            onSave: onGitCacheTtlUpdate
+        },
+        customCommandCacheTtl: {
+            currentValue: customCommandCacheTtlSeconds,
+            prompt: '輸入自定義命令快取 TTL（秒，0-60）:',
+            helperText: '此設定影響自定義命令元件多快顯示新輸出，以及多常執行一次 Shell。',
+            hint: '填 0 關閉快取；每次渲染狀態列都會重新執行命令。',
+            validate: validateCustomCommandCacheTtlInput,
+            onSave: onCustomCommandCacheTtlUpdate
+        }
+    };
 
     useInput((input, key) => {
         if (editingRefreshInterval) {
@@ -162,31 +216,33 @@ export const RefreshIntervalMenu: React.FC<RefreshIntervalMenuProps> = ({
             return;
         }
 
-        if (editingGitCacheTtl) {
+        if (editingTtlField) {
+            const field = ttlFields[editingTtlField];
+
             if (key.return) {
-                const error = validateGitCacheTtlInput(gitCacheTtlInput);
+                const error = field.validate(ttlInput);
 
                 if (error) {
                     setValidationError(error);
                 } else {
-                    const value = parseInt(gitCacheTtlInput, 10);
-                    onGitCacheTtlUpdate(value);
-                    setEditingGitCacheTtl(false);
+                    const value = parseInt(ttlInput, 10);
+                    field.onSave(value);
+                    setEditingTtlField(null);
                     setValidationError(null);
                 }
             } else if (key.escape) {
-                setGitCacheTtlInput(String(gitCacheTtlSeconds));
-                setEditingGitCacheTtl(false);
+                setTtlInput(String(field.currentValue));
+                setEditingTtlField(null);
                 setValidationError(null);
             } else if (key.backspace) {
-                setGitCacheTtlInput(gitCacheTtlInput.slice(0, -1));
+                setTtlInput(ttlInput.slice(0, -1));
                 setValidationError(null);
             } else if (key.delete) {
                 // No cursor position in simple input
             } else if (shouldInsertInput(input, key) && /\d/.test(input)) {
-                const newValue = gitCacheTtlInput + input;
+                const newValue = ttlInput + input;
                 if (newValue.length <= 2) {
-                    setGitCacheTtlInput(newValue);
+                    setTtlInput(newValue);
                     setValidationError(null);
                 }
             }
@@ -217,23 +273,23 @@ export const RefreshIntervalMenu: React.FC<RefreshIntervalMenuProps> = ({
                         <Text dimColor>按 Enter 確認，ESC 取消。留空即移除。</Text>
                     )}
                 </Box>
-            ) : editingGitCacheTtl ? (
+            ) : editingTtlField ? (
                 <Box marginTop={1} flexDirection='column'>
                     <Text>
-                        輸入 Git 快取 TTL（秒，0-60）:
+                        {ttlFields[editingTtlField].prompt}
                         {' '}
-                        {gitCacheTtlInput}
-                        {gitCacheTtlInput.length > 0 ? ' 秒' : ''}
+                        {ttlInput}
+                        {ttlInput.length > 0 ? ' 秒' : ''}
                     </Text>
                     <Text> </Text>
                     <Text dimColor wrap='wrap'>
-                        此設定影響 Git 元件多快能察覺到未暫存和未跟蹤的工作區改動。
+                        {ttlFields[editingTtlField].helperText}
                     </Text>
                     {validationError ? (
                         <Text color='red'>{validationError}</Text>
                     ) : (
                         <Text dimColor>
-                            填 0 關閉按時長過期；快取有效性僅依據 .git/HEAD 和 .git/index 的 mtime。
+                            {ttlFields[editingTtlField].hint}
                         </Text>
                     )}
                     <Text dimColor>按 Enter 確認，ESC 取消。</Text>
@@ -241,7 +297,12 @@ export const RefreshIntervalMenu: React.FC<RefreshIntervalMenuProps> = ({
             ) : (
                 <List
                     marginTop={1}
-                    items={buildConfigureStatusLineItems(currentInterval, supportsRefreshInterval, gitCacheTtlSeconds)}
+                    items={buildConfigureStatusLineItems(
+                        currentInterval,
+                        supportsRefreshInterval,
+                        gitCacheTtlSeconds,
+                        customCommandCacheTtlSeconds
+                    )}
                     onSelect={(value) => {
                         if (value === 'back') {
                             onBack();
@@ -254,8 +315,8 @@ export const RefreshIntervalMenu: React.FC<RefreshIntervalMenuProps> = ({
                             return;
                         }
 
-                        setGitCacheTtlInput(String(gitCacheTtlSeconds));
-                        setEditingGitCacheTtl(true);
+                        setTtlInput(String(ttlFields[value].currentValue));
+                        setEditingTtlField(value);
                     }}
                     showBackButton={true}
                 />
