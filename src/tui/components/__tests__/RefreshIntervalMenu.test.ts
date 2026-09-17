@@ -13,7 +13,8 @@ import {
     buildConfigureStatusLineItems,
     validateCustomCommandCacheTtlInput,
     validateGitCacheTtlInput,
-    validateRefreshIntervalInput
+    validateRefreshIntervalInput,
+    validateTerminalWidthCacheTtlInput
 } from '../RefreshIntervalMenu';
 
 class MockTtyStream extends PassThrough {
@@ -128,55 +129,147 @@ describe('validateCustomCommandCacheTtlInput', () => {
 
 describe('buildConfigureStatusLineItems', () => {
     it('should show (not set) when interval is null and supported', () => {
-        const items = buildConfigureStatusLineItems(null, true, 5, 5);
+        const items = buildConfigureStatusLineItems(null, true, 5, 5, 5);
         expect(items[0]?.sublabel).toBe('（未設定）');
     });
 
     it('should show seconds for set intervals', () => {
-        const items = buildConfigureStatusLineItems(10, true, 5, 5);
+        const items = buildConfigureStatusLineItems(10, true, 5, 5, 5);
         expect(items[0]?.sublabel).toBe('（10 秒）');
     });
 
     it('should show seconds for small values', () => {
-        const items = buildConfigureStatusLineItems(1, true, 5, 5);
+        const items = buildConfigureStatusLineItems(1, true, 5, 5, 5);
         expect(items[0]?.sublabel).toBe('（1 秒）');
     });
 
     it('should show version requirement when not supported', () => {
-        const items = buildConfigureStatusLineItems(null, false, 5, 5);
+        const items = buildConfigureStatusLineItems(null, false, 5, 5, 5);
         expect(items[0]?.sublabel).toContain('需要 Claude Code');
         expect(items[0]?.disabled).toBe(true);
     });
 
     it('should not be disabled when supported', () => {
-        const items = buildConfigureStatusLineItems(10, true, 5, 5);
+        const items = buildConfigureStatusLineItems(10, true, 5, 5, 5);
         expect(items[0]?.disabled).toBeFalsy();
     });
 
     it('should show the configured Git cache TTL', () => {
-        const items = buildConfigureStatusLineItems(10, true, 5, 5);
+        const items = buildConfigureStatusLineItems(10, true, 5, 5, 5);
         expect(items[1]?.label).toContain('Git 快取 TTL');
         expect(items[1]?.sublabel).toBe('（5 秒）');
     });
 
     it('should describe zero Git cache TTL as mtime-only', () => {
-        const items = buildConfigureStatusLineItems(10, true, 0, 5);
+        const items = buildConfigureStatusLineItems(10, true, 0, 5, 5);
         expect(items[1]?.sublabel).toBe('（僅 mtime）');
     });
 
     it('should show the configured custom command cache TTL', () => {
-        const items = buildConfigureStatusLineItems(10, true, 5, 3);
-        expect(items[2]?.label).toContain('Custom Command Cache TTL');
-        expect(items[2]?.sublabel).toBe('(3s)');
+        const items = buildConfigureStatusLineItems(10, true, 5, 3, 5);
+        expect(items[2]?.label).toContain('自訂命令快取 TTL');
+        expect(items[2]?.sublabel).toBe('（3 秒）');
     });
 
     it('should describe zero custom command cache TTL as disabled', () => {
-        const items = buildConfigureStatusLineItems(10, true, 5, 0);
-        expect(items[2]?.sublabel).toBe('(disabled)');
+        const items = buildConfigureStatusLineItems(10, true, 5, 0, 5);
+        expect(items[2]?.sublabel).toBe('（已停用）');
+    });
+
+    it('should show the configured Terminal Width cache TTL', () => {
+        const items = buildConfigureStatusLineItems(10, true, 5, 5, 30);
+        expect(items[3]?.label).toContain('終端寬度快取 TTL');
+        expect(items[3]?.sublabel).toBe('（30 秒）');
+    });
+
+    it('should describe zero Terminal Width cache TTL as disabled', () => {
+        const items = buildConfigureStatusLineItems(10, true, 5, 5, 0);
+        expect(items[3]?.sublabel).toBe('（已停用）');
+    });
+});
+
+describe('validateTerminalWidthCacheTtlInput', () => {
+    it('should accept valid values within range', () => {
+        expect(validateTerminalWidthCacheTtlInput('0')).toBeNull();
+        expect(validateTerminalWidthCacheTtlInput('5')).toBeNull();
+        expect(validateTerminalWidthCacheTtlInput('300')).toBeNull();
+    });
+
+    it('should reject values outside the range', () => {
+        expect(validateTerminalWidthCacheTtlInput('-1')).toContain('最小');
+        expect(validateTerminalWidthCacheTtlInput('301')).toContain('最大');
+    });
+
+    it('should reject empty and non-numeric input', () => {
+        expect(validateTerminalWidthCacheTtlInput('')).toContain('有效數字');
+        expect(validateTerminalWidthCacheTtlInput('abc')).toContain('有效數字');
     });
 });
 
 describe('RefreshIntervalMenu', () => {
+    it('saves a three-digit Terminal Width cache TTL without changing the other settings', async () => {
+        const stdin = createMockStdin();
+        const stdout = createMockStdout();
+        const stderr = createMockStdout();
+        const onUpdate = vi.fn();
+        const onGitCacheTtlUpdate = vi.fn();
+        const onCustomCommandCacheTtlUpdate = vi.fn();
+        const onTerminalWidthCacheTtlUpdate = vi.fn();
+        const instance = render(
+            React.createElement(RefreshIntervalMenu, {
+                currentInterval: 10,
+                supportsRefreshInterval: true,
+                gitCacheTtlSeconds: 5,
+                customCommandCacheTtlSeconds: 0,
+                terminalWidthCacheTtlSeconds: 5,
+                onUpdate,
+                onGitCacheTtlUpdate,
+                onCustomCommandCacheTtlUpdate,
+                onTerminalWidthCacheTtlUpdate,
+                onBack: vi.fn()
+            }),
+            {
+                stdin,
+                stdout,
+                stderr,
+                debug: true,
+                exitOnCtrlC: false,
+                patchConsole: false
+            }
+        );
+
+        try {
+            await flushInk();
+            for (let index = 0; index < 3; index++) {
+                stdin.write('\u001B[B');
+                await flushInk();
+            }
+            stdin.write('\r');
+            await flushInk();
+
+            expect(stdout.getOutput()).toContain('輸入終端寬度快取 TTL（秒，0-300）:');
+            expect(stdout.getOutput()).toContain('未偵測到 TTY');
+
+            stdin.write('\u007F');
+            await flushInk();
+            stdin.write('300');
+            await flushInk();
+            stdin.write('\r');
+            await flushInk();
+
+            expect(onTerminalWidthCacheTtlUpdate).toHaveBeenCalledWith(300);
+            expect(onGitCacheTtlUpdate).not.toHaveBeenCalled();
+            expect(onCustomCommandCacheTtlUpdate).not.toHaveBeenCalled();
+            expect(onUpdate).not.toHaveBeenCalled();
+        } finally {
+            instance.unmount();
+            instance.cleanup();
+            stdin.destroy();
+            stdout.destroy();
+            stderr.destroy();
+        }
+    });
+
     it('keeps an unset interval empty when reopening the editor', async () => {
         const stdin = createMockStdin();
         const stdout = createMockStdout();
@@ -189,9 +282,11 @@ describe('RefreshIntervalMenu', () => {
                 supportsRefreshInterval: true,
                 gitCacheTtlSeconds: 5,
                 customCommandCacheTtlSeconds: 5,
+                terminalWidthCacheTtlSeconds: 5,
                 onUpdate,
                 onGitCacheTtlUpdate: vi.fn(),
                 onCustomCommandCacheTtlUpdate: vi.fn(),
+                onTerminalWidthCacheTtlUpdate: vi.fn(),
                 onBack
             }),
             {
@@ -238,9 +333,11 @@ describe('RefreshIntervalMenu', () => {
                 supportsRefreshInterval: true,
                 gitCacheTtlSeconds: 0,
                 customCommandCacheTtlSeconds: 5,
+                terminalWidthCacheTtlSeconds: 5,
                 onUpdate,
                 onGitCacheTtlUpdate,
                 onCustomCommandCacheTtlUpdate: vi.fn(),
+                onTerminalWidthCacheTtlUpdate: vi.fn(),
                 onBack
             }),
             {
@@ -289,9 +386,11 @@ describe('RefreshIntervalMenu', () => {
                 supportsRefreshInterval: true,
                 gitCacheTtlSeconds: 5,
                 customCommandCacheTtlSeconds: 0,
+                terminalWidthCacheTtlSeconds: 5,
                 onUpdate: vi.fn(),
                 onGitCacheTtlUpdate,
                 onCustomCommandCacheTtlUpdate,
+                onTerminalWidthCacheTtlUpdate: vi.fn(),
                 onBack: vi.fn()
             }),
             {
