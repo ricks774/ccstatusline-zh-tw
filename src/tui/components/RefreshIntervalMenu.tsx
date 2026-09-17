@@ -12,7 +12,7 @@ import {
     type ListEntry
 } from './List';
 
-type TtlField = 'gitCacheTtl' | 'customCommandCacheTtl';
+type TtlField = 'gitCacheTtl' | 'customCommandCacheTtl' | 'terminalWidthCacheTtl';
 type ConfigureStatusLineValue = 'refreshInterval' | TtlField;
 
 function getRefreshInputValue(interval: number | null): string {
@@ -37,7 +37,7 @@ function getGitCacheTtlSublabel(ttlSeconds: number): string {
         : `（${ttlSeconds} 秒）`;
 }
 
-function getCustomCommandCacheTtlSublabel(ttlSeconds: number): string {
+function getCacheTtlSublabel(ttlSeconds: number): string {
     return ttlSeconds === 0
         ? '（已停用）'
         : `（${ttlSeconds} 秒）`;
@@ -47,7 +47,8 @@ export function buildConfigureStatusLineItems(
     refreshInterval: number | null,
     supportsRefreshInterval: boolean,
     gitCacheTtlSeconds: number,
-    customCommandCacheTtlSeconds: number
+    customCommandCacheTtlSeconds: number,
+    terminalWidthCacheTtlSeconds: number
 ): ListEntry<ConfigureStatusLineValue>[] {
     return [
         {
@@ -67,9 +68,15 @@ export function buildConfigureStatusLineItems(
         },
         {
             label: '🔧 自定義命令快取 TTL',
-            sublabel: getCustomCommandCacheTtlSublabel(customCommandCacheTtlSeconds),
+            sublabel: getCacheTtlSublabel(customCommandCacheTtlSeconds),
             value: 'customCommandCacheTtl',
             description: '自定義命令輸出在重新執行命令前可複用的時長。輸入 0-60 秒；\n填 0 關閉快取，每次狀態列繪製都會重新執行命令。'
+        },
+        {
+            label: '🖥️  終端機寬度快取 TTL',
+            sublabel: getCacheTtlSublabel(terminalWidthCacheTtlSeconds),
+            value: 'terminalWidthCacheTtl',
+            description: '快取的「未偵測到 TTY」結果在重新探測終端機寬度前的有效時長。輸入 0-300 秒；\n填 0 關閉快取（永遠重新探測）。偵測到的寬度不會跨次繪製快取，僅此無 TTY 結果會被快取。'
         }
     ];
 }
@@ -96,7 +103,7 @@ export function validateRefreshIntervalInput(value: string): string | null {
     return null;
 }
 
-function validateTtlInput(value: string, label: string): string | null {
+function validateTtlInput(value: string, label: string, maximum = 60): string | null {
     const parsed = parseInt(value, 10);
 
     if (value === '' || isNaN(parsed)) {
@@ -107,8 +114,8 @@ function validateTtlInput(value: string, label: string): string | null {
         return `${label} 最小為 0 秒（輸入了 ${parsed} 秒）`;
     }
 
-    if (parsed > 60) {
-        return `${label} 最大為 60 秒（輸入了 ${parsed} 秒）`;
+    if (parsed > maximum) {
+        return `${label} 最大為 ${maximum} 秒（輸入了 ${parsed} 秒）`;
     }
 
     return null;
@@ -122,8 +129,13 @@ export function validateCustomCommandCacheTtlInput(value: string): string | null
     return validateTtlInput(value, '自定義命令快取 TTL');
 }
 
+export function validateTerminalWidthCacheTtlInput(value: string): string | null {
+    return validateTtlInput(value, '終端機寬度快取 TTL', 300);
+}
+
 interface TtlFieldConfig {
     currentValue: number;
+    maxInputLength: number;
     prompt: string;
     helperText: string;
     hint: string;
@@ -136,9 +148,11 @@ export interface RefreshIntervalMenuProps {
     supportsRefreshInterval: boolean;
     gitCacheTtlSeconds: number;
     customCommandCacheTtlSeconds: number;
+    terminalWidthCacheTtlSeconds: number;
     onUpdate: (interval: number | null) => void;
     onGitCacheTtlUpdate: (ttlSeconds: number) => void;
     onCustomCommandCacheTtlUpdate: (ttlSeconds: number) => void;
+    onTerminalWidthCacheTtlUpdate: (ttlSeconds: number) => void;
     onBack: () => void;
 }
 
@@ -147,9 +161,11 @@ export const RefreshIntervalMenu: React.FC<RefreshIntervalMenuProps> = ({
     supportsRefreshInterval,
     gitCacheTtlSeconds,
     customCommandCacheTtlSeconds,
+    terminalWidthCacheTtlSeconds,
     onUpdate,
     onGitCacheTtlUpdate,
     onCustomCommandCacheTtlUpdate,
+    onTerminalWidthCacheTtlUpdate,
     onBack
 }) => {
     const [editingRefreshInterval, setEditingRefreshInterval] = useState(false);
@@ -161,6 +177,7 @@ export const RefreshIntervalMenu: React.FC<RefreshIntervalMenuProps> = ({
     const ttlFields: Record<TtlField, TtlFieldConfig> = {
         gitCacheTtl: {
             currentValue: gitCacheTtlSeconds,
+            maxInputLength: 2,
             prompt: '輸入 Git 快取 TTL（秒，0-60）:',
             helperText: '此設定影響 Git 元件多快能察覺到未暫存和未跟蹤的工作區改動。',
             hint: '填 0 關閉按時長過期；快取有效性僅依據 .git/HEAD 和 .git/index 的 mtime。',
@@ -169,11 +186,21 @@ export const RefreshIntervalMenu: React.FC<RefreshIntervalMenuProps> = ({
         },
         customCommandCacheTtl: {
             currentValue: customCommandCacheTtlSeconds,
+            maxInputLength: 2,
             prompt: '輸入自定義命令快取 TTL（秒，0-60）:',
             helperText: '此設定影響自定義命令元件多快能顯示新的輸出，以及多久重新執行一次 shell。',
             hint: '填 0 關閉快取；每次狀態列繪製都會重新執行命令。',
             validate: validateCustomCommandCacheTtlInput,
             onSave: onCustomCommandCacheTtlUpdate
+        },
+        terminalWidthCacheTtl: {
+            currentValue: terminalWidthCacheTtlSeconds,
+            maxInputLength: 3,
+            prompt: '輸入終端機寬度快取 TTL（秒，0-300）:',
+            helperText: '控制「未偵測到 TTY」結果的快取時長。偵測到的寬度每次繪製都會重新探測，因此調整終端機大小會立即生效。',
+            hint: '填 0 關閉快取（永遠重新探測）。',
+            validate: validateTerminalWidthCacheTtlInput,
+            onSave: onTerminalWidthCacheTtlUpdate
         }
     };
 
@@ -241,7 +268,7 @@ export const RefreshIntervalMenu: React.FC<RefreshIntervalMenuProps> = ({
                 // No cursor position in simple input
             } else if (shouldInsertInput(input, key) && /\d/.test(input)) {
                 const newValue = ttlInput + input;
-                if (newValue.length <= 2) {
+                if (newValue.length <= field.maxInputLength) {
                     setTtlInput(newValue);
                     setValidationError(null);
                 }
@@ -301,7 +328,8 @@ export const RefreshIntervalMenu: React.FC<RefreshIntervalMenuProps> = ({
                         currentInterval,
                         supportsRefreshInterval,
                         gitCacheTtlSeconds,
-                        customCommandCacheTtlSeconds
+                        customCommandCacheTtlSeconds,
+                        terminalWidthCacheTtlSeconds
                     )}
                     onSelect={(value) => {
                         if (value === 'back') {
