@@ -305,7 +305,6 @@ function clearInstallationMetadata(settings: Settings | null): Settings | null {
     }
 
     const { installation, ...next } = settings;
-    void installation;
     return next;
 }
 
@@ -1360,6 +1359,8 @@ export const App: React.FC = () => {
                         currentInterval={currentRefreshInterval}
                         supportsRefreshInterval={supportsRefreshInterval}
                         gitCacheTtlSeconds={settings.gitCacheTtlSeconds}
+                        terminalWidthCacheTtlSeconds={settings.terminalWidthCacheTtlSeconds}
+                        customCommandCacheTtlSeconds={settings.customCommandCacheTtlSeconds}
                         onUpdate={(interval) => {
                             const previous = currentRefreshInterval;
                             setCurrentRefreshInterval(interval);
@@ -1386,6 +1387,28 @@ export const App: React.FC = () => {
                             });
                             setFlashMessage({
                                 text: '✓ Git 快取 TTL 已更新',
+                                color: 'green'
+                            });
+                            setScreen('main');
+                        }}
+                        onTerminalWidthCacheTtlUpdate={(ttlSeconds) => {
+                            setSettings({
+                                ...settings,
+                                terminalWidthCacheTtlSeconds: ttlSeconds
+                            });
+                            setFlashMessage({
+                                text: '✓ 終端寬度快取 TTL 已更新',
+                                color: 'green'
+                            });
+                            setScreen('main');
+                        }}
+                        onCustomCommandCacheTtlUpdate={(ttlSeconds) => {
+                            setSettings({
+                                ...settings,
+                                customCommandCacheTtlSeconds: ttlSeconds
+                            });
+                            setFlashMessage({
+                                text: '✓ 自定義命令快取 TTL 已更新',
                                 color: 'green'
                             });
                             setScreen('main');

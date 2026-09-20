@@ -119,6 +119,34 @@ describe('BlockResetTimerWidget', () => {
         expect(render(widget, { id: 'reset', type: 'reset-timer', rawValue: true }, { usageData: {} })).toBe('[載入中]');
     });
 
+    it('declares the no-data hideable state', () => {
+        expect(new BlockResetTimerWidget().getHideableStates().map(state => state.key)).toEqual(['no-data']);
+    });
+
+    // One state covers both placeholders, since either means the same thing to
+    // a reader: the widget has nothing to report yet.
+    it.each([
+        ['a usage error', { error: 'timeout' as const }],
+        ['no data at all', {}]
+    ])('hides %s when the no-data state is enabled', (_label, usageData) => {
+        const widget = new BlockResetTimerWidget();
+
+        mockResolveUsageWindowWithFallback.mockReturnValue(null);
+        mockGetUsageErrorMessage.mockReturnValue('[超時]');
+
+        expect(render(widget, { id: 'reset', type: 'reset-timer', metadata: { hide: 'no-data' } }, { usageData })).toBeNull();
+    });
+
+    it('keeps both placeholders when the no-data state is off', () => {
+        const widget = new BlockResetTimerWidget();
+
+        mockResolveUsageWindowWithFallback.mockReturnValue(null);
+        mockGetUsageErrorMessage.mockReturnValue('[超時]');
+
+        expect(render(widget, { id: 'reset', type: 'reset-timer', metadata: { hide: '' } }, { usageData: {} })).toBe('重置: [載入中]');
+        expect(render(widget, { id: 'reset', type: 'reset-timer' }, { usageData: { error: 'timeout' } })).toBe('[超時]');
+    });
+
     it('shows raw value without label in time mode', () => {
         const widget = new BlockResetTimerWidget();
 
@@ -179,7 +207,7 @@ describe('BlockResetTimerWidget', () => {
             { key: 'p', label: '(p)進度條切換', action: 'toggle-progress' },
             { key: 's', label: '(s)短時間', action: 'toggle-compact' },
             { key: 't', label: '(t)時間戳', action: 'toggle-date' },
-            { key: 'h', label: '12/24 小時(h)', action: 'toggle-hour-format' },
+            { key: 'f', label: '12/24 格式(f)', action: 'toggle-hour-format' },
             { key: 'z', label: '時區(z)', action: 'edit-timezone' },
             { key: 'l', label: '(l)地區', action: 'edit-locale' }
         ]);
