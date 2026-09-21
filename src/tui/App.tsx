@@ -1397,7 +1397,7 @@ export const App: React.FC = () => {
                                 terminalWidthCacheTtlSeconds: ttlSeconds
                             });
                             setFlashMessage({
-                                text: '✓ Terminal Width cache TTL updated',
+                                text: '✓ 終端寬度快取 TTL 已更新',
                                 color: 'green'
                             });
                             setScreen('main');
