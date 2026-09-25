@@ -4,7 +4,7 @@
 
 _在終端中顯示模型資訊、Git 分支、Token 用量及其他實時指標_
 
-> 本專案是 [ccstatusline](https://github.com/sirmalloc/ccstatusline) 的**繁體中文化 Fork**，當前同步至上游 v2.2.29 版本（含 Claude 狀態元件、統一的隱藏狀態系統、可設定數值精度、JSONL 串流讀取，以及每次 render 只讀一次轉錄檔等效能優化）。所有使用者可見的介面文字（元件名稱、分類、描述、選單標籤、提示資訊等）均已翻譯為中文，方便中文使用者使用。
+> 本專案是 [ccstatusline](https://github.com/sirmalloc/ccstatusline) 的**繁體中文化 Fork**，當前同步至上游 v2.2.30 版本（含自定義命令輸出快取 TTL、終端寬度探測快取與效能優化、Git／Jujutsu 增刪元件符號自定義）。所有使用者可見的介面文字（元件名稱、分類、描述、選單標籤、提示資訊等）均已翻譯為中文，方便中文使用者使用。
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/ricks774/ccstatusline-zh-tw/blob/main/LICENSE)
 [![Node.js Version](https://img.shields.io/node/v/ccstatusline.svg)](https://nodejs.org)
@@ -46,6 +46,7 @@ ccstatusline 是一個優秀的 Claude Code CLI 狀態列格式化工具，支�
 - **快取計時器 / Git CI 狀態 / 沙箱狀態元件**、**單側預設內邊距**、**選擇性 Powerline 對齊**、**Git 分支與根目錄寬度限制**、**當前目錄字元**、**可配置上下文視窗兜底值**、**可組合壓縮指標**、**`--version` 引數**、**用量快取與載入態修復**、**非同步 Git PR/CI 檢查重新整理**（v2.2.23–v2.2.25）
 - **周 Fable 用量元件**、**設定匯入/匯出**（含變更預覽與全部取代/合併模式）、**用量 API `limits[]` 陣列解析**（相容遷移帳戶）、**每模型周用量改讀 `limits[]`**、**壓縮後上下文長度改由 `compact_boundary` 回報**、**渲染器隱藏元件後分隔符保留修復**（v2.2.26–v2.2.27）
 - **Claude 狀態元件**（讀取 status.claude.com 服務狀態，含可選 48 小時事件歷史條）、**統一的隱藏狀態系統**（各元件的隱藏條件整合為單一 `(h)隱藏…` 檢查清單，v3→v4 設定自動遷移）、**可設定數值精度**（`precise` / `compact` / `whole`，可全域性或按類型/按元件設定）、**JSONL 串流讀取**（大型轉錄檔也能正確計算 Token）、**Git 衝突數為 0 時可隱藏**、**每次 render 只讀一次轉錄檔的效能優化**、**usage lock 永不過期修復**、**Git 快取寫入失敗時的暫存檔洩漏修復**（v2.2.28–v2.2.29）
+- **自定義命令輸出快取**（可配置 TTL，逾時終止整個子程序樹）、**終端寬度探測快取**（僅快取「未偵測到 TTY」結果，減少重複探測開銷）、**Git／Jujutsu 增刪元件符號自定義**（Git 新增 / Git 刪除 / Git 乾淨狀態 / JJ 新增 / JJ 刪除）、**周期重置計時器隱藏無資料狀態**、**用量百分比元件共用渲染模組**（v2.2.30）
 - **確認對話方塊** "是 / 否"
 - **分類篩選** "全部" 等介面元素
 
@@ -58,7 +59,7 @@ ccstatusline 是一個優秀的 Claude Code CLI 狀態列格式化工具，支�
 | 介面語言   | 英文         | 中文                      |
 | 配置相容性 | —            | ✅ 共用相同 settings.json |
 | 功能差異   | —            | 無，功能完全一致          |
-| 同步版本   | 最新         | v2.2.29（+ Claude 狀態 / 統一隱藏狀態系統 / 可設定數值精度 / JSONL 串流讀取 / 中文化覆蓋） |
+| 同步版本   | 最新         | v2.2.30（+ 自定義命令快取 TTL / 終端寬度探測快取 / Git・JJ 符號自定義 / 中文化覆蓋） |
 
 ---
 
@@ -339,7 +340,7 @@ ccstatusline-zh-tw --config /path/to/custom-settings.json
 - **Powerline 設定** — 選擇主題和自定義分隔符
 - **全域性樣式覆蓋** — 設定全域性顏色、樣式、預設內邊距方向及全域性數字格式化（精度 precise / compact / whole）
 - **終端選項** — 配置終端寬度和顏色級別
-- **配置狀態行** — 配置 Claude Code 狀態行重新整理間隔（Claude Code ≥ 2.1.97）
+- **配置狀態行** — 配置 Claude Code 狀態行重新整理間隔（Claude Code ≥ 2.1.97），以及 Git／自定義命令／終端寬度快取 TTL
 - **匯出設定** — 將目前設定儲存為 JSON 檔案以便備份或分享
 - **匯入設定** — 從先前匯出的 JSON 檔案載入設定，套用前可預覽差異並選擇全部取代或合併
 - **安裝到 Claude Code** — 選擇自動更新 / 固定全域性安裝兩種方式

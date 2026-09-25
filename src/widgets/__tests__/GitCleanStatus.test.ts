@@ -95,7 +95,7 @@ describe('GitCleanStatusWidget', () => {
     it('renders no git when probe returns false', () => {
         mockExecFileSync.mockReturnValue('false\n');
 
-        expect(render()).toBe('(no git)');
+        expect(render()).toBe('(無 Git)');
     });
 
     it('hides no git when configured', () => {
@@ -107,6 +107,6 @@ describe('GitCleanStatusWidget', () => {
     it('renders no git when command fails', () => {
         mockExecFileSync.mockImplementation(() => { throw new Error('No git'); });
 
-        expect(render()).toBe('(no git)');
+        expect(render()).toBe('(無 Git)');
     });
 });
