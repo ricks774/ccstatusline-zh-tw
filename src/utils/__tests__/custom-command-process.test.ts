@@ -148,7 +148,7 @@ for (const runtime of ['bun', 'node']) {
             it.skipIf(process.platform === 'win32')(`kills descendants on ${mode}`, async () => {
                 const sentinelPath = path.join(tempRoot, `${runtime}-${mode}`);
                 const result = run(mode, { timeoutMs: 300, argument: sentinelPath });
-                expect(result.result).toEqual({ status: 'failed', marker: mode === 'timeout-tree' ? '[Timeout]' : '[Error]' });
+                expect(result.result).toEqual({ status: 'failed', marker: mode === 'timeout-tree' ? '[超時]' : '[錯誤]' });
                 await new Promise(resolve => setTimeout(resolve, 1300));
                 expect(fs.existsSync(sentinelPath)).toBe(false);
             });
