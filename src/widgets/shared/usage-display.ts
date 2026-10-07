@@ -17,9 +17,7 @@ import {
 
 export type UsageDisplayMode = 'time' | 'progress' | 'progress-short' | 'slider' | 'slider-only';
 
-// Shared by the usage percentage widgets. The reset timers render the same
-// error placeholders but cannot declare this state: they bind 'h' for the
-// hour-format toggle, which would shadow the shared hide keybind
+// 由用量百分比元件與重置計時器共用，兩者都會顯示相同的錯誤預留位置
 export const USAGE_NO_DATA_HIDEABLE_STATE: HideableState = { key: 'no-data', label: '用量資料不可用時' };
 
 const SLIDER_WIDTH = 10;
@@ -29,7 +27,9 @@ const INVERT_TOGGLE_KEYBIND: CustomKeybind = { key: 'v', label: '(v)反轉填充
 const COMPACT_TOGGLE_KEYBIND: CustomKeybind = { key: 's', label: '(s)短時間', action: 'toggle-compact' };
 const CURSOR_TOGGLE_KEYBIND: CustomKeybind = { key: 't', label: '(t)時間遊標', action: 'toggle-cursor' };
 const DATE_TOGGLE_KEYBIND: CustomKeybind = { key: 't', label: '(t)時間戳', action: 'toggle-date' };
-const HOUR_FORMAT_TOGGLE_KEYBIND: CustomKeybind = { key: 'h', label: '12/24 小時(h)', action: 'toggle-hour-format' };
+// 'h' 已改為開啟共用的隱藏清單，且 items editor 比對時取第一個命中的鍵，
+// 若元件層級仍綁定 'h'，會讓有此切換的模式下該清單無法觸發。
+const HOUR_FORMAT_TOGGLE_KEYBIND: CustomKeybind = { key: 'f', label: '12/24 格式(f)', action: 'toggle-hour-format' };
 const WEEKDAY_TOGGLE_KEYBIND: CustomKeybind = { key: 'w', label: '(w)星期', action: 'toggle-weekday' };
 const TIMEZONE_KEYBIND: CustomKeybind = { key: 'z', label: '時區(z)', action: 'edit-timezone' };
 const LOCALE_KEYBIND: CustomKeybind = { key: 'l', label: '(l)地區', action: 'edit-locale' };
