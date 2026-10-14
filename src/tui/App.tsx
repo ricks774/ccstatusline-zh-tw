@@ -10,6 +10,7 @@ import Gradient from 'ink-gradient';
 import React, {
     useCallback,
     useEffect,
+    useRef,
     useState
 } from 'react';
 
@@ -104,7 +105,7 @@ import {
     type ListEntry
 } from './components/List';
 
-const GITHUB_REPO_URL = 'https://github.com/ricks774/ccstatusline-zh-tw';
+const GITHUB_REPO_URL = 'https://github.com/sirmalloc/ccstatusline';
 
 interface FlashMessage {
     text: string;
@@ -166,6 +167,7 @@ interface PinnedVersionMismatch {
 interface PinnedVersionMismatchScreenProps {
     mismatch: PinnedVersionMismatch;
     canRunPackageManager: boolean;
+    updating: boolean;
     onUpdate: () => void;
     onExit: () => void;
 }
@@ -206,20 +208,20 @@ function getPinnedMismatchItems(
 
     if (mismatch.canUpdateToRunningVersion) {
         items.push({
-            label: `Update ${mismatch.packageManager} global install to v${mismatch.runningVersion}`,
+            label: `將 ${mismatch.packageManager} 全域性安裝更新到 v${mismatch.runningVersion}`,
             value: 'update',
             disabled: !canRunPackageManager,
-            sublabel: canRunPackageManager ? undefined : `(${mismatch.packageManager} not installed)`,
-            description: `Runs ${mismatch.packageManager === 'npm'
+            sublabel: canRunPackageManager ? undefined : `（未檢測到 ${mismatch.packageManager}）`,
+            description: `執行 ${mismatch.packageManager === 'npm'
                 ? `npm install -g ccstatusline-zh-tw@${mismatch.runningVersion}`
                 : `bun add -g ccstatusline-zh-tw@${mismatch.runningVersion}`}`
         });
     }
 
     items.push({
-        label: 'Exit',
+        label: '退出',
         value: 'exit',
-        description: `Relaunch manually with ${mismatch.relaunchCommand}`
+        description: `請手動重新啟動：${mismatch.relaunchCommand}`
     });
 
     return items;
@@ -228,55 +230,63 @@ function getPinnedMismatchItems(
 const PinnedVersionMismatchScreen: React.FC<PinnedVersionMismatchScreenProps> = ({
     mismatch,
     canRunPackageManager,
+    updating,
     onUpdate,
     onExit
 }) => {
     useInput((_, key) => {
-        if (key.escape) {
+        if (key.escape && !updating) {
             onExit();
         }
     });
 
     return (
         <Box flexDirection='column'>
-            <Text bold>Pinned Install Version Mismatch</Text>
+            <Text bold>固定安裝版本不符</Text>
             <Box marginTop={1} flexDirection='column'>
                 <Text color='yellow'>
-                    Claude Code is pinned to ccstatusline-zh-tw v
+                    Claude Code 已固定到 ccstatusline-zh-tw v
                     {mismatch.installedVersion}
-                    , but this TUI is v
+                    ，但當前 TUI 為 v
                     {mismatch.runningVersion}
-                    .
+                    。
                 </Text>
                 <Text dimColor wrap='wrap'>
-                    To avoid writing config that the pinned runtime may not support,
-                    update the pinned global install or exit and relaunch the pinned version.
+                    為避免寫入固定版本可能不支援的配置，請更新固定的全域性安裝，或退出並重新啟動固定版本。
                 </Text>
             </Box>
             <Box marginTop={1} flexDirection='column'>
                 <Text>
-                    Current pinned version:
+                    當前固定版本：
                     {' '}
                     {mismatch.relaunchCommand}
                 </Text>
             </Box>
-            <List
-                marginTop={1}
-                items={getPinnedMismatchItems(mismatch, canRunPackageManager)}
-                onSelect={(value) => {
-                    if (value === 'back') {
-                        return;
-                    }
+            {updating ? (
+                <Box marginTop={1}>
+                    <Text color='yellow'>
+                        {`正在更新 ${mismatch.packageManager} 全域性安裝至 v${mismatch.runningVersion}... 可能需要一些時間。`}
+                    </Text>
+                </Box>
+            ) : (
+                <List
+                    marginTop={1}
+                    items={getPinnedMismatchItems(mismatch, canRunPackageManager)}
+                    onSelect={(value) => {
+                        if (value === 'back') {
+                            return;
+                        }
 
-                    if (value === 'update') {
-                        onUpdate();
-                        return;
-                    }
+                        if (value === 'update') {
+                            onUpdate();
+                            return;
+                        }
 
-                    onExit();
-                }}
-                color='cyan'
-            />
+                        onExit();
+                    }}
+                    color='cyan'
+                />
+            )}
         </Box>
     );
 };
@@ -289,7 +299,9 @@ function getGlobalUninstallCommand(packageManager: GlobalPackageManager): string
 
 function buildUninstallConfirmMessage(selection: UninstallSelection): string {
     if (selection.packageManagers.length === 0) {
-        return `This will remove ccstatusline-zh-tw from ${getClaudeSettingsPath()}. Continue?`;
+        return `將從 ${getClaudeSettingsPath()} 中移除 ccstatusline-zh-tw。
+
+繼續？`;
     }
 
     const commands = selection.packageManagers
@@ -305,7 +317,6 @@ function clearInstallationMetadata(settings: Settings | null): Settings | null {
     }
 
     const { installation, ...next } = settings;
-    void installation;
     return next;
 }
 
@@ -333,10 +344,10 @@ function joinCommandPath(dir: string, command: string): string {
 
 function getCommandFileName(globalBinDir: string, platform: NodeJS.Platform): string {
     if (platform === 'win32' || /^[a-z]:[\\/]/i.test(globalBinDir)) {
-        return 'ccstatusline-zh-tw.cmd';
+        return 'ccstatusline.cmd';
     }
 
-    return 'ccstatusline-zh-tw';
+    return 'ccstatusline';
 }
 
 function getPinnedGlobalRelaunchCommand(packageManager: GlobalPackageManager): string {
@@ -356,13 +367,14 @@ function getPinnedGlobalRelaunchCommand(packageManager: GlobalPackageManager): s
         );
     }
 
-    return 'ccstatusline-zh-tw';
+    return 'ccstatusline';
 }
 
 export function getPinnedVersionMismatch(
     installation: ResolvedInstallationMetadata,
     runningVersion: string,
-    relaunchCommand: string
+    relaunchCommand: string,
+    versionInstalledThisSession: string | null = null
 ): PinnedVersionMismatch | null {
     if (
         installation.method !== 'pinned'
@@ -370,6 +382,9 @@ export function getPinnedVersionMismatch(
         || installation.packageManager === 'unknown'
         || !runningVersion
         || installation.installedVersion === runningVersion
+        // This session's own update installed it. The settings being edited were loaded
+        // before that update, so saving them now is the same as saving just before it.
+        || installation.installedVersion === versionInstalledThisSession
     ) {
         return null;
     }
@@ -445,7 +460,8 @@ export function buildConfigLoadWarning(configLoadError: string | null): string |
 
 export function buildInvalidConfigSaveConfirm(
     configLoadError: string | null,
-    onConfirm: () => void
+    onConfirm: () => void,
+    returnScreen: Exclude<AppScreen, 'confirm'> = 'main'
 ): ConfirmDialogState | null {
     if (!configLoadError) {
         return null;
@@ -457,7 +473,7 @@ export function buildInvalidConfigSaveConfirm(
             onConfirm();
             return Promise.resolve();
         },
-        cancelScreen: 'main'
+        cancelScreen: returnScreen
     };
 }
 
@@ -486,9 +502,13 @@ export const App: React.FC = () => {
     const [flowNotice, setFlowNotice] = useState<FlowNoticeState | null>(null);
     const [globalPackageInstallations, setGlobalPackageInstallations] = useState<GlobalPackageInstallation[]>([]);
     const [updatesReturnScreen, setUpdatesReturnScreen] = useState<'main' | 'manageInstallation'>('main');
+    const [versionInstalledThisSession, setVersionInstalledThisSession] = useState<string | null>(null);
     const [hasLoadedClaudeStatus, setHasLoadedClaudeStatus] = useState(false);
     const [hasLoadedInstalledState, setHasLoadedInstalledState] = useState(false);
     const [importValidation, setImportValidation] = useState<ImportValidationResult | null>(null);
+    const [actionInFlight, setActionInFlight] = useState(false);
+    // The ref blocks a second start synchronously, before the busy screen re-renders
+    const actionInFlightRef = useRef(false);
 
     useEffect(() => {
         void loadClaudeStatusLineState()
@@ -568,7 +588,12 @@ export const App: React.FC = () => {
                 ? inspectActiveGlobalCommand({ commandAvailability })
                 : null;
             const effectiveInstallation = getPathInferredInstallation(installation, activeCommand);
-            const mismatch = getPinnedVersionMismatch(effectiveInstallation, getPackageVersion(), 'ccstatusline-zh-tw');
+            const mismatch = getPinnedVersionMismatch(
+                effectiveInstallation,
+                getPackageVersion(),
+                'ccstatusline',
+                versionInstalledThisSession
+            );
             if (mismatch) {
                 return;
             }
@@ -594,14 +619,16 @@ export const App: React.FC = () => {
                 })();
             };
 
+            // Ctrl+S works on any screen, so both answers return to the one it was pressed on
+            const returnScreen = screen;
             const saveGuard = buildInvalidConfigSaveConfirm(configLoadError, () => {
                 // The confirm dialog doesn't self-dismiss; its action must navigate away
-                // (matching the other confirm flows in this file). Return to the main menu
-                // before saving so the success flash isn't hidden behind the dialog.
+                // (matching the other confirm flows in this file). Navigate back before
+                // saving so the success flash isn't hidden behind the dialog.
                 setConfirmDialog(null);
-                setScreen('main');
+                setScreen(returnScreen);
                 performSave();
-            });
+            }, returnScreen);
             if (saveGuard) {
                 setConfirmDialog(saveGuard);
                 setScreen('confirm');
@@ -691,12 +718,15 @@ export const App: React.FC = () => {
                                 color: 'green'
                             });
                         }
-                    } catch {
-                        setFlashMessage({
-                            text: '✗ 安裝失敗',
-                            color: 'red'
+                    } catch (err) {
+                        setFlashMessage(null);
+                        setFlowNotice({
+                            title: '安裝失敗',
+                            message: err instanceof Error ? err.message : String(err),
+                            color: 'red',
+                            continueScreen: 'install'
                         });
-                        setScreen('install');
+                        setScreen('flowNotice');
                     }
                     setConfirmDialog(null);
                 }
@@ -738,6 +768,7 @@ export const App: React.FC = () => {
             action: async () => {
                 try {
                     await runGlobalUpdateAction(action);
+                    setVersionInstalledThisSession(action.version);
                     const installation = {
                         method: 'pinned' as const,
                         installedVersion: action.version
@@ -851,9 +882,26 @@ export const App: React.FC = () => {
         ? getPinnedVersionMismatch(
             effectiveInstallation,
             runningVersion,
-            getPinnedGlobalRelaunchCommand(effectiveInstallation.packageManager)
+            getPinnedGlobalRelaunchCommand(effectiveInstallation.packageManager),
+            versionInstalledThisSession
         )
         : null;
+
+    // Install, uninstall and update run a package manager and write settings files.
+    // Run one at a time and hold its screen until it settles, so a second Enter
+    // can't start it again and ESC can't leave it finishing behind another screen.
+    const runActionOnce = (action: () => Promise<void>) => {
+        if (actionInFlightRef.current) {
+            return;
+        }
+
+        actionInFlightRef.current = true;
+        setActionInFlight(true);
+        void action().finally(() => {
+            actionInFlightRef.current = false;
+            setActionInFlight(false);
+        });
+    };
 
     const handlePinnedVersionMismatchUpdate = async (mismatch: PinnedVersionMismatch) => {
         try {
@@ -1082,7 +1130,7 @@ export const App: React.FC = () => {
                 <Box marginBottom={1}>
                     <Text bold>
                         <Gradient name='retro'>
-                            CCStatusline Configuration
+                            CCStatusline 配置
                         </Gradient>
                     </Text>
                     <Text bold>
@@ -1097,8 +1145,9 @@ export const App: React.FC = () => {
                 <PinnedVersionMismatchScreen
                     mismatch={pinnedVersionMismatch}
                     canRunPackageManager={commandAvailability[pinnedVersionMismatch.packageManager]}
+                    updating={actionInFlight}
                     onUpdate={() => {
-                        void handlePinnedVersionMismatchUpdate(pinnedVersionMismatch);
+                        runActionOnce(() => handlePinnedVersionMismatchUpdate(pinnedVersionMismatch));
                     }}
                     onExit={exit}
                 />
@@ -1288,7 +1337,10 @@ export const App: React.FC = () => {
                 {screen === 'confirm' && confirmDialog && (
                     <ConfirmDialog
                         message={confirmDialog.message}
-                        onConfirm={() => void confirmDialog.action()}
+                        busy={actionInFlight}
+                        onConfirm={() => {
+                            runActionOnce(confirmDialog.action);
+                        }}
                         onCancel={() => {
                             setScreen(getConfirmCancelScreen(confirmDialog));
                             setConfirmDialog(null);
@@ -1360,6 +1412,8 @@ export const App: React.FC = () => {
                         currentInterval={currentRefreshInterval}
                         supportsRefreshInterval={supportsRefreshInterval}
                         gitCacheTtlSeconds={settings.gitCacheTtlSeconds}
+                        terminalWidthCacheTtlSeconds={settings.terminalWidthCacheTtlSeconds}
+                        customCommandCacheTtlSeconds={settings.customCommandCacheTtlSeconds}
                         onUpdate={(interval) => {
                             const previous = currentRefreshInterval;
                             setCurrentRefreshInterval(interval);
@@ -1386,6 +1440,28 @@ export const App: React.FC = () => {
                             });
                             setFlashMessage({
                                 text: '✓ Git 快取 TTL 已更新',
+                                color: 'green'
+                            });
+                            setScreen('main');
+                        }}
+                        onTerminalWidthCacheTtlUpdate={(ttlSeconds) => {
+                            setSettings({
+                                ...settings,
+                                terminalWidthCacheTtlSeconds: ttlSeconds
+                            });
+                            setFlashMessage({
+                                text: '✓ 終端寬度快取 TTL 已更新',
+                                color: 'green'
+                            });
+                            setScreen('main');
+                        }}
+                        onCustomCommandCacheTtlUpdate={(ttlSeconds) => {
+                            setSettings({
+                                ...settings,
+                                customCommandCacheTtlSeconds: ttlSeconds
+                            });
+                            setFlashMessage({
+                                text: '✓ 自訂命令快取 TTL 已更新',
                                 color: 'green'
                             });
                             setScreen('main');

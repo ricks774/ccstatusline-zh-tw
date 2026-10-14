@@ -252,6 +252,21 @@ describe('BlockTimerWidget', () => {
         }).modifierText).toBe('(僅短進度條)');
     });
 
+    it('does not show a time cursor carried over from a usage widget', () => {
+        // A usage bar's cursor metadata survives a type change in the picker,
+        // but this timer never draws a cursor
+        const widget = new BlockTimerWidget();
+
+        const modifierText = widget.getEditorDisplay({
+            id: 'block',
+            type: 'block-timer',
+            metadata: { display: 'progress', cursor: 'true' }
+        }).modifierText;
+
+        expect(modifierText).toContain('進度條');
+        expect(modifierText).not.toContain('time cursor');
+    });
+
     runUsageTimerEditorSuite({
         baseItem: { id: 'block', type: 'block-timer' },
         createWidget: () => new BlockTimerWidget(),

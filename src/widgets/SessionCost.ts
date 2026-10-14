@@ -12,6 +12,9 @@ import {
 } from '../utils/number-format';
 
 import { isHidden } from './shared/hideable';
+import { formatRawOrLabeledValue } from './shared/raw-or-labeled';
+
+const LABEL = '費用: ';
 
 const ZERO_HIDEABLE_STATE: HideableState = { key: 'zero', label: '費用為 $0.00 時' };
 
@@ -20,6 +23,7 @@ export class SessionCostWidget implements Widget {
     getDescription(): string { return '顯示當前會話總費用（美元）'; }
     getDisplayName(): string { return '會話費用'; }
     getCategory(): string { return '會話'; }
+    getLabelPrefix(): string { return LABEL; }
     getEditorDisplay(item: WidgetItem): WidgetEditorDisplay {
         return { displayText: this.getDisplayName() };
     }
@@ -32,7 +36,7 @@ export class SessionCostWidget implements Widget {
         const format = resolveNumberFormat('cost', item, settings);
         if (context.isPreview) {
             const value = formatCost(2.45, format);
-            return item.rawValue ? value : `費用: ${value}`;
+            return formatRawOrLabeledValue(item, this.getLabelPrefix(), value);
         }
 
         const totalCost = context.data?.cost?.total_cost_usd;
@@ -48,7 +52,7 @@ export class SessionCostWidget implements Widget {
         }
 
         const formattedCost = formatCost(totalCost, format);
-        return item.rawValue ? formattedCost : `費用: ${formattedCost}`;
+        return formatRawOrLabeledValue(item, this.getLabelPrefix(), formattedCost);
     }
 
     supportsRawValue(): boolean { return true; }

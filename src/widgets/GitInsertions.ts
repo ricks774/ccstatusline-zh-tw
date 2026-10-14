@@ -1,55 +1,27 @@
-import type { RenderContext } from '../types/RenderContext';
-import type { Settings } from '../types/Settings';
-import type {
-    HideableState,
-    Widget,
-    WidgetEditorDisplay,
-    WidgetItem
-} from '../types/Widget';
+import type { WidgetItem } from '../types/Widget';
+import type { GitChangeCounts } from '../utils/git';
+
+import { GitLineCountWidget } from './shared/git-count-widget';
 import {
-    getGitChangeCounts,
-    isInsideGitWorkTree
-} from '../utils/git';
+    getSlotSymbol,
+    type SymbolSlot
+} from './shared/symbol-override';
 
-import {
-    NO_GIT_HIDEABLE_STATE,
-    isHidden
-} from './shared/hideable';
+const INSERTIONS_SLOT: SymbolSlot = { id: 'symbolInsertions', label: '新增', defaultSymbol: '+' };
 
-const ZERO_HIDEABLE_STATE: HideableState = { key: 'zero', label: '新增行數為零時' };
+export class GitInsertionsWidget extends GitLineCountWidget {
+    protected readonly zeroLabel = '新增行數為零時';
+    protected readonly slots = [INSERTIONS_SLOT];
 
-export class GitInsertionsWidget implements Widget {
     getDefaultColor(): string { return 'green'; }
     getDescription(): string { return '顯示 Git 新增行數'; }
     getDisplayName(): string { return 'Git 新增'; }
-    getCategory(): string { return 'Git'; }
-    getEditorDisplay(item: WidgetItem): WidgetEditorDisplay {
-        return { displayText: this.getDisplayName() };
+
+    protected isZero(changes: GitChangeCounts): boolean {
+        return changes.insertions === 0;
     }
 
-    getHideableStates(): HideableState[] {
-        return [NO_GIT_HIDEABLE_STATE, ZERO_HIDEABLE_STATE];
+    protected formatCounts(item: WidgetItem, changes: GitChangeCounts): string {
+        return `${getSlotSymbol(item, INSERTIONS_SLOT)}${changes.insertions}`;
     }
-
-    render(item: WidgetItem, context: RenderContext, _settings: Settings): string | null {
-        const hideNoGit = isHidden(item, NO_GIT_HIDEABLE_STATE.key);
-
-        if (context.isPreview) {
-            return '+42';
-        }
-
-        if (!isInsideGitWorkTree(context)) {
-            return hideNoGit ? null : '(無 Git)';
-        }
-
-        const changes = getGitChangeCounts(context);
-        if (changes.insertions === 0 && isHidden(item, ZERO_HIDEABLE_STATE.key)) {
-            return null;
-        }
-
-        return `+${changes.insertions}`;
-    }
-
-    supportsRawValue(): boolean { return false; }
-    supportsColors(item: WidgetItem): boolean { return true; }
 }

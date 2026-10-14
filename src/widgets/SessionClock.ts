@@ -8,6 +8,9 @@ import type {
 } from '../types/Widget';
 
 import { isHidden } from './shared/hideable';
+import { formatRawOrLabeledValue } from './shared/raw-or-labeled';
+
+const LABEL = '會話: ';
 
 const ZERO_HIDEABLE_STATE: HideableState = { key: 'zero', label: '不足 1 分鐘時' };
 
@@ -36,6 +39,7 @@ export class SessionClockWidget implements Widget {
     getDescription(): string { return '顯示當前會話已經過的時間'; }
     getDisplayName(): string { return '會話時鐘'; }
     getCategory(): string { return '會話'; }
+    getLabelPrefix(): string { return LABEL; }
     getEditorDisplay(item: WidgetItem): WidgetEditorDisplay {
         return { displayText: this.getDisplayName() };
     }
@@ -46,7 +50,7 @@ export class SessionClockWidget implements Widget {
 
     render(item: WidgetItem, context: RenderContext, settings: Settings): string | null {
         if (context.isPreview) {
-            return item.rawValue ? '2時 15分' : '會話: 2時 15分';
+            return formatRawOrLabeledValue(item, this.getLabelPrefix(), '2時 15分');
         }
 
         const hideZero = isHidden(item, ZERO_HIDEABLE_STATE.key);
@@ -57,14 +61,14 @@ export class SessionClockWidget implements Widget {
                 return null;
             }
             const formatted = formatDurationFromMs(durationMs);
-            return item.rawValue ? formatted : `會話: ${formatted}`;
+            return formatRawOrLabeledValue(item, this.getLabelPrefix(), formatted);
         }
 
         const duration = context.sessionDuration ?? '0分';
         if ((duration === '0分' || duration === '<1分') && hideZero) {
             return null;
         }
-        return item.rawValue ? duration : `會話: ${duration}`;
+        return formatRawOrLabeledValue(item, this.getLabelPrefix(), duration);
     }
 
     supportsRawValue(): boolean { return true; }

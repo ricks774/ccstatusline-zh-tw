@@ -1,4 +1,4 @@
-import * as fs from 'fs';
+import * as fs from 'node:fs';
 
 import type { RenderContext } from '../types/RenderContext';
 import type { Settings } from '../types/Settings';
@@ -9,6 +9,10 @@ import type {
 } from '../types/Widget';
 import { getClaudeJsonPath } from '../utils/claude-settings';
 
+import { formatRawOrLabeledValue } from './shared/raw-or-labeled';
+
+const LABEL = '賬戶: ';
+
 interface ClaudeJson { oauthAccount?: { emailAddress?: string } }
 
 export class ClaudeAccountEmailWidget implements Widget {
@@ -16,13 +20,14 @@ export class ClaudeAccountEmailWidget implements Widget {
     getDescription(): string { return '顯示當前已登入的 Claude 賬戶郵箱'; }
     getDisplayName(): string { return 'Claude 賬戶郵箱'; }
     getCategory(): string { return '會話'; }
+    getLabelPrefix(): string { return LABEL; }
     getEditorDisplay(item: WidgetItem): WidgetEditorDisplay {
         return { displayText: this.getDisplayName() };
     }
 
     render(item: WidgetItem, context: RenderContext, settings: Settings): string | null {
         if (context.isPreview) {
-            return item.rawValue ? 'you@example.com' : '賬戶: you@example.com';
+            return formatRawOrLabeledValue(item, this.getLabelPrefix(), 'you@example.com');
         }
 
         try {
@@ -34,7 +39,7 @@ export class ClaudeAccountEmailWidget implements Widget {
                 return null;
             }
 
-            return item.rawValue ? email : `賬戶: ${email}`;
+            return formatRawOrLabeledValue(item, this.getLabelPrefix(), email);
         } catch {
             return null;
         }

@@ -35,6 +35,7 @@ export class ContextPercentageUsableWidget implements Widget {
     getDescription(): string { return '顯示有效上下文視窗已用或剩餘百分比（自動壓縮前最大值的 80%）'; }
     getDisplayName(): string { return '上下文 %（有效）'; }
     getCategory(): string { return '上下文'; }
+    getLabelPrefix(item: WidgetItem): string { return isContextInverse(item) ? '剩餘: ' : '已用: '; }
     getEditorDisplay(item: WidgetItem): WidgetEditorDisplay {
         const modifiers = [
             getContextInverseModifierText(item),
@@ -55,7 +56,6 @@ export class ContextPercentageUsableWidget implements Widget {
 
     render(item: WidgetItem, context: RenderContext, settings: Settings): string | null {
         const isInverse = isContextInverse(item);
-        const label = isInverse ? '剩餘: ' : '已用: ';
         const sliderMode = getContextSliderMode(item);
         const modelIdentifier = getModelContextIdentifier(context.data?.model);
         const contextWindowMetrics = getContextWindowMetrics(context.data);
@@ -64,7 +64,7 @@ export class ContextPercentageUsableWidget implements Widget {
 
         const formatContextPercentage = (displayPercentage: number): string => {
             const sliderResult = renderContextSlider(sliderMode, displayPercentage, format);
-            return formatRawOrLabeledValue(item, label, sliderResult ?? formatPercent(displayPercentage, format));
+            return formatRawOrLabeledValue(item, this.getLabelPrefix(item), sliderResult ?? formatPercent(displayPercentage, format));
         };
 
         if (context.isPreview) {

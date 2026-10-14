@@ -21,7 +21,7 @@ describe('VimModeWidget', () => {
     describe('editor configuration', () => {
         it('uses f as the format toggle keybind', () => {
             expect(new VimModeWidget().getCustomKeybinds()).toEqual([
-                { key: 'f', label: '(f)格式切換', action: 'cycle-format' },
+                { key: 'f', label: '(f)顯示格式', action: 'cycle-format' },
                 { key: 'n', label: '(n)Nerd 字型', action: 'toggle-nerd-font' }
             ]);
         });

@@ -26,11 +26,14 @@ import {
 import { isHidden } from './shared/hideable';
 import { formatRawOrLabeledValue } from './shared/raw-or-labeled';
 
+const LABEL = '快取命中: ';
+
 export class CacheHitRateWidget implements Widget {
     getDefaultColor(): string { return 'green'; }
     getDescription(): string { return '顯示提示快取命中率（快取讀取 vs 快取寫入）'; }
     getDisplayName(): string { return '快取命中率'; }
     getCategory(): string { return '快取'; }
+    getLabelPrefix(): string { return LABEL; }
     getEditorDisplay(item: WidgetItem): WidgetEditorDisplay {
         return { displayText: this.getDisplayName(), modifierText: getCacheModifierText(item) };
     }
@@ -46,25 +49,25 @@ export class CacheHitRateWidget implements Widget {
     render(item: WidgetItem, context: RenderContext, settings: Settings): string | null {
         const format = resolveNumberFormat('percent', item, settings);
         if (context.isPreview) {
-            return formatRawOrLabeledValue(item, '快取命中: ', formatPercent(87, format));
+            return formatRawOrLabeledValue(item, this.getLabelPrefix(), formatPercent(87, format));
         }
 
         const hideWhenEmpty = isHidden(item, CACHE_EMPTY_HIDEABLE_STATE.key);
         const tokens = getCacheTokens(context, isCacheSessionScope(item));
         if (!tokens) {
-            return hideWhenEmpty ? null : formatRawOrLabeledValue(item, '快取命中: ', 'n/a');
+            return hideWhenEmpty ? null : formatRawOrLabeledValue(item, this.getLabelPrefix(), 'n/a');
         }
 
         const hitRate = getCacheHitRate(tokens);
         if (hitRate === null) {
-            return hideWhenEmpty ? null : formatRawOrLabeledValue(item, '快取命中: ', formatPercent(0, format));
+            return hideWhenEmpty ? null : formatRawOrLabeledValue(item, this.getLabelPrefix(), formatPercent(0, format));
         }
 
         if (hitRate === 0 && hideWhenEmpty) {
             return null;
         }
 
-        return formatRawOrLabeledValue(item, '快取命中: ', formatPercent(hitRate, format));
+        return formatRawOrLabeledValue(item, this.getLabelPrefix(), formatPercent(hitRate, format));
     }
 
     getCustomKeybinds(item?: WidgetItem): CustomKeybind[] {

@@ -117,6 +117,35 @@ describe('BlockResetTimerWidget', () => {
 
         expect(render(widget, { id: 'reset', type: 'reset-timer' }, { usageData: {} })).toBe('重置: [載入中]');
         expect(render(widget, { id: 'reset', type: 'reset-timer', rawValue: true }, { usageData: {} })).toBe('[載入中]');
+        expect(render(widget, { id: 'reset', type: 'reset-timer', metadata: { display: 'progress' } }, { usageData: {} })).toBe('重置 [載入中]');
+    });
+
+    it('declares the no-data hideable state', () => {
+        expect(new BlockResetTimerWidget().getHideableStates().map(state => state.key)).toEqual(['no-data']);
+    });
+
+    // One state covers both placeholders, since either means the same thing to
+    // a reader: the widget has nothing to report yet.
+    it.each([
+        ['a usage error', { error: 'timeout' as const }],
+        ['no data at all', {}]
+    ])('hides %s when the no-data state is enabled', (_label, usageData) => {
+        const widget = new BlockResetTimerWidget();
+
+        mockResolveUsageWindowWithFallback.mockReturnValue(null);
+        mockGetUsageErrorMessage.mockReturnValue('[超時]');
+
+        expect(render(widget, { id: 'reset', type: 'reset-timer', metadata: { hide: 'no-data' } }, { usageData })).toBeNull();
+    });
+
+    it('keeps both placeholders when the no-data state is off', () => {
+        const widget = new BlockResetTimerWidget();
+
+        mockResolveUsageWindowWithFallback.mockReturnValue(null);
+        mockGetUsageErrorMessage.mockReturnValue('[超時]');
+
+        expect(render(widget, { id: 'reset', type: 'reset-timer', metadata: { hide: '' } }, { usageData: {} })).toBe('重置: [載入中]');
+        expect(render(widget, { id: 'reset', type: 'reset-timer' }, { usageData: { error: 'timeout' } })).toBe('[超時]');
     });
 
     it('shows raw value without label in time mode', () => {
@@ -179,7 +208,7 @@ describe('BlockResetTimerWidget', () => {
             { key: 'p', label: '(p)進度條切換', action: 'toggle-progress' },
             { key: 's', label: '(s)短時間', action: 'toggle-compact' },
             { key: 't', label: '(t)時間戳', action: 'toggle-date' },
-            { key: 'h', label: '12/24 小時(h)', action: 'toggle-hour-format' },
+            { key: 'f', label: '12/24 小時(f)', action: 'toggle-hour-format' },
             { key: 'z', label: '時區(z)', action: 'edit-timezone' },
             { key: 'l', label: '(l)地區', action: 'edit-locale' }
         ]);
@@ -198,6 +227,106 @@ describe('BlockResetTimerWidget', () => {
 
         expect(hour12?.metadata?.hour12).toBe('true');
         expect(cleared?.metadata?.hour12).toBe('false');
+    });
+
+    it('renders slider bar with elapsed percentage', () => {
+        const widget = new BlockResetTimerWidget();
+        const item: WidgetItem = {
+            id: 'reset',
+            type: 'reset-timer',
+            metadata: { display: 'slider' }
+        };
+
+        mockResolveUsageWindowWithFallback.mockReturnValue({
+            sessionDurationMs: 18000000,
+            elapsedMs: 9000000,
+            remainingMs: 9000000,
+            elapsedPercent: 50,
+            remainingPercent: 50
+        });
+
+        expect(render(widget, item, { usageData: {} })).toBe('重置 ▓▓▓▓▓░░░░░ 50.0%');
+    });
+
+    it('renders slider-only bar without percentage', () => {
+        const widget = new BlockResetTimerWidget();
+        const item: WidgetItem = {
+            id: 'reset',
+            type: 'reset-timer',
+            metadata: { display: 'slider-only' }
+        };
+
+        mockResolveUsageWindowWithFallback.mockReturnValue({
+            sessionDurationMs: 18000000,
+            elapsedMs: 9000000,
+            remainingMs: 9000000,
+            elapsedPercent: 50,
+            remainingPercent: 50
+        });
+
+        expect(render(widget, item, { usageData: {} })).toBe('重置 ▓▓▓▓▓░░░░░');
+    });
+
+    it('renders inverted slider using remaining percent', () => {
+        const widget = new BlockResetTimerWidget();
+        const item: WidgetItem = {
+            id: 'reset',
+            type: 'reset-timer',
+            metadata: { display: 'slider', invert: 'true' }
+        };
+
+        mockResolveUsageWindowWithFallback.mockReturnValue({
+            sessionDurationMs: 18000000,
+            elapsedMs: 14400000,
+            remainingMs: 3600000,
+            elapsedPercent: 80,
+            remainingPercent: 20
+        });
+
+        expect(render(widget, item, { usageData: {} })).toBe('重置 ▓▓░░░░░░░░ 20.0%');
+    });
+
+    it('exposes invert keybind in slider mode', () => {
+        const widget = new BlockResetTimerWidget();
+
+        expect(widget.getCustomKeybinds({
+            id: 'reset',
+            type: 'reset-timer',
+            metadata: { display: 'slider' }
+        })).toEqual([
+            { key: 'p', label: '(p)進度條切換', action: 'toggle-progress' },
+            { key: 'v', label: '(v)反轉填充', action: 'toggle-invert' }
+        ]);
+    });
+
+    it('shows short bar modifier text in slider modes', () => {
+        const widget = new BlockResetTimerWidget();
+
+        expect(widget.getEditorDisplay({
+            id: 'reset',
+            type: 'reset-timer',
+            metadata: { display: 'slider' }
+        }).modifierText).toBe('(短進度條)');
+        expect(widget.getEditorDisplay({
+            id: 'reset',
+            type: 'reset-timer',
+            metadata: { display: 'slider-only' }
+        }).modifierText).toBe('(僅短進度條)');
+    });
+
+    it('does not show a time cursor carried over from a usage widget', () => {
+        // A usage bar's cursor metadata survives a type change in the picker,
+        // but this timer never draws a cursor
+        const widget = new BlockResetTimerWidget();
+
+        const modifierText = widget.getEditorDisplay({
+            id: 'reset',
+            type: 'reset-timer',
+            metadata: { display: 'progress', cursor: 'true' }
+        }).modifierText;
+
+        expect(modifierText).toContain('進度條');
+        expect(modifierText).not.toContain('時間遊標');
     });
 
     runUsageTimerEditorSuite({
