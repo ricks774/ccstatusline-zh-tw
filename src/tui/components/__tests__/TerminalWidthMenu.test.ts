@@ -10,6 +10,7 @@ import {
 } from 'vitest';
 
 import { DEFAULT_SETTINGS } from '../../../types/Settings';
+import { waitFor } from '../../__tests__/helpers/wait-for-ink';
 import {
     TerminalWidthMenu,
     buildTerminalWidthItems,
@@ -59,12 +60,6 @@ function createMockStdout(): CapturedWriteStream {
         getOutput() {
             return chunks.join('');
         }
-    });
-}
-
-function flushInk() {
-    return new Promise((resolve) => {
-        setTimeout(resolve, 25);
     });
 }
 
@@ -134,30 +129,36 @@ describe('TerminalWidthMenu helpers', () => {
         );
 
         try {
-            await flushInk();
+            await waitFor(() => {
+                expect(stdout.getOutput()).toContain('▶  始終全寬');
+            });
+            stdout.clearOutput();
             stdin.write('\u001B[B');
-            await flushInk();
+            await waitFor(() => {
+                expect(stdout.getOutput()).toContain('▶  全寬減 40');
+            });
+            stdout.clearOutput();
             stdin.write('\u001B[B');
-            await flushInk();
+            await waitFor(() => {
+                expect(stdout.getOutput()).toContain('▶  上下文壓縮前全寬');
+            });
             stdin.write('\r');
-            await flushInk();
-
-            expect(stdout.getOutput()).toContain('輸入壓縮閾值（1-99）');
+            await waitFor(() => {
+                expect(stdout.getOutput()).toContain('輸入壓縮閾值（1-99）');
+            });
 
             stdout.clearOutput();
 
             stdin.write('\r');
-            await flushInk();
+            await waitFor(() => {
+                expect(onUpdate).toHaveBeenCalledWith(expect.objectContaining({
+                    flexMode: 'full-until-compact',
+                    compactThreshold: 60
+                }));
+                expect(stdout.getOutput()).toContain('▶  上下文壓縮前全寬');
+            });
 
-            expect(onUpdate).toHaveBeenCalledWith(expect.objectContaining({
-                flexMode: 'full-until-compact',
-                compactThreshold: 60
-            }));
-
-            const output = stdout.getOutput();
-
-            expect(output).toContain('▶  上下文壓縮前全寬');
-            expect(output).not.toContain('▶  始終全寬');
+            expect(stdout.getOutput()).not.toContain('▶  始終全寬');
         } finally {
             instance.unmount();
             instance.cleanup();

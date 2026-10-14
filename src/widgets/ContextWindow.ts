@@ -13,11 +13,16 @@ import {
 import { resolveNumberFormat } from '../utils/number-format';
 import { formatTokens } from '../utils/renderer';
 
+import { formatRawOrLabeledValue } from './shared/raw-or-labeled';
+
+const LABEL = '視窗: ';
+
 export class ContextWindowWidget implements Widget {
     getDefaultColor(): string { return 'brightBlack'; }
     getDescription(): string { return '顯示當前模型的上下文視窗總大小'; }
     getDisplayName(): string { return '上下文視窗'; }
     getCategory(): string { return '上下文'; }
+    getLabelPrefix(): string { return LABEL; }
     getEditorDisplay(item: WidgetItem): WidgetEditorDisplay {
         return { displayText: this.getDisplayName() };
     }
@@ -26,7 +31,7 @@ export class ContextWindowWidget implements Widget {
         const format = resolveNumberFormat('token', item, settings);
         if (context.isPreview) {
             const value = formatTokens(200000, format);
-            return item.rawValue ? value : `視窗: ${value}`;
+            return formatRawOrLabeledValue(item, this.getLabelPrefix(), value);
         }
 
         let total = getContextWindowSize(context.data);
@@ -40,7 +45,7 @@ export class ContextWindowWidget implements Widget {
             return null;
         }
 
-        return item.rawValue ? formatTokens(total, format) : `視窗: ${formatTokens(total, format)}`;
+        return formatRawOrLabeledValue(item, this.getLabelPrefix(), formatTokens(total, format));
     }
 
     supportsRawValue(): boolean { return true; }

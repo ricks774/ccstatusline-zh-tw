@@ -42,31 +42,19 @@ describe('LinkWidget', () => {
         expect(result).toBe('\x1b]8;;https://example.com/docs\x1b\\🔗 https://example.com/docs\x1b]8;;\x1b\\');
     });
 
-    it('renders OSC 8 hyperlink for POSIX file URL', () => {
+    it('percent-encodes characters a link can\'t carry as they are', () => {
+        const result = renderLink({ url: 'https://example.com/a b/\x1b]52;c;AAAA\x07/docs', text: 'Docs' });
+
+        expect(result).toBe('\x1b]8;;https://example.com/a%20b/%1B]52;c;AAAA%07/docs\x1b\\🔗 Docs\x1b]8;;\x1b\\');
+    });
+
+    it('falls back to plain text for non-http URL schemes', () => {
         const result = renderLink({
             url: 'file:///tmp/report.txt',
             text: 'Report'
         });
 
-        expect(result).toBe('\x1b]8;;file:///tmp/report.txt\x1b\\🔗 Report\x1b]8;;\x1b\\');
-    });
-
-    it('renders OSC 8 hyperlink for Windows drive file URL', () => {
-        const result = renderLink({
-            url: 'file:///C:/Users/alice/report.txt',
-            text: 'Report'
-        });
-
-        expect(result).toBe('\x1b]8;;file:///C:/Users/alice/report.txt\x1b\\🔗 Report\x1b]8;;\x1b\\');
-    });
-
-    it('renders OSC 8 hyperlink for UNC file URL', () => {
-        const result = renderLink({
-            url: 'file://server/share/report.txt',
-            text: 'Report'
-        });
-
-        expect(result).toBe('\x1b]8;;file://server/share/report.txt\x1b\\🔗 Report\x1b]8;;\x1b\\');
+        expect(result).toBe('🔗 Report');
     });
 
     it('falls back to plain text for file URL without a path', () => {

@@ -16,15 +16,12 @@ import type {
 } from '../types/Widget';
 import { renderOsc8Link } from '../utils/hyperlink';
 import { shouldInsertInput } from '../utils/input-guards';
+import { isSafeHyperlinkUrl } from '../utils/terminal-sanitize';
 
-function isValidLinkUrl(url: string): boolean {
+function isValidHttpUrl(url: string): boolean {
     try {
         const parsed = new URL(url);
-        if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
-            return true;
-        }
-
-        return parsed.protocol === 'file:' && parsed.pathname.length > 0 && parsed.pathname !== '/';
+        return parsed.protocol === 'http:' || parsed.protocol === 'https:';
     } catch {
         return false;
     }
@@ -55,7 +52,6 @@ function buildMetadata(widget: WidgetItem, urlValue: string, textValue: string):
 
     if (Object.keys(metadata).length === 0) {
         const { metadata, ...rest } = widget;
-        void metadata; // Intentionally unused
         return rest;
     }
 
@@ -101,17 +97,15 @@ export class LinkWidget implements Widget {
     }
 
     render(item: WidgetItem, context: RenderContext, settings: Settings): string | null {
-        void settings;
-        void context;
-
         const { url, label } = getLinkLabel(item);
         const displayText = withEmojiPrefix(label, item.rawValue);
 
-        if (!url || !isValidLinkUrl(url)) {
+        if (!url || !isValidHttpUrl(url)) {
             return displayText;
         }
 
-        return renderOsc8Link(new URL(url).href, displayText);
+        // The parsed form percent-encodes what a link can't carry as is
+        return renderOsc8Link(isSafeHyperlinkUrl(url) ? url : new URL(url).href, displayText);
     }
 
     getCustomKeybinds(): CustomKeybind[] {
@@ -127,7 +121,6 @@ export class LinkWidget implements Widget {
 
     supportsRawValue(): boolean { return true; }
     supportsColors(item: WidgetItem): boolean {
-        void item;
         return true;
     }
 }
@@ -189,7 +182,7 @@ const LinkEditor: React.FC<WidgetEditorProps> = ({ widget, onComplete, onCancel,
         }
     });
 
-    const showInvalidUrlWarning = isUrlMode && urlInput.trim().length > 0 && !isValidLinkUrl(urlInput.trim());
+    const showInvalidUrlWarning = isUrlMode && urlInput.trim().length > 0 && !isValidHttpUrl(urlInput.trim());
     const prompt = isUrlMode ? '輸入 URL（http/https/file）：' : '輸入連結文字（留空使用 URL）：';
 
     return (
@@ -214,7 +207,7 @@ const LinkEditor: React.FC<WidgetEditorProps> = ({ widget, onComplete, onCancel,
                 </Text>
             )}
             {showInvalidUrlWarning && (
-                <Text color='yellow'>URL 必須以 http://、https:// 或 file:// 開頭</Text>
+                <Text color='yellow'>URL 必須以 http:// 或 https:// 開頭</Text>
             )}
             <Text dimColor>←→ 移動游標，Enter 儲存，ESC 取消</Text>
         </Box>

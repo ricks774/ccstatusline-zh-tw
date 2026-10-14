@@ -1,54 +1,34 @@
 import type { RenderContext } from '../types/RenderContext';
-import type { Settings } from '../types/Settings';
 import type {
-    HideableState,
-    Widget,
-    WidgetEditorDisplay,
+    CustomKeybind,
+    WidgetEditorProps,
     WidgetItem
 } from '../types/Widget';
 import {
-    isInsideJjRepo,
-    runJjArgs
+    runJjArgs,
+    type JjChangeCounts
 } from '../utils/jj';
 
+import { JjWidgetBase } from './shared/jj-widget-base';
 import {
-    NO_JJ_HIDEABLE_STATE,
-    isHidden
-} from './shared/hideable';
+    getSlotSymbol,
+    getSymbolKeybind,
+    renderSymbolSlotsEditor,
+    type SymbolSlot
+} from './shared/symbol-override';
 
-export class JjChangesWidget implements Widget {
+const INSERTIONS_SLOT: SymbolSlot = { id: 'symbolInsertions', label: '新增', defaultSymbol: '+' };
+const DELETIONS_SLOT: SymbolSlot = { id: 'symbolDeletions', label: '刪除', defaultSymbol: '-' };
+
+export class JjChangesWidget extends JjWidgetBase<JjChangeCounts> {
+    protected readonly previewValue = { insertions: 42, deletions: 10 };
+    protected readonly noJjText = '(無 JJ)';
+
     getDefaultColor(): string { return 'yellow'; }
     getDescription(): string { return '顯示 Jujutsu 變更數（+新增, -刪除）'; }
     getDisplayName(): string { return 'JJ 變更數'; }
-    getCategory(): string { return 'Jujutsu'; }
-    getEditorDisplay(item: WidgetItem): WidgetEditorDisplay {
-        return { displayText: this.getDisplayName() };
-    }
 
-    getHideableStates(): HideableState[] {
-        return [NO_JJ_HIDEABLE_STATE];
-    }
-
-    render(item: WidgetItem, context: RenderContext, _settings: Settings): string | null {
-        const hideNoJj = isHidden(item, NO_JJ_HIDEABLE_STATE.key);
-
-        if (context.isPreview) {
-            return '(+42,-10)';
-        }
-
-        if (!isInsideJjRepo(context)) {
-            return hideNoJj ? null : '(無 JJ)';
-        }
-
-        const changes = this.getJjChanges(context);
-        if (changes) {
-            return `(+${changes.insertions},-${changes.deletions})`;
-        }
-
-        return hideNoJj ? null : '(無 JJ)';
-    }
-
-    private getJjChanges(context: RenderContext): { insertions: number; deletions: number } | null {
+    protected getValue(context: RenderContext): JjChangeCounts {
         const stat = runJjArgs(['diff', '--stat'], context);
 
         let totalInsertions = 0;
@@ -60,14 +40,25 @@ export class JjChangesWidget implements Widget {
             if (summaryLine) {
                 const insertMatch = /(\d+) insertion/.exec(summaryLine);
                 const deleteMatch = /(\d+) deletion/.exec(summaryLine);
-                totalInsertions += insertMatch?.[1] ? parseInt(insertMatch[1], 10) : 0;
-                totalDeletions += deleteMatch?.[1] ? parseInt(deleteMatch[1], 10) : 0;
+                totalInsertions += insertMatch?.[1] ? Number.parseInt(insertMatch[1], 10) : 0;
+                totalDeletions += deleteMatch?.[1] ? Number.parseInt(deleteMatch[1], 10) : 0;
             }
         }
 
         return { insertions: totalInsertions, deletions: totalDeletions };
     }
 
+    protected formatValue(item: WidgetItem, changes: JjChangeCounts): string {
+        return `(${getSlotSymbol(item, INSERTIONS_SLOT)}${changes.insertions},${getSlotSymbol(item, DELETIONS_SLOT)}${changes.deletions})`;
+    }
+
+    getCustomKeybinds(): CustomKeybind[] {
+        return [getSymbolKeybind()];
+    }
+
+    renderEditor(props: WidgetEditorProps) {
+        return renderSymbolSlotsEditor(props, [INSERTIONS_SLOT, DELETIONS_SLOT]);
+    }
+
     supportsRawValue(): boolean { return false; }
-    supportsColors(): boolean { return true; }
 }

@@ -8,6 +8,9 @@ import type {
 } from '../types/Widget';
 
 import { isHidden } from './shared/hideable';
+import { formatRawOrLabeledValue } from './shared/raw-or-labeled';
+
+const LABEL = '風格: ';
 
 const DEFAULT_VALUE_HIDEABLE_STATE: HideableState = { key: 'default-value', label: '風格為 \'default\' 時' };
 
@@ -16,6 +19,7 @@ export class OutputStyleWidget implements Widget {
     getDescription(): string { return '顯示當前 Claude Code 輸出風格'; }
     getDisplayName(): string { return '輸出風格'; }
     getCategory(): string { return '核心'; }
+    getLabelPrefix(): string { return LABEL; }
     getEditorDisplay(item: WidgetItem): WidgetEditorDisplay {
         return { displayText: this.getDisplayName() };
     }
@@ -26,13 +30,13 @@ export class OutputStyleWidget implements Widget {
 
     render(item: WidgetItem, context: RenderContext, settings: Settings): string | null {
         if (context.isPreview) {
-            return item.rawValue ? 'default' : '風格: default';
+            return formatRawOrLabeledValue(item, this.getLabelPrefix(), 'default');
         } else if (context.data?.output_style?.name) {
             const styleName = context.data.output_style.name;
             if (styleName === 'default' && isHidden(item, DEFAULT_VALUE_HIDEABLE_STATE.key)) {
                 return null;
             }
-            return item.rawValue ? styleName : `風格: ${styleName}`;
+            return formatRawOrLabeledValue(item, this.getLabelPrefix(), styleName);
         }
         return null;
     }
