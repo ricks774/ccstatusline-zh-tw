@@ -1,5 +1,9 @@
 import chalk from 'chalk';
+import * as childProcess from 'node:child_process';
+import { randomBytes } from 'node:crypto';
 import * as fs from 'node:fs';
+import * as os from 'node:os';
+import * as path from 'node:path';
 import {
     afterEach,
     beforeEach,
@@ -14,6 +18,8 @@ import {
     type InstallationMetadata
 } from '../../types/Settings';
 import * as claudeSettings from '../../utils/claude-settings';
+import { DEV_RELOAD_CHILD_ARG_PREFIX } from '../../utils/dev-reload';
+import * as globalCommandResolution from '../../utils/global-command-resolution';
 import * as globalPackageManager from '../../utils/global-package-manager';
 import { getPackageVersion } from '../../utils/terminal';
 import * as updateChecker from '../../utils/update-checker';
@@ -21,9 +27,9 @@ import {
     applyTuiImport,
     buildConfigLoadWarning,
     buildInvalidConfigSaveConfirm,
+    classifyInstalledStatusLine,
     clearInstallMenuSelection,
     getConfirmCancelScreen,
-    getCurrentInstallation,
     getPathInferredInstallation,
     getPinnedVersionMismatch
 } from '../App';
@@ -113,10 +119,7 @@ describe('Pinned version mismatch guard', () => {
             installedVersion: '2.2.13'
         };
 
-        expect(getCurrentInstallation(true, null, {
-            ...DEFAULT_SETTINGS,
-            installation
-        })).toEqual(installation);
+        expect(classifyInstalledStatusLine(null, installation)).toEqual(installation);
     });
 
     it('does not block auto-update or matching pinned installs', () => {
@@ -441,6 +444,207 @@ describe('App after a global update run from the TUI', () => {
     });
 });
 
+describe('App launched through npx', () => {
+    let sandbox: AppSandbox;
+
+    beforeEach(() => {
+        sandbox = setUpAppSandbox();
+    });
+
+    afterEach(() => {
+        sandbox.restore();
+    });
+
+    it.skipIf(process.platform === 'win32')('still guards a pinned npm install older than the running TUI', async () => {
+        fs.writeFileSync(sandbox.settingsPath, JSON.stringify({
+            ...DEFAULT_SETTINGS,
+            installation: { method: 'pinned', installedVersion: '2.0.0' }
+        }));
+        vi.spyOn(claudeStatus, 'loadClaudeStatusLineState').mockResolvedValue({ existingStatusLine: null, refreshInterval: null });
+        vi.spyOn(claudeSettings, 'isInstalled').mockResolvedValue(true);
+        // While npx runs the TUI, its cache's bin dir comes first on PATH
+        const responses: Record<string, string> = {
+            'which -a ccstatusline-zh-tw': '/home/alice/.npm/_npx/9f3c1e2a7b6d4c80/node_modules/.bin/ccstatusline-zh-tw\n/home/alice/.npm-global/bin/ccstatusline-zh-tw\n',
+            'npm prefix -g': '/home/alice/.npm-global\n'
+        };
+        vi.spyOn(childProcess, 'execFileSync').mockImplementation((command, args) => {
+            const key = `${command} ${(args as string[]).join(' ')}`;
+            const response = responses[key];
+
+            if (response === undefined) {
+                throw new Error(`Unexpected command: ${key}`);
+            }
+
+            return response;
+        });
+        const rendered = renderApp();
+
+        try {
+            await waitFor(() => {
+                expect(rendered.getFrame()).toContain('固定安裝版本不符');
+            });
+            expect(rendered.getFrame()).toContain(`v2.0.0，但當前 TUI 為 v${getPackageVersion()}`);
+            expect(rendered.getFrame()).toContain(`將 npm 全域性安裝更新到 v${getPackageVersion()}`);
+        } finally {
+            rendered.cleanup();
+        }
+    });
+});
+
+describe('App live label preview', () => {
+    let sandbox: AppSandbox;
+
+    beforeEach(() => {
+        sandbox = setUpAppSandbox();
+        vi.spyOn(claudeStatus, 'loadClaudeStatusLineState').mockResolvedValue({ existingStatusLine: null, refreshInterval: null });
+        vi.spyOn(claudeSettings, 'isInstalled').mockResolvedValue(false);
+    });
+
+    afterEach(() => {
+        sandbox.restore();
+    });
+
+    it.each([false, true])('previews label spacing, cancels drafts, and commits or resets labels (Powerline: %s)', async (powerline) => {
+        const initial = {
+            ...DEFAULT_SETTINGS,
+            powerline: { ...DEFAULT_SETTINGS.powerline, enabled: powerline },
+            lines: [
+                [{ id: 'anchor', type: 'custom-text', customText: 'Untouched line' }],
+                [{ id: 'model', type: 'model', metadata: { label: '7d' } }]
+            ]
+        };
+        fs.writeFileSync(sandbox.settingsPath, JSON.stringify(initial));
+        const rendered = renderApp();
+
+        try {
+            await waitFor(() => {
+                expect(rendered.getFrame()).toContain('主選單');
+                expect(rendered.getFrame()).toContain('7dClaude');
+            });
+            await pressKey(rendered, KEYS.enter, '選擇要編輯元件的行');
+            await pressKey(rendered, KEYS.down, '第 2 行');
+            await pressKey(rendered, KEYS.enter, 'Edit Line 2');
+            await pressKey(rendered, 'e', '（預設: "模型: "）');
+            await pressKey(rendered, ' ', '7d Claude');
+            await pressKey(rendered, '\x7f', '7dClaude');
+            await pressKey(rendered, 'XYZ', '7dXYZClaude');
+            expect(rendered.getFrame()).toContain('Untouched line');
+            expect(JSON.parse(fs.readFileSync(sandbox.settingsPath, 'utf-8'))).toEqual(initial);
+
+            await pressKey(rendered, KEYS.escape, 'Edit Line 2');
+            expect(rendered.getFrame()).toContain('7dClaude');
+            expect(rendered.getFrame()).not.toContain('7dXYZClaude');
+            await pressKey(rendered, 'e', '（預設: "模型: "）');
+            await pressKey(rendered, ' ', '7d Claude');
+            await pressKey(rendered, KEYS.enter, 'Edit Line 2');
+            expect(rendered.getFrame()).toContain('7d Claude');
+            await pressKey(rendered, KEYS.ctrlS, '✓ 配置已儲存');
+            expect(JSON.parse(fs.readFileSync(sandbox.settingsPath, 'utf-8'))).toMatchObject({ lines: [initial.lines[0], [{ id: 'model', metadata: { label: '7d ' } }]] });
+
+            await pressKey(rendered, 'e', '（預設: "模型: "）');
+            await pressKey(rendered, '!', '7d !Claude');
+            await pressKey(rendered, '\t', 'Edit Line 2');
+            expect(rendered.getFrame()).toContain('模型: Claude');
+            expect(rendered.getFrame()).not.toContain('7d !Claude');
+        } finally {
+            rendered.cleanup();
+        }
+    });
+});
+
+describe('App lookup of the global ccstatusline command', () => {
+    let sandbox: AppSandbox;
+
+    beforeEach(() => {
+        sandbox = setUpAppSandbox();
+        vi.spyOn(claudeStatus, 'loadClaudeStatusLineState').mockResolvedValue({ existingStatusLine: 'ccstatusline-zh-tw', refreshInterval: null });
+        vi.spyOn(claudeSettings, 'isInstalled').mockResolvedValue(true);
+    });
+
+    afterEach(() => {
+        sandbox.restore();
+    });
+
+    // The real lookups run `which -a`, `npm prefix -g` and `bun pm bin -g`
+    it.each(['pinned', 'self-managed'] as const)('looks up a %s install once, not again for each editor key', async (method) => {
+        const runningVersion = getPackageVersion();
+        fs.writeFileSync(sandbox.settingsPath, JSON.stringify({
+            ...DEFAULT_SETTINGS,
+            lines: [[{ id: 'model', type: 'model', metadata: { label: '7d' } }]],
+            ...(method === 'pinned' && { installation: { method: 'pinned', installedVersion: runningVersion } })
+        }));
+        const inspectActiveCommand = vi.spyOn(globalPackageManager, 'inspectActiveGlobalCommand').mockReturnValue({
+            packageManager: 'npm',
+            resolvedPath: '/usr/local/bin/ccstatusline',
+            resolvedPaths: ['/usr/local/bin/ccstatusline'],
+            binDir: '/usr/local/bin',
+            version: runningVersion,
+            warning: null
+        });
+        const inspectResolution = vi.spyOn(globalCommandResolution, 'inspectGlobalCommandResolution').mockReturnValue({
+            resolvedPaths: ['/usr/local/bin/ccstatusline'],
+            firstResolvedPath: '/usr/local/bin/ccstatusline',
+            expectedBinDir: '/usr/local/bin',
+            warning: null
+        });
+        const rendered = renderApp();
+
+        try {
+            await waitFor(() => {
+                expect(rendered.getFrame()).toContain('🧰 管理安裝');
+            });
+            await pressKey(rendered, KEYS.enter, '選擇要編輯元件的行');
+            await pressKey(rendered, KEYS.enter, 'Edit Line 1');
+            await pressKey(rendered, 'e', '（預設: "模型: "）');
+            await pressKey(rendered, 'X', '7dXClaude');
+            await pressKey(rendered, 'Y', '7dXYClaude');
+            await pressKey(rendered, 'Z', '7dXYZClaude');
+            await pressKey(rendered, KEYS.enter, 'Edit Line 1');
+            await pressKey(rendered, 'r', '(raw value)');
+            await pressKey(rendered, KEYS.escape, '選擇要編輯元件的行');
+            await pressKey(rendered, KEYS.escape, '🧰 管理安裝');
+
+            expect(inspectActiveCommand).toHaveBeenCalledOnce();
+            // Pinned installs also look up the relaunch path for the version-mismatch screen
+            expect(inspectResolution).toHaveBeenCalledTimes(method === 'pinned' ? 1 : 0);
+        } finally {
+            rendered.cleanup();
+        }
+    });
+
+    it('looks again after the TUI updates the pinned global install', async () => {
+        fs.writeFileSync(sandbox.settingsPath, JSON.stringify({
+            ...DEFAULT_SETTINGS,
+            installation: { method: 'pinned', installedVersion: '2.0.0' }
+        }));
+        let versionOnDisk = '2.0.0';
+        const inspectActiveCommand = vi.spyOn(globalPackageManager, 'inspectActiveGlobalCommand').mockImplementation(() => ({
+            packageManager: 'npm',
+            resolvedPath: '/usr/local/bin/ccstatusline',
+            resolvedPaths: ['/usr/local/bin/ccstatusline'],
+            binDir: '/usr/local/bin',
+            version: versionOnDisk,
+            warning: null
+        }));
+        vi.spyOn(updateChecker, 'runGlobalPackageInstall').mockImplementation((packageManager, version) => {
+            versionOnDisk = version;
+            return Promise.resolve();
+        });
+        const rendered = renderApp();
+
+        try {
+            await waitFor(() => {
+                expect(rendered.getFrame()).toContain('固定安裝版本不符');
+            });
+            await pressKey(rendered, KEYS.enter, '✓ 全域性包已更新');
+            expect(rendered.getFrame()).toContain('主選單');
+            expect(inspectActiveCommand).toHaveBeenCalledTimes(2);
+        } finally {
+            rendered.cleanup();
+        }
+    });
+});
+
 describe('App save guard for an invalid settings.json', () => {
     let sandbox: AppSandbox;
 
@@ -480,6 +684,83 @@ describe('App save guard for an invalid settings.json', () => {
     });
 });
 
+describe('App save with a widget whose hooks the status line command can\'t run', () => {
+    const statusCommand = 'bash ~/.claude/statusline.sh';
+    let sandbox: AppSandbox;
+
+    beforeEach(() => {
+        sandbox = setUpAppSandbox();
+        fs.writeFileSync(sandbox.settingsPath, JSON.stringify({
+            ...DEFAULT_SETTINGS,
+            lines: [[{ id: 'skills-1', type: 'skills' }], [], []]
+        }));
+        const claudeConfigDir = process.env.CLAUDE_CONFIG_DIR ?? '';
+        fs.mkdirSync(claudeConfigDir, { recursive: true });
+        fs.writeFileSync(path.join(claudeConfigDir, 'settings.json'), JSON.stringify({ statusLine: { type: 'command', command: statusCommand } }));
+        vi.spyOn(claudeStatus, 'loadClaudeStatusLineState').mockResolvedValue({ existingStatusLine: statusCommand, refreshInterval: null });
+        vi.spyOn(claudeSettings, 'isInstalled').mockResolvedValue(false);
+    });
+
+    afterEach(() => {
+        sandbox.restore();
+    });
+
+    it('explains after Ctrl+S that the hooks weren\'t added, then returns to the same screen', async () => {
+        const rendered = renderApp();
+
+        try {
+            await waitFor(() => {
+                expect(rendered.getFrame()).toContain('主選單');
+            });
+            await pressKey(rendered, KEYS.enter, '選擇要編輯元件的行');
+
+            await pressKey(rendered, KEYS.ctrlS, '未新增 技能 的 Claude Code hooks');
+            expect(rendered.getFrame()).toContain('配置已儲存');
+            expect(rendered.getFrame()).toContain(statusCommand);
+            expect(rendered.getFrame()).toContain('ccstatusline "$@"');
+
+            await pressKey(rendered, KEYS.enter, '選擇要編輯元件的行');
+            expect(rendered.getFrame()).not.toContain('weren\'t added');
+        } finally {
+            rendered.cleanup();
+        }
+    });
+
+    it('explains after Save & Exit that the hooks weren\'t added, then exits', async () => {
+        const rendered = renderApp();
+
+        try {
+            await waitFor(() => {
+                expect(rendered.getFrame()).toContain('主選單');
+            });
+
+            // An unsaved edit, so the menu offers Save & Exit: Color Level 256 → Truecolor
+            await pressKey(rendered, KEYS.down, '▶  🎨 編輯顏色');
+            await pressKey(rendered, KEYS.down, '▶  ⚡ Powerline 設定');
+            await pressKey(rendered, KEYS.down, '▶  💻 終端選項');
+            await pressKey(rendered, KEYS.enter, '▶  ◱ 終端寬度');
+            await pressKey(rendered, KEYS.down, '▶  ▓ 顏色級別');
+            await pressKey(rendered, KEYS.enter, '(Truecolor)');
+            await pressKey(rendered, KEYS.escape, '💾 儲存並退出');
+
+            await pressKey(rendered, KEYS.up, '▶  ⚡ Powerline 設定');
+            await pressKey(rendered, KEYS.up, '▶  🎨 編輯顏色');
+            await pressKey(rendered, KEYS.up, '▶  📝 編輯狀態行');
+            await pressKey(rendered, KEYS.up, '▶  ⭐ 喜歡 ccstatusline-zh-tw？來 GitHub 給個 Star');
+            await pressKey(rendered, KEYS.up, '▶  ❌ 不儲存退出');
+            await pressKey(rendered, KEYS.up, '▶  💾 儲存並退出');
+            await pressKey(rendered, KEYS.enter, '未新增 技能 的 Claude Code hooks');
+            const saved = JSON.parse(fs.readFileSync(sandbox.settingsPath, 'utf-8')) as { colorLevel: number };
+            expect(saved.colorLevel).toBe(3);
+
+            rendered.stdin.write(KEYS.enter);
+            await rendered.waitUntilExit();
+        } finally {
+            rendered.cleanup();
+        }
+    });
+});
+
 function createPendingRun() {
     let finish: () => void = () => undefined;
     const run = vi.fn(() => new Promise<void>((resolve) => {
@@ -491,16 +772,29 @@ function createPendingRun() {
 
 describe('App while an install or update runs', () => {
     let sandbox: AppSandbox;
+    let devReloadDir: string;
+    let devReloadStateFile: string;
+    const savedEnv = { ...process.env };
+    const savedArgv = [...process.argv];
 
     beforeEach(() => {
         sandbox = setUpAppSandbox();
+        const capability = randomBytes(32).toString('hex');
+        devReloadDir = path.join(os.tmpdir(), `ccstatusline-dev-reload-${capability}`);
+        devReloadStateFile = path.join(devReloadDir, 'snapshot.json');
+        fs.mkdirSync(devReloadDir, { mode: 0o700 });
+        process.env.CCSTATUSLINE_DEV_RELOAD = '1';
+        process.argv = [...savedArgv, `${DEV_RELOAD_CHILD_ARG_PREFIX}${capability}`];
     });
 
     afterEach(() => {
         sandbox.restore();
+        process.env = { ...savedEnv };
+        process.argv = [...savedArgv];
+        fs.rmSync(devReloadDir, { recursive: true, force: true });
     });
 
-    it('runs a confirmed install once, ignoring Enter and ESC until it finishes', async () => {
+    it('runs a confirmed install once, ignoring Enter, ESC and Ctrl+R until it finishes', async () => {
         vi.spyOn(claudeStatus, 'loadClaudeStatusLineState').mockResolvedValue({ existingStatusLine: null, refreshInterval: null });
         vi.spyOn(claudeSettings, 'isInstalled').mockResolvedValue(false);
         vi.spyOn(claudeSettings, 'getExistingStatusLine').mockResolvedValue(null);
@@ -538,6 +832,9 @@ describe('App while an install or update runs', () => {
             await letReactCatchUp();
             rendered.stdin.write(KEYS.escape);
             await letReactCatchUp();
+            rendered.stdin.write('\u0012');
+            await letReactCatchUp();
+            expect(fs.existsSync(devReloadStateFile)).toBe(false);
             expect(globalInstall.run).toHaveBeenCalledOnce();
             expect(rendered.getFrame()).toContain('處理中...');
             expect(rendered.getFrame()).not.toContain('選擇安裝方式：');
@@ -553,7 +850,7 @@ describe('App while an install or update runs', () => {
         }
     });
 
-    it('runs the pinned version update once, ignoring Enter and ESC until it finishes', async () => {
+    it('runs the pinned version update once, ignoring Enter, ESC and Ctrl+R until it finishes', async () => {
         fs.writeFileSync(sandbox.settingsPath, JSON.stringify({
             ...DEFAULT_SETTINGS,
             installation: { method: 'pinned', installedVersion: '2.0.0' }
@@ -585,6 +882,9 @@ describe('App while an install or update runs', () => {
             await letReactCatchUp();
             rendered.stdin.write(KEYS.escape);
             await letReactCatchUp();
+            rendered.stdin.write('\u0012');
+            await letReactCatchUp();
+            expect(fs.existsSync(devReloadStateFile)).toBe(false);
             expect(globalInstall.run).toHaveBeenCalledOnce();
             expect(rendered.getFrame()).toContain('正在更新 npm 全域性安裝至 v');
             expect(rendered.getFrame()).not.toContain('請手動重新啟動');

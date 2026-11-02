@@ -12,7 +12,7 @@ import { formatRawOrLabeledValue } from './shared/raw-or-labeled';
 const LABEL = '終端: ';
 
 export class TerminalWidthWidget implements Widget {
-    getDefaultColor(): string { return 'gray'; }
+    getDefaultColor(): string { return 'brightBlack'; }
     getDescription(): string { return '顯示當前終端寬度（列數）'; }
     getDisplayName(): string { return '終端寬度'; }
     getCategory(): string { return '環境'; }

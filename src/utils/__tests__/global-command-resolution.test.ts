@@ -105,7 +105,7 @@ describe('global command resolution', () => {
         expect(resolution.expectedBinDir).toBeNull();
     });
 
-    it('warns when multiple PATH directories contain ccstatusline', () => {
+    it('warns when multiple PATH directories contain ccstatusline-zh-tw', () => {
         mockExecFileSync({
             'which -a ccstatusline-zh-tw': '/home/alice/.bun/bin/ccstatusline-zh-tw\n/usr/local/bin/ccstatusline-zh-tw\n',
             'bun pm bin -g': '/home/alice/.bun/bin\n'
@@ -128,6 +128,49 @@ describe('global command resolution', () => {
 
         expect(resolution.firstResolvedPath).toBe('/Users/alice/.bun/bin/ccstatusline-zh-tw');
         expect(resolution.resolvedPaths).toEqual(['/Users/alice/.bun/bin/ccstatusline-zh-tw']);
+        expect(resolution.warning).toBeNull();
+    });
+
+    it('ignores transient npx status line shims when resolving global commands', () => {
+        mockExecFileSync({
+            'which -a ccstatusline-zh-tw': '/Users/alice/.npm/_npx/9f3c1e2a7b6d4c80/node_modules/.bin/ccstatusline-zh-tw\n/Users/alice/.nvm/versions/node/v24.9.0/bin/ccstatusline-zh-tw\n',
+            'npm prefix -g': '/Users/alice/.nvm/versions/node/v24.9.0\n'
+        });
+
+        const resolution = inspectGlobalCommandResolution('npm', { platform: 'darwin' });
+
+        expect(resolution.firstResolvedPath).toBe('/Users/alice/.nvm/versions/node/v24.9.0/bin/ccstatusline-zh-tw');
+        expect(resolution.resolvedPaths).toEqual(['/Users/alice/.nvm/versions/node/v24.9.0/bin/ccstatusline-zh-tw']);
+        expect(resolution.warning).toBeNull();
+    });
+
+    it('ignores npx shims from a custom npm cache directory', () => {
+        mockExecFileSync({
+            'which -a ccstatusline-zh-tw': '/srv/cache/npm/_npx/0a1b2c3d4e5f6789/node_modules/.bin/ccstatusline-zh-tw\n/usr/local/bin/ccstatusline-zh-tw\n',
+            'npm prefix -g': '/usr/local\n'
+        });
+
+        const resolution = inspectGlobalCommandResolution('npm', { platform: 'linux' });
+
+        expect(resolution.resolvedPaths).toEqual(['/usr/local/bin/ccstatusline-zh-tw']);
+        expect(resolution.warning).toBeNull();
+    });
+
+    it('ignores transient npx shims in the Windows npm cache', () => {
+        mockExecFileSync({
+            'where ccstatusline-zh-tw': [
+                'C:\\Users\\Alice\\AppData\\Local\\npm-cache\\_npx\\9f3c1e2a7b6d4c80\\node_modules\\.bin\\ccstatusline-zh-tw',
+                'C:\\Users\\Alice\\AppData\\Local\\npm-cache\\_npx\\9f3c1e2a7b6d4c80\\node_modules\\.bin\\ccstatusline-zh-tw.cmd',
+                'C:\\Users\\Alice\\AppData\\Local\\npm-cache\\_npx\\9f3c1e2a7b6d4c80\\node_modules\\.bin\\ccstatusline-zh-tw.ps1',
+                'C:\\Users\\Alice\\AppData\\Roaming\\npm\\ccstatusline-zh-tw.cmd',
+                ''
+            ].join('\r\n'),
+            'npm.cmd prefix -g': 'C:\\Users\\Alice\\AppData\\Roaming\\npm\r\n'
+        });
+
+        const resolution = inspectGlobalCommandResolution('npm', { platform: 'win32' });
+
+        expect(resolution.resolvedPaths).toEqual(['C:\\Users\\Alice\\AppData\\Roaming\\npm\\ccstatusline-zh-tw.cmd']);
         expect(resolution.warning).toBeNull();
     });
 
@@ -155,7 +198,7 @@ describe('global command resolution', () => {
         expect(resolution.warning).toContain('/usr/local/bin/ccstatusline-zh-tw');
     });
 
-    it('warns when ccstatusline is not resolvable after a global install', () => {
+    it('warns when ccstatusline-zh-tw is not resolvable after a global install', () => {
         mockExecFileSync({ 'npm prefix -g': '/usr/local\n' });
 
         const resolution = inspectGlobalCommandResolution('npm', { platform: 'linux' });

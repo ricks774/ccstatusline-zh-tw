@@ -6,7 +6,10 @@ import {
 import React, { useState } from 'react';
 
 import type { FlexMode } from '../../types/FlexMode';
-import type { Settings } from '../../types/Settings';
+import {
+    DEFAULT_SETTINGS,
+    type Settings
+} from '../../types/Settings';
 import { shouldInsertInput } from '../../utils/input-guards';
 
 import {
@@ -40,17 +43,24 @@ export function buildTerminalWidthItems(
     selectedOption: FlexMode,
     compactThreshold: number
 ): ListEntry<FlexMode>[] {
+    const getSublabel = (option: FlexMode): string | undefined => {
+        if (option === selectedOption) {
+            return '（當前）';
+        }
+        return option === DEFAULT_SETTINGS.flexMode ? '（預設）' : undefined;
+    };
+
     return [
         {
             value: 'full',
             label: '始終全寬',
-            sublabel: selectedOption === 'full' ? '（當前）' : undefined,
-            description: '使用完整終端寬度減去 4 個字元的終端內邊距。如果出現自動壓縮訊息，可能導致行換行。\n\n注意：如果啟用了 /ide 整合，不建議使用此模式。'
+            sublabel: getSublabel('full'),
+            description: '使用完整終端寬度減去 6 個字元的終端內邊距。如果出現自動壓縮訊息，可能導致行換行。\n\n注意：如果啟用了 /ide 整合，不建議使用此模式。'
         },
         {
             value: 'full-minus-40',
             label: '全寬減 40',
-            sublabel: selectedOption === 'full-minus-40' ? '（當前）' : '（預設）',
+            sublabel: getSublabel('full-minus-40'),
             description: '在狀態列右側留出空間以容納自動壓縮訊息。這可以防止換行但可能留下未使用的空間。此限制存在是因為我們無法檢測訊息何時出現。'
         },
         {

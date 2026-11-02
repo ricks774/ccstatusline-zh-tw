@@ -4,7 +4,7 @@
 
 _在終端中顯示模型資訊、Git 分支、Token 用量及其他實時指標_
 
-> 本專案是 [ccstatusline](https://github.com/sirmalloc/ccstatusline) 的**繁體中文化 Fork**，當前同步至上游 v2.2.32 版本（含工作階段費率 / 超額用量每日預算元件、可編輯元件標籤前綴、自訂命令快取 TTL、Git/終端寬度探測效能優化，以及多項安全加固）。所有使用者可見的介面文字（元件名稱、分類、描述、選單標籤、提示資訊等）均已翻譯為中文，方便中文使用者使用。
+> 本專案是 [ccstatusline](https://github.com/sirmalloc/ccstatusline) 的**繁體中文化 Fork**，當前同步至上游 v2.2.33 版本（含快速模式 / 時段預測 / 時段上限計時 / 額外用量上限 / 支出上限元件、可點擊的當前目錄連結、元件即時預覽選擇器、Token 與速度指標去重修正，以及多項穩定性修復）。所有使用者可見的介面文字（元件名稱、分類、描述、選單標籤、提示資訊等）均已翻譯為中文，方便中文使用者使用。
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/ricks774/ccstatusline-zh-tw/blob/main/LICENSE)
 [![Node.js Version](https://img.shields.io/node/v/ccstatusline.svg)](https://nodejs.org)
@@ -31,7 +31,7 @@ _在終端中顯示模型資訊、Git 分支、Token 用量及其他實時指標
 
 ccstatusline 是一個優秀的 Claude Code CLI 狀態列格式化工具，支援 80+ 種可定製元件、Powerline 主題、互動式 TUI 配置介面等豐富功能。本專案在其基礎上，將所有使用者可見的英文文字直接替換為中文，包括：
 
-- **90 個元件**的名稱、描述、分類標籤（含 v2.2.13 新增的 Voice Status / 周 Sonnet 用量 / 周 Opus 用量，v2.2.17 新增的超額用量佔比 / 超額用量剩餘，v2.2.20 新增的 Remote Control Status，v2.2.22 新增的快取命中率 / 快取讀取 / 快取寫入 / 超額已用，v2.2.24 新增的快取計時器 / Git CI 狀態 / 沙箱狀態，v2.2.26 新增的周 Fable 用量，v2.2.29 新增的 Claude 狀態，v2.2.31 新增的會話費率 / 超額用量每日預算）
+- **98 個元件**的名稱、描述、分類標籤（含 v2.2.13 新增的 Voice Status / 周 Sonnet 用量 / 周 Opus 用量，v2.2.17 新增的超額用量佔比 / 超額用量剩餘，v2.2.20 新增的 Remote Control Status，v2.2.22 新增的快取命中率 / 快取讀取 / 快取寫入 / 超額已用，v2.2.24 新增的快取計時器 / Git CI 狀態 / 沙箱狀態，v2.2.26 新增的周 Fable 用量，v2.2.29 新增的 Claude 狀態，v2.2.31 新增的會話費率 / 超額用量每日預算）
 - **TUI 配置介面**的全部選單項、幫助文字、提示資訊、對話方塊
 - **佈局元件**（分隔符、彈性分隔符）的名稱和描述
 - **極簡模式 / Minimalist Mode**、**模糊搜尋元件選擇器**、**Powerline 主題色延續**（v2.2.8）
@@ -47,6 +47,7 @@ ccstatusline 是一個優秀的 Claude Code CLI 狀態列格式化工具，支�
 - **周 Fable 用量元件**、**設定匯入/匯出**（含變更預覽與全部取代/合併模式）、**用量 API `limits[]` 陣列解析**（相容遷移帳戶）、**每模型周用量改讀 `limits[]`**、**壓縮後上下文長度改由 `compact_boundary` 回報**、**渲染器隱藏元件後分隔符保留修復**（v2.2.26–v2.2.27）
 - **Claude 狀態元件**（讀取 status.claude.com 服務狀態，含可選 48 小時事件歷史條）、**統一的隱藏狀態系統**（各元件的隱藏條件整合為單一 `(h)隱藏…` 檢查清單，v3→v4 設定自動遷移）、**可設定數值精度**（`precise` / `compact` / `whole`，可全域性或按類型/按元件設定）、**JSONL 串流讀取**（大型轉錄檔也能正確計算 Token）、**Git 衝突數為 0 時可隱藏**、**每次 render 只讀一次轉錄檔的效能優化**、**usage lock 永不過期修復**、**Git 快取寫入失敗時的暫存檔洩漏修復**（v2.2.28–v2.2.29）
 - **會話費率元件**（Session Cost Rate，按小時顯示費用，可切換活躍時間 / 時鐘時間）、**超額用量每日預算元件**（Extra Usage Daily Budget，可僅計工作日）、**可編輯元件標籤前綴**（TUI 按 `e` 編輯）、**自訂命令輸出快取 TTL**（可於「配置狀態行」設定）、**終端寬度無 TTY 結果快取 TTL**、**重置計時器可隱藏無資料佔位**、**Git 狀態 / 遠端 / Jujutsu / Token 系列元件共用基底類別重構**、**Git 狀態旗標元件可自訂符號**、**Git Is Fork 可自訂符號**、**安全加固**（Git 倉庫命令強化、Windows 可執行檔 PATH 解析、終端控制序列清理、設定檔權限保護、匯入預覽確認新增 shell 命令）、**Actions 以 commit SHA 固定**（v2.2.30–v2.2.32）
+- **快速模式元件**（Fast Mode）、**時段預測 / 時段上限計時元件**（Block Forecast / Block Limit Timer）、**額外用量上限元件**（Extra Usage Limit）、**支出上限用量 / 支出上限金額元件**（Spend Limit Usage / Amount）、**可點擊的當前目錄連結**（file / VS Code / Cursor）、**Claude 狀態元件可連結狀態頁**、**分支與工作樹 fish 風格縮寫**、**元件選擇器即時預覽**、**所有字形欄位可用 Shift+Tab 切換「無／預設」**、**Token 與速度指標每個 API 回應只計一次**、**上下文百分比不再計入輸出 Token**、**用量快取與鎖檔依 `CLAUDE_CONFIG_DIR` 隔離**、**開發熱重載**（v2.2.33）
 - **確認對話方塊** "是 / 否"
 - **分類篩選** "全部" 等介面元素
 
@@ -59,7 +60,7 @@ ccstatusline 是一個優秀的 Claude Code CLI 狀態列格式化工具，支�
 | 介面語言   | 英文         | 中文                      |
 | 配置相容性 | —            | ✅ 共用相同 settings.json |
 | 功能差異   | —            | 無，功能完全一致          |
-| 同步版本   | 最新         | v2.2.32（+ 會話費率 / 超額用量每日預算 / 可編輯標籤前綴 / 自訂命令快取 / 安全加固 / 中文化覆蓋） |
+| 同步版本   | 最新         | v2.2.33（+ 快速模式 / 時段預測 / 時段上限計時 / 額外用量上限 / 支出上限 / 目錄連結 / 中文化覆蓋） |
 
 ---
 
@@ -230,7 +231,8 @@ ccstatusline-zh-tw --config /path/to/custom-settings.json
 | Vim 模式 | 顯示當前 Vim 模式                                     |
 | 語音狀態 | 顯示 Claude Code 語音輸入是否啟用（4 種格式 + Nerd 字型） |
 | 沙箱狀態 | 顯示 Claude Code Bash 沙箱模式是否啟用                |
-| Claude 狀態 | 讀取 status.claude.com 服務狀態，含可選 48 小時事件歷史條 |
+| Claude 狀態 | 讀取 status.claude.com 服務狀態，含可選 48 小時事件歷史條與狀態頁連結 |
+| 快速模式 | 顯示 Claude Code 快速模式是否開啟（4 種格式 + Nerd 字型） |
 
 ### Git
 
@@ -290,7 +292,9 @@ ccstatusline-zh-tw --config /path/to/custom-settings.json
 | 會話費用       | 顯示當前會話預估費用          |
 | 會話費率       | 顯示會話每小時費用（可切換活躍 / 時鐘時間） |
 | 會話名稱       | 顯示 Claude Code 會話名稱     |
-| 會話用量       | 顯示會話 API 用量             |
+| 時段用量       | 顯示當前 5 小時時段的 API 用量 |
+| 時段預測       | 依近期速度預估 5 小時時段重置時的用量 |
+| 時段上限計時   | 預估距離 5 小時時段上限的時間（早於重置時才顯示） |
 | 周用量         | 顯示本週 API 用量             |
 | 周 Sonnet 用量 | 顯示本週 Sonnet 模型 API 用量 |
 | 周 Opus 用量   | 顯示本週 Opus 模型 API 用量   |
@@ -298,6 +302,9 @@ ccstatusline-zh-tw --config /path/to/custom-settings.json
 | 超額用量佔比   | 顯示超額用量（按量付費）佔比       |
 | 超額用量剩餘   | 顯示每月超額用量額度的剩餘金額（美元） |
 | 超額用量每日預算 | 顯示超額額度按本月剩餘天數平均後的每日預算 |
+| 額外用量上限   | 顯示每月額外用量上限（Pro/Max 超額或 Enterprise 支出） |
+| 支出上限用量   | 顯示 Claude apps gateway 支出上限已使用的百分比 |
+| 支出上限金額   | 以美元顯示 Claude apps gateway 支出上限的已用金額 |
 | 時段計時器     | 顯示當前 5 小時時段已用時間   |
 | 時段重置計時   | 顯示時段重置視窗剩餘時間      |
 | 周重置計時     | 顯示周重置剩餘時間            |
@@ -407,7 +414,7 @@ bun run lint
 ```
 src/
 ├── ccstatusline.ts          # 入口檔案
-├── widgets/                 # 元件目錄（90 個元件）
+├── widgets/                 # 元件目錄（98 個元件）
 │   ├── Model.ts
 │   ├── GitBranch.ts
 │   ├── TokensInput.ts
