@@ -9,7 +9,7 @@ import {
 } from './shared/hideable';
 
 export class GitShaWidget extends GitStatusWidgetBase {
-    getDefaultColor(): string { return 'gray'; }
+    getDefaultColor(): string { return 'brightBlack'; }
     getDescription(): string { return '顯示簡短提交雜湊（SHA）'; }
     getDisplayName(): string { return 'Git SHA'; }
 

@@ -40,6 +40,8 @@ describe('widget catalog', () => {
         const totalSpeed = catalog.find(entry => entry.type === 'total-speed');
         const resetTimer = catalog.find(entry => entry.type === 'reset-timer');
         const weeklyResetTimer = catalog.find(entry => entry.type === 'weekly-reset-timer');
+        const sessionForecast = catalog.find(entry => entry.type === 'block-forecast');
+        const sessionLimitTimer = catalog.find(entry => entry.type === 'block-limit-timer');
 
         expect(model?.displayName).toBe('模型');
         expect(model?.category).toBe('核心');
@@ -61,6 +63,10 @@ describe('widget catalog', () => {
         expect(resetTimer?.category).toBe('用量');
         expect(weeklyResetTimer?.displayName).toBe('周重置計時');
         expect(weeklyResetTimer?.category).toBe('用量');
+        expect(sessionForecast?.displayName).toBe('時段預測');
+        expect(sessionForecast?.category).toBe('用量');
+        expect(sessionLimitTimer?.displayName).toBe('時段上限計時');
+        expect(sessionLimitTimer?.category).toBe('用量');
     });
 
     it('hides manual separator when default separator is configured', () => {
@@ -382,6 +388,8 @@ describe('label prefix', () => {
         { display: 'progress-short' },
         { display: 'slider' },
         { display: 'slider-only' },
+        { format: 'label-check' },
+        { format: 'label-mark' },
         { inverse: 'true' }
     ];
 
@@ -400,6 +408,9 @@ describe('label prefix', () => {
             for (const metadata of LABEL_MODE_PROBES) {
                 const item = { id: '1', type, metadata };
                 const label = widget.getLabelPrefix(item);
+                if (label === undefined) {
+                    continue;
+                }
                 const rendered = widget.render(item, { isPreview: true }, settings) ?? '';
                 expect(`${type}/${JSON.stringify(metadata)}: ${rendered.includes(label) ? 'has' : 'lacks'} "${label}"`)
                     .toBe(`${type}/${JSON.stringify(metadata)}: has "${label}"`);

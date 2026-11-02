@@ -103,6 +103,53 @@ describe('global package manager inspection', () => {
         });
     });
 
+    it('warns about distinct POSIX bin directories that differ only in case', () => {
+        mockExecFileSync({
+            'which -a ccstatusline-zh-tw': '/home/alice/Bin/ccstatusline-zh-tw\n/home/alice/bin/ccstatusline-zh-tw\n',
+            'bun pm bin -g': '/home/alice/Bin\n'
+        });
+        vi.spyOn(fs, 'existsSync').mockReturnValue(false);
+
+        const activeCommand = inspectActiveGlobalCommand({
+            commandAvailability: {
+                npm: false,
+                bun: true
+            },
+            platform: 'linux'
+        });
+
+        expect(activeCommand.packageManager).toBe('bun');
+        expect(activeCommand.resolvedPaths).toEqual([
+            '/home/alice/Bin/ccstatusline-zh-tw',
+            '/home/alice/bin/ccstatusline-zh-tw'
+        ]);
+        expect(activeCommand.warning).toBe(
+            '⚠ PATH 中存在多個 ccstatusline-zh-tw 可執行檔案，Claude Code 將使用第一個匹配：/home/alice/Bin/ccstatusline-zh-tw。\n其他匹配：/home/alice/bin/ccstatusline-zh-tw'
+        );
+    });
+
+    it.each([
+        ['Windows', 'C:/Users/Alice/Bin', 'c:/users/alice/bin'],
+        ['WSL', '/mnt/c/Users/Alice/Bin', '/mnt/c/users/alice/bin']
+    ])('ignores case differences within the same %s bin directory', (_style, firstDir, secondDir) => {
+        mockExecFileSync({
+            'which -a ccstatusline-zh-tw': `${firstDir}/ccstatusline-zh-tw\n${secondDir}/ccstatusline-zh-tw\n`,
+            'bun pm bin -g': `${firstDir}\n`
+        });
+        vi.spyOn(fs, 'existsSync').mockReturnValue(false);
+
+        const activeCommand = inspectActiveGlobalCommand({
+            commandAvailability: {
+                npm: false,
+                bun: true
+            },
+            platform: 'linux'
+        });
+
+        expect(activeCommand.packageManager).toBe('bun');
+        expect(activeCommand.warning).toBeNull();
+    });
+
     it('ignores transient bunx status line shims when identifying the active global command', () => {
         mockExecFileSync({
             'which -a ccstatusline-zh-tw': '/var/folders/demo/T/bunx-501-ccstatusline-zh-tw@latest/node_modules/.bin/ccstatusline-zh-tw\n/Users/alice/.bun/bin/ccstatusline-zh-tw\n',
@@ -133,6 +180,85 @@ describe('global package manager inspection', () => {
             resolvedPath: '/Users/alice/.bun/bin/ccstatusline-zh-tw',
             resolvedPaths: ['/Users/alice/.bun/bin/ccstatusline-zh-tw'],
             binDir: '/Users/alice/.bun/bin',
+            version: '2.2.14',
+            warning: null
+        });
+    });
+
+    it('ignores transient npx status line shims when identifying the active global command', () => {
+        mockExecFileSync({
+            'which -a ccstatusline-zh-tw': '/Users/alice/.npm/_npx/9f3c1e2a7b6d4c80/node_modules/.bin/ccstatusline-zh-tw\n/Users/alice/.nvm/versions/node/v24.9.0/bin/ccstatusline-zh-tw\n',
+            'npm prefix -g': '/Users/alice/.nvm/versions/node/v24.9.0\n',
+            'npm root -g': '/Users/alice/.nvm/versions/node/v24.9.0/lib/node_modules\n'
+        });
+        vi.spyOn(fs, 'existsSync').mockImplementation(filePath => (
+            filePath === '/Users/alice/.nvm/versions/node/v24.9.0/lib/node_modules/ccstatusline-zh-tw/package.json'
+        ));
+        vi.spyOn(fs, 'readFileSync').mockImplementation((filePath) => {
+            if (filePath === '/Users/alice/.nvm/versions/node/v24.9.0/lib/node_modules/ccstatusline-zh-tw/package.json') {
+                return '{"version":"2.2.14"}';
+            }
+
+            throw new Error(`Unexpected read: ${String(filePath)}`);
+        });
+
+        const activeCommand = inspectActiveGlobalCommand({
+            commandAvailability: {
+                npm: true,
+                bun: false
+            },
+            platform: 'darwin'
+        });
+
+        expect(activeCommand).toEqual({
+            packageManager: 'npm',
+            resolvedPath: '/Users/alice/.nvm/versions/node/v24.9.0/bin/ccstatusline-zh-tw',
+            resolvedPaths: ['/Users/alice/.nvm/versions/node/v24.9.0/bin/ccstatusline-zh-tw'],
+            binDir: '/Users/alice/.nvm/versions/node/v24.9.0/bin',
+            version: '2.2.14',
+            warning: null
+        });
+    });
+
+    it('ignores transient npx shims in the Windows npm cache when identifying the active global command', () => {
+        mockExecFileSync({
+            'where ccstatusline-zh-tw': [
+                'C:\\Users\\Alice\\AppData\\Local\\npm-cache\\_npx\\9f3c1e2a7b6d4c80\\node_modules\\.bin\\ccstatusline-zh-tw.cmd',
+                'C:\\Users\\Alice\\AppData\\Local\\npm-cache\\_npx\\9f3c1e2a7b6d4c80\\node_modules\\.bin\\ccstatusline-zh-tw.ps1',
+                'C:\\Users\\Alice\\AppData\\Roaming\\npm\\ccstatusline-zh-tw.cmd',
+                'C:\\Users\\Alice\\AppData\\Roaming\\npm\\ccstatusline-zh-tw.ps1',
+                ''
+            ].join('\r\n'),
+            'npm.cmd prefix -g': 'C:\\Users\\Alice\\AppData\\Roaming\\npm\r\n',
+            'npm.cmd root -g': 'C:\\Users\\Alice\\AppData\\Roaming\\npm\\node_modules\r\n'
+        });
+        vi.spyOn(fs, 'existsSync').mockImplementation(filePath => (
+            filePath === 'C:\\Users\\Alice\\AppData\\Roaming\\npm\\node_modules\\ccstatusline-zh-tw\\package.json'
+        ));
+        vi.spyOn(fs, 'readFileSync').mockImplementation((filePath) => {
+            if (filePath === 'C:\\Users\\Alice\\AppData\\Roaming\\npm\\node_modules\\ccstatusline-zh-tw\\package.json') {
+                return '{"version":"2.2.14"}';
+            }
+
+            throw new Error(`Unexpected read: ${String(filePath)}`);
+        });
+
+        const activeCommand = inspectActiveGlobalCommand({
+            commandAvailability: {
+                npm: true,
+                bun: false
+            },
+            platform: 'win32'
+        });
+
+        expect(activeCommand).toEqual({
+            packageManager: 'npm',
+            resolvedPath: 'C:\\Users\\Alice\\AppData\\Roaming\\npm\\ccstatusline-zh-tw.cmd',
+            resolvedPaths: [
+                'C:\\Users\\Alice\\AppData\\Roaming\\npm\\ccstatusline-zh-tw.cmd',
+                'C:\\Users\\Alice\\AppData\\Roaming\\npm\\ccstatusline-zh-tw.ps1'
+            ],
+            binDir: 'C:\\Users\\Alice\\AppData\\Roaming\\npm',
             version: '2.2.14',
             warning: null
         });
