@@ -64,12 +64,6 @@ function createMockStdout(): CapturedWriteStream {
     });
 }
 
-function flushInk() {
-    return new Promise((resolve) => {
-        setTimeout(resolve, 25);
-    });
-}
-
 function StatefulItemsEditor({ initialWidgets }: { initialWidgets: WidgetItem[] }) {
     const [widgets, setWidgets] = useState(initialWidgets);
 
@@ -101,24 +95,28 @@ describe('ItemsEditor', () => {
         );
 
         try {
-            await flushInk();
-            expect(stripAnsi(stdout.getOutput())).toContain('1. 輸入 Token');
+            await waitFor(() => {
+                expect(stripAnsi(stdout.getOutput())).toContain('1. 輸入 Token');
+            });
             expect(stripAnsi(stdout.getOutput())).not.toContain('(compact)');
 
             stdout.clearOutput();
             stdin.write('.');
-            await flushInk();
-            expect(stripAnsi(stdout.getOutput())).toContain('1. 輸入 Token (compact)');
+            await waitFor(() => {
+                expect(stripAnsi(stdout.getOutput())).toContain('1. 輸入 Token (compact)');
+            });
 
             stdout.clearOutput();
             stdin.write('.');
-            await flushInk();
-            expect(stripAnsi(stdout.getOutput())).toContain('1. 輸入 Token (whole)');
+            await waitFor(() => {
+                expect(stripAnsi(stdout.getOutput())).toContain('1. 輸入 Token (whole)');
+            });
 
             stdout.clearOutput();
             stdin.write('.');
-            await flushInk();
-            expect(stripAnsi(stdout.getOutput())).toContain('1. 輸入 Token');
+            await waitFor(() => {
+                expect(stripAnsi(stdout.getOutput())).toContain('1. 輸入 Token');
+            });
             expect(stripAnsi(stdout.getOutput())).not.toContain('(compact)');
             expect(stripAnsi(stdout.getOutput())).not.toContain('(whole)');
         } finally {
@@ -159,8 +157,9 @@ describe('ItemsEditor', () => {
         );
 
         try {
-            await flushInk();
-            expect(stripAnsi(stdout.getOutput())).toContain('1. 快取讀取 (session) (compact)');
+            await waitFor(() => {
+                expect(stripAnsi(stdout.getOutput())).toContain('1. 快取讀取 (session) (compact)');
+            });
         } finally {
             instance.unmount();
             instance.cleanup();
@@ -187,29 +186,38 @@ describe('ItemsEditor', () => {
         );
 
         try {
-            await flushInk();
-            expect(stripAnsi(stdout.getOutput())).toContain('(e)編輯標籤…');
+            await waitFor(() => {
+                expect(stripAnsi(stdout.getOutput())).toContain('(e)編輯標籤…');
+            });
 
             stdout.clearOutput();
             stdin.write('e');
-            await flushInk();
-            expect(stripAnsi(stdout.getOutput())).toContain('（預設: "模型: "）');
+            await waitFor(() => {
+                expect(stripAnsi(stdout.getOutput())).toContain('（預設: "模型: "）');
+            });
 
             // Trim "模型: " down to "模", one backspace per keypress
-            for (const key of Array.from('型: ', () => '\x7f')) {
-                stdin.write(key);
-                await flushInk();
+            for (const text of ['模型:', '模型', '模']) {
+                stdin.write('\x7f');
+                await waitFor(() => {
+                    expect(stripAnsi(stdout.getOutput())).toContain(`"${text} " （預設: "模型: "）`);
+                });
             }
             stdin.write(' ');
-            await flushInk();
+            await waitFor(() => {
+                expect(stripAnsi(stdout.getOutput())).toContain('"模  " （預設: "模型: "）');
+            });
             stdout.clearOutput();
             stdin.write('\r');
-            await flushInk();
-            expect(stripAnsi(stdout.getOutput())).toContain('1. 模型 （標籤: "模 "）');
+            await waitFor(() => {
+                expect(stripAnsi(stdout.getOutput())).toContain('1. 模型 （標籤: "模 "）');
+            });
 
             stdout.clearOutput();
             stdin.write('r');
-            await flushInk();
+            await waitFor(() => {
+                expect(stripAnsi(stdout.getOutput())).toContain('(raw value)');
+            });
             const rawOutput = stripAnsi(stdout.getOutput());
             expect(rawOutput).toContain('(raw value)');
             expect(rawOutput).not.toContain('(e)編輯標籤…');
@@ -307,20 +315,29 @@ describe('ItemsEditor', () => {
         );
 
         try {
-            await flushInk();
-            expect(stripAnsi(stdout.getOutput())).toContain('1. 模型 （標籤: "M "）');
+            await waitFor(() => {
+                expect(stripAnsi(stdout.getOutput())).toContain('1. 模型 （標籤: "M "）');
+            });
 
             stdin.write('\x1b[C');
-            await flushInk();
-            for (const char of query) {
+            await waitFor(() => {
+                expect(stripAnsi(stdout.getOutput())).toContain('Search: （無）');
+            });
+            for (const [index, char] of Array.from(query).entries()) {
+                // The search row drops the trailing space a typed space leaves
+                const typed = query.slice(0, index + 1).trimEnd();
+                stdout.clearOutput();
                 stdin.write(char);
-                await flushInk();
+                await waitFor(() => {
+                    expect(stripAnsi(stdout.getOutput())).toContain(`Search: ${typed}`);
+                });
             }
             stdout.clearOutput();
             stdin.write('\r');
-            await flushInk();
+            await waitFor(() => {
+                expect(stripAnsi(stdout.getOutput())).toContain(`1. ${name}`);
+            });
             const output = stripAnsi(stdout.getOutput());
-            expect(output).toContain(`1. ${name}`);
             if (keepsLabel) {
                 expect(output).toContain('（標籤: "M "）');
             } else {
@@ -353,19 +370,26 @@ describe('ItemsEditor', () => {
         );
 
         try {
-            await flushInk();
+            await waitFor(() => {
+                expect(stripAnsi(stdout.getOutput())).toContain('1. 模型');
+            });
             stdin.write('e');
-            await flushInk();
+            await waitFor(() => {
+                expect(stripAnsi(stdout.getOutput())).toContain('（預設: "模型: "）');
+            });
 
             // One macrotask apart: separate keypresses, but no re-render between them
             stdin.write('\x7f');
             await new Promise(resolve => setImmediate(resolve));
             stdin.write('\x7f');
-            await flushInk();
+            await waitFor(() => {
+                expect(stripAnsi(stdout.getOutput())).toContain('"模型 " （預設: "模型: "）');
+            });
             stdout.clearOutput();
             stdin.write('\r');
-            await flushInk();
-            expect(stripAnsi(stdout.getOutput())).toContain('1. 模型 （標籤: "模型"）');
+            await waitFor(() => {
+                expect(stripAnsi(stdout.getOutput())).toContain('1. 模型 （標籤: "模型"）');
+            });
         } finally {
             instance.unmount();
             instance.cleanup();
@@ -433,11 +457,66 @@ describe('ItemsEditor', () => {
         );
 
         try {
-            await flushInk();
+            await waitFor(() => {
+                expect(stripAnsi(stdout.getOutput())).toContain('1. 模型');
+            });
             stdout.clearOutput();
             stdin.write('e');
-            await flushInk();
-            expect(stripAnsi(stdout.getOutput())).toContain('"\u{1F469}\u200D\u{1F4BB}  " （預設: "模型: "）');
+            await waitFor(() => {
+                expect(stripAnsi(stdout.getOutput())).toContain('"\u{1F469}\u200D\u{1F4BB}  " （預設: "模型: "）');
+            });
+        } finally {
+            instance.unmount();
+            instance.cleanup();
+            stdin.destroy();
+            stdout.destroy();
+            stderr.destroy();
+        }
+    });
+
+    it.each([
+        {
+            name: 'a joined emoji',
+            widget: { id: '1', type: 'custom-text', customText: '\u{1F469}‍\u{1F4BB}', merge: true },
+            row: '1. 自定義文字 (\u{1F469}‍\u{1F4BB}) (merged→)'
+        },
+        {
+            name: 'a flag',
+            widget: { id: '1', type: 'custom-text', customText: '\u{1F1FA}\u{1F1F8}', merge: 'no-padding' as const },
+            row: '1. 自定義文字 (\u{1F1FA}\u{1F1F8}) (merged-no-pad→)'
+        },
+        {
+            name: 'a skin-toned label',
+            widget: { id: '1', type: 'model', metadata: { label: '\u{1F44D}\u{1F3FD} ' }, merge: true },
+            row: '1. 模型 （標籤: "\u{1F44D}\u{1F3FD} "） (merged→)'
+        }
+    ])('shows a row with $name in full before the tags that follow it', async ({ widget, row }) => {
+        const stdin = createMockStdin();
+        const stdout = createMockStdout();
+        const stderr = createMockStdout();
+        // Debug mode writes whole frames; the last one starts at the last title
+        const lastFrame = () => {
+            const output = stripAnsi(stdout.getOutput());
+            return output.slice(output.lastIndexOf('Edit Line 1'));
+        };
+
+        const instance = render(
+            React.createElement(StatefulItemsEditor, { initialWidgets: [widget, { id: '2', type: 'version' }] }),
+            {
+                stdin,
+                stdout,
+                stderr,
+                debug: true,
+                exitOnCtrlC: false,
+                patchConsole: false
+            }
+        );
+
+        try {
+            await waitFor(() => {
+                expect(lastFrame()).toContain('2. 版本');
+            });
+            expect(lastFrame()).toContain(row);
         } finally {
             instance.unmount();
             instance.cleanup();
@@ -465,19 +544,29 @@ describe('ItemsEditor', () => {
         );
 
         try {
-            await flushInk();
+            await waitFor(() => {
+                expect(stripAnsi(stdout.getOutput())).toContain('1. 時段計時器');
+            });
             stdin.write('e');
-            await flushInk();
+            await waitFor(() => {
+                expect(stripAnsi(stdout.getOutput())).toContain('（預設: "時段 "）');
+            });
             stdout.clearOutput();
             stdin.write('\r');
-            await flushInk();
-            expect(stripAnsi(stdout.getOutput())).toContain('（標籤: "時段 "）');
+            await waitFor(() => {
+                expect(stripAnsi(stdout.getOutput())).toContain('（標籤: "時段 "）');
+            });
 
+            stdout.clearOutput();
             stdin.write('e');
-            await flushInk();
+            await waitFor(() => {
+                expect(stripAnsi(stdout.getOutput())).toContain('（預設: "時段 "）');
+            });
             stdout.clearOutput();
             stdin.write('\t');
-            await flushInk();
+            await waitFor(() => {
+                expect(stripAnsi(stdout.getOutput())).toContain('1. 時段計時器');
+            });
             expect(stripAnsi(stdout.getOutput())).not.toContain('（標籤:');
         } finally {
             instance.unmount();
@@ -620,9 +709,64 @@ describe('ItemsEditor', () => {
             });
             stdin.write('l');
             await waitFor(() => {
+                expect(lastFrame()).toContain('連結: Zed');
+            });
+            stdin.write('l');
+            await waitFor(() => {
                 expect(lastFrame()).toContain('當前目錄 (~, 段數: 2)');
                 expect(lastFrame()).not.toContain('link:');
             });
+        } finally {
+            instance.unmount();
+            instance.cleanup();
+            stdin.destroy();
+            stdout.destroy();
+            stderr.destroy();
+        }
+    });
+
+    it('turns fish style off when a cwd segment count is saved', async () => {
+        const stdin = createMockStdin();
+        const stdout = createMockStdout();
+        const stderr = createMockStdout();
+        // Debug mode writes whole frames; the last one starts at the last title
+        const lastFrame = () => {
+            const output = stripAnsi(stdout.getOutput());
+            return output.slice(output.lastIndexOf('Edit Line 1'));
+        };
+
+        const instance = render(
+            React.createElement(StatefulItemsEditor, { initialWidgets: [{ id: '1', type: 'current-working-dir', metadata: { fishStyle: 'true' } }] }),
+            {
+                stdin,
+                stdout,
+                stderr,
+                debug: true,
+                exitOnCtrlC: false,
+                patchConsole: false
+            }
+        );
+
+        try {
+            await waitFor(() => {
+                expect(lastFrame()).toContain('▶  1. 當前目錄 (fish 風格)');
+            });
+
+            stdin.write('s');
+            await waitFor(() => {
+                expect(lastFrame()).toContain('Enter number of segments to display');
+            });
+
+            stdin.write('2');
+            await waitFor(() => {
+                expect(lastFrame()).toContain('(blank for full path): 2');
+            });
+
+            stdin.write('\r');
+            await waitFor(() => {
+                expect(lastFrame()).toContain('▶  1. 當前目錄 (段數: 2)');
+            });
+            expect(lastFrame()).not.toContain('fish 風格');
         } finally {
             instance.unmount();
             instance.cleanup();

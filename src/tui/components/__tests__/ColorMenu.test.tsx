@@ -97,12 +97,6 @@ function renderColorMenu(widgets: WidgetItem[]) {
     };
 }
 
-function flushInk() {
-    return new Promise((resolve) => {
-        setTimeout(resolve, 25);
-    });
-}
-
 describe('ColorMenu', () => {
     it('keeps bold and dim indicators on the current-style row', async () => {
         const stdin = createMockStdin();
@@ -146,13 +140,18 @@ describe('ColorMenu', () => {
             }
         );
 
-        try {
-            await flushInk();
-            stdin.write('\x1B[B');
-            await flushInk();
+        const latestFrame = () => stdout.getOutput().split('配置顏色').at(-1) ?? '';
 
-            const latestFrame = stdout.getOutput().split('配置顏色').at(-1) ?? '';
-            const currentStyleLine = latestFrame
+        try {
+            await waitFor(() => {
+                expect(stripAnsi(latestFrame())).toContain('▶  1: 快取命中率');
+            });
+            stdin.write('\x1B[B');
+            await waitFor(() => {
+                expect(stripAnsi(latestFrame())).toContain('▶  2: 快取讀取');
+            });
+
+            const currentStyleLine = latestFrame()
                 .split('\n')
                 .find(line => line.includes('當前') && line.includes('前景色')) ?? '';
 
@@ -236,5 +235,41 @@ describe('ColorMenu', () => {
         } finally {
             menu.cleanup();
         }
+    });
+
+    it('explains which text the foreground still colors when a widget sets some colors itself', async () => {
+        const renderMenu = async (widget: WidgetItem) => {
+            const stdin = createMockStdin();
+            const stdout = createMockStdout();
+            const stderr = createMockStdout();
+            const instance = render(
+                React.createElement(ColorMenu, {
+                    widgets: [widget],
+                    settings: DEFAULT_SETTINGS,
+                    onUpdate: vi.fn(),
+                    onBack: vi.fn()
+                }),
+                { stdin, stdout, stderr, debug: true, exitOnCtrlC: false, patchConsole: false }
+            );
+
+            try {
+                await waitFor(() => {
+                    expect(stripAnsi(stdout.getOutput())).toContain('▶  1: 思考力度');
+                });
+                return stripAnsi(stdout.getOutput().split('Configure Colors').at(-1) ?? '');
+            } finally {
+                instance.unmount();
+                instance.cleanup();
+                stdin.destroy();
+                stdout.destroy();
+                stderr.destroy();
+            }
+        };
+
+        const levelColored = await renderMenu({ id: '1', type: 'thinking-effort', metadata: { levelColors: 'true' } });
+        const singleColored = await renderMenu({ id: '1', type: 'thinking-effort' });
+
+        expect(levelColored).toContain('自行設定部分顏色');
+        expect(singleColored).not.toContain('自行設定部分顏色');
     });
 });
