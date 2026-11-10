@@ -307,6 +307,46 @@ describe('GlobalOverridesMenu', () => {
         }
     });
 
+    it.each([
+        { name: 'a skin-toned', glyph: '\u{1F44D}\u{1F3FD}' },
+        { name: 'a joined', glyph: '\u{1F469}‍\u{1F4BB}' }
+    ])('shows $name emoji padding and separator in full before their hints', async ({ glyph }) => {
+        const stdin = createMockStdin();
+        const stdout = createMockStdout();
+        const stderr = createMockStdout();
+
+        const instance = render(
+            React.createElement(GlobalOverridesMenu, {
+                settings: { ...DEFAULT_SETTINGS, defaultPadding: glyph, defaultSeparator: glyph },
+                onUpdate: vi.fn(),
+                onBack: vi.fn()
+            }),
+            {
+                stdin,
+                stdout,
+                stderr,
+                debug: true,
+                exitOnCtrlC: false,
+                patchConsole: false
+            }
+        );
+
+        try {
+            await waitFor(() => {
+                expect(stdout.getOutput()).toContain('預設分隔符:');
+            });
+            const output = stripAnsi(stdout.getOutput());
+            expect(output).toContain(`預設內邊距: "${glyph}" - 按 (p) 編輯`);
+            expect(output).toContain(`預設分隔符: "${glyph}" - 按 (s) 編輯`);
+        } finally {
+            instance.unmount();
+            instance.cleanup();
+            stdin.destroy();
+            stdout.destroy();
+            stderr.destroy();
+        }
+    });
+
     it('shows foreground override gradient and clear controls on the same line', async () => {
         const stdin = createMockStdin();
         const stdout = createMockStdout();
