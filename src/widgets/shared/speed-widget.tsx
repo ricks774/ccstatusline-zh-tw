@@ -32,6 +32,7 @@ import {
     withWidgetSpeedWindowSeconds
 } from '../../utils/speed-window';
 
+import { BlinkingCursor } from './BlinkingCursor';
 import { makeModifierText } from './editor-display';
 import { isHidden } from './hideable';
 import { formatRawOrLabeledValue } from './raw-or-labeled';
@@ -54,21 +55,21 @@ const SPEED_WIDGET_CONFIG: Record<SpeedWidgetKind, SpeedWidgetKindConfig> = {
     input: {
         label: '輸入: ',
         displayName: '輸入速度',
-        description: '顯示會話平均輸入 Token 速度（tokens/sec）。可選視窗：0-120 秒（0 = 全會話平均）。',
+        description: '顯示會話平均輸入 Token 速度（tokens/sec）。可選視窗：0-3600 秒（0 = 全會話平均）。',
         sessionPreview: 85.2,
         windowedPreview: 31.5
     },
     output: {
         label: '輸出: ',
         displayName: '輸出速度',
-        description: '顯示會話平均輸出 Token 速度（tokens/sec）。可選視窗：0-120 秒（0 = 全會話平均）。',
+        description: '顯示會話平均輸出 Token 速度（tokens/sec）。可選視窗：0-3600 秒（0 = 全會話平均）。',
         sessionPreview: 42.5,
         windowedPreview: 26.8
     },
     total: {
         label: '合計: ',
         displayName: '總速度',
-        description: '顯示會話平均總 Token 速度（tokens/sec）。可選視窗：0-120 秒（0 = 全會話平均）。',
+        description: '顯示會話平均總 Token 速度（tokens/sec）。可選視窗：0-3600 秒（0 = 全會話平均）。',
         sessionPreview: 127.7,
         windowedPreview: 58.3
     }
@@ -209,7 +210,7 @@ const SpeedWindowEditor: React.FC<WidgetEditorProps> = ({ widget, onComplete, on
                     {' '}
                 </Text>
                 <Text>{windowInput}</Text>
-                <Text backgroundColor='gray' color='black'>{' '}</Text>
+                <BlinkingCursor>{' '}</BlinkingCursor>
             </Box>
             <Text dimColor>0 disables window mode and averages the full session. Press Enter to save, ESC to cancel.</Text>
         </Box>

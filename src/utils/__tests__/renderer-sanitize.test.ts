@@ -20,4 +20,22 @@ describe('preRenderAllWidgets', () => {
         expect(line[0]?.content).toBe('safe text');
         expect(line[0]?.plainLength).toBe('safe text'.length);
     });
+
+    it('keeps 8-bit colors in widget output, in their 7-bit form', () => {
+        const widget: WidgetItem = { id: 'text', type: 'custom-text', customText: '\x9b31mred\x9b39m text' };
+
+        const [line = []] = preRenderAllWidgets([[widget]], DEFAULT_SETTINGS, context);
+
+        expect(line[0]?.content).toBe('\x1b[31mred\x1b[39m text');
+        expect(line[0]?.plainLength).toBe('red text'.length);
+    });
+
+    it('prints a tab in widget output as one space, measured as one column', () => {
+        const widget: WidgetItem = { id: 'text', type: 'custom-text', customText: 'ahead\t3' };
+
+        const [line = []] = preRenderAllWidgets([[widget]], DEFAULT_SETTINGS, context);
+
+        expect(line[0]?.content).toBe('ahead 3');
+        expect(line[0]?.plainLength).toBe('ahead 3'.length);
+    });
 });

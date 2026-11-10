@@ -1,5 +1,7 @@
 import * as childProcess from 'node:child_process';
 import * as fs from 'node:fs';
+import * as os from 'node:os';
+import * as path from 'node:path';
 import {
     afterEach,
     describe,
@@ -103,6 +105,135 @@ describe('global package manager inspection', () => {
         });
     });
 
+    // Merged /usr (Ubuntu 22.04+, Debian 12): /bin links to usr/bin and PATH lists both
+    it.skipIf(process.platform === 'win32')('counts a PATH directory reached through a symlink once', () => {
+        const root = fs.mkdtempSync(path.join(os.tmpdir(), 'ccstatusline-merged-usr-'));
+        try {
+            const packageDir = path.join(root, 'usr', 'lib', 'node_modules', 'ccstatusline-zh-tw');
+            fs.mkdirSync(path.join(root, 'usr', 'bin'), { recursive: true });
+            fs.mkdirSync(packageDir, { recursive: true });
+            fs.writeFileSync(path.join(root, 'usr', 'bin', 'ccstatusline-zh-tw'), '#!/bin/sh\n', { mode: 0o755 });
+            fs.writeFileSync(path.join(packageDir, 'package.json'), '{"version":"2.2.13"}');
+            fs.symlinkSync('usr/bin', path.join(root, 'bin'));
+            mockExecFileSync({
+                'which -a ccstatusline-zh-tw': `${root}/usr/bin/ccstatusline-zh-tw\n${root}/bin/ccstatusline-zh-tw\n`,
+                'npm prefix -g': `${root}/usr\n`,
+                'npm root -g': `${root}/usr/lib/node_modules\n`
+            });
+
+            const activeCommand = inspectActiveGlobalCommand({
+                commandAvailability: {
+                    npm: true,
+                    bun: false
+                },
+                platform: 'linux'
+            });
+
+            expect(activeCommand).toEqual({
+                packageManager: 'npm',
+                resolvedPath: `${root}/usr/bin/ccstatusline-zh-tw`,
+                resolvedPaths: [
+                    `${root}/usr/bin/ccstatusline-zh-tw`,
+                    `${root}/bin/ccstatusline-zh-tw`
+                ],
+                binDir: `${root}/usr/bin`,
+                version: '2.2.13',
+                warning: null
+            });
+        } finally {
+            fs.rmSync(root, { recursive: true, force: true });
+        }
+    });
+
+    it.skipIf(process.platform === 'win32')('lists another install once and leaves out other spellings of the active one', () => {
+        const root = fs.mkdtempSync(path.join(os.tmpdir(), 'ccstatusline-merged-usr-'));
+        try {
+            const packageDir = path.join(root, 'usr', 'lib', 'node_modules', 'ccstatusline-zh-tw');
+            fs.mkdirSync(path.join(root, 'usr', 'bin'), { recursive: true });
+            fs.mkdirSync(path.join(root, '.bun', 'bin'), { recursive: true });
+            fs.mkdirSync(packageDir, { recursive: true });
+            fs.writeFileSync(path.join(root, 'usr', 'bin', 'ccstatusline-zh-tw'), '#!/bin/sh\n', { mode: 0o755 });
+            fs.writeFileSync(path.join(root, '.bun', 'bin', 'ccstatusline-zh-tw'), '#!/bin/sh\n', { mode: 0o755 });
+            fs.writeFileSync(path.join(packageDir, 'package.json'), '{"version":"2.2.13"}');
+            fs.symlinkSync('usr/bin', path.join(root, 'bin'));
+            mockExecFileSync({
+                'which -a ccstatusline-zh-tw': `${root}/usr/bin/ccstatusline-zh-tw\n${root}/bin/ccstatusline-zh-tw\n${root}/.bun/bin/ccstatusline-zh-tw\n`,
+                'npm prefix -g': `${root}/usr\n`,
+                'npm root -g': `${root}/usr/lib/node_modules\n`
+            });
+
+            const activeCommand = inspectActiveGlobalCommand({
+                commandAvailability: {
+                    npm: true,
+                    bun: false
+                },
+                platform: 'linux'
+            });
+
+            expect(activeCommand).toEqual({
+                packageManager: 'npm',
+                resolvedPath: `${root}/usr/bin/ccstatusline-zh-tw`,
+                resolvedPaths: [
+                    `${root}/usr/bin/ccstatusline-zh-tw`,
+                    `${root}/bin/ccstatusline-zh-tw`,
+                    `${root}/.bun/bin/ccstatusline-zh-tw`
+                ],
+                binDir: `${root}/usr/bin`,
+                version: '2.2.13',
+                warning: `⚠ PATH 中存在多個 ccstatusline-zh-tw 可執行檔案，Claude Code 將使用第一個匹配：${root}/usr/bin/ccstatusline-zh-tw。\n其他匹配：${root}/.bun/bin/ccstatusline-zh-tw`
+            });
+        } finally {
+            fs.rmSync(root, { recursive: true, force: true });
+        }
+    });
+
+    it('warns about distinct POSIX bin directories that differ only in case', () => {
+        mockExecFileSync({
+            'which -a ccstatusline-zh-tw': '/home/alice/Bin/ccstatusline-zh-tw\n/home/alice/bin/ccstatusline-zh-tw\n',
+            'bun pm bin -g': '/home/alice/Bin\n'
+        });
+        vi.spyOn(fs, 'existsSync').mockReturnValue(false);
+
+        const activeCommand = inspectActiveGlobalCommand({
+            commandAvailability: {
+                npm: false,
+                bun: true
+            },
+            platform: 'linux'
+        });
+
+        expect(activeCommand.packageManager).toBe('bun');
+        expect(activeCommand.resolvedPaths).toEqual([
+            '/home/alice/Bin/ccstatusline-zh-tw',
+            '/home/alice/bin/ccstatusline-zh-tw'
+        ]);
+        expect(activeCommand.warning).toBe(
+            '⚠ PATH 中存在多個 ccstatusline-zh-tw 可執行檔案，Claude Code 將使用第一個匹配：/home/alice/Bin/ccstatusline-zh-tw。\n其他匹配：/home/alice/bin/ccstatusline-zh-tw'
+        );
+    });
+
+    it.each([
+        ['Windows', 'C:/Users/Alice/Bin', 'c:/users/alice/bin'],
+        ['WSL', '/mnt/c/Users/Alice/Bin', '/mnt/c/users/alice/bin']
+    ])('ignores case differences within the same %s bin directory', (_style, firstDir, secondDir) => {
+        mockExecFileSync({
+            'which -a ccstatusline-zh-tw': `${firstDir}/ccstatusline-zh-tw\n${secondDir}/ccstatusline-zh-tw\n`,
+            'bun pm bin -g': `${firstDir}\n`
+        });
+        vi.spyOn(fs, 'existsSync').mockReturnValue(false);
+
+        const activeCommand = inspectActiveGlobalCommand({
+            commandAvailability: {
+                npm: false,
+                bun: true
+            },
+            platform: 'linux'
+        });
+
+        expect(activeCommand.packageManager).toBe('bun');
+        expect(activeCommand.warning).toBeNull();
+    });
+
     it('ignores transient bunx status line shims when identifying the active global command', () => {
         mockExecFileSync({
             'which -a ccstatusline-zh-tw': '/var/folders/demo/T/bunx-501-ccstatusline-zh-tw@latest/node_modules/.bin/ccstatusline-zh-tw\n/Users/alice/.bun/bin/ccstatusline-zh-tw\n',
@@ -133,6 +264,85 @@ describe('global package manager inspection', () => {
             resolvedPath: '/Users/alice/.bun/bin/ccstatusline-zh-tw',
             resolvedPaths: ['/Users/alice/.bun/bin/ccstatusline-zh-tw'],
             binDir: '/Users/alice/.bun/bin',
+            version: '2.2.14',
+            warning: null
+        });
+    });
+
+    it('ignores transient npx status line shims when identifying the active global command', () => {
+        mockExecFileSync({
+            'which -a ccstatusline-zh-tw': '/Users/alice/.npm/_npx/9f3c1e2a7b6d4c80/node_modules/.bin/ccstatusline-zh-tw\n/Users/alice/.nvm/versions/node/v24.9.0/bin/ccstatusline-zh-tw\n',
+            'npm prefix -g': '/Users/alice/.nvm/versions/node/v24.9.0\n',
+            'npm root -g': '/Users/alice/.nvm/versions/node/v24.9.0/lib/node_modules\n'
+        });
+        vi.spyOn(fs, 'existsSync').mockImplementation(filePath => (
+            filePath === '/Users/alice/.nvm/versions/node/v24.9.0/lib/node_modules/ccstatusline-zh-tw/package.json'
+        ));
+        vi.spyOn(fs, 'readFileSync').mockImplementation((filePath) => {
+            if (filePath === '/Users/alice/.nvm/versions/node/v24.9.0/lib/node_modules/ccstatusline-zh-tw/package.json') {
+                return '{"version":"2.2.14"}';
+            }
+
+            throw new Error(`Unexpected read: ${String(filePath)}`);
+        });
+
+        const activeCommand = inspectActiveGlobalCommand({
+            commandAvailability: {
+                npm: true,
+                bun: false
+            },
+            platform: 'darwin'
+        });
+
+        expect(activeCommand).toEqual({
+            packageManager: 'npm',
+            resolvedPath: '/Users/alice/.nvm/versions/node/v24.9.0/bin/ccstatusline-zh-tw',
+            resolvedPaths: ['/Users/alice/.nvm/versions/node/v24.9.0/bin/ccstatusline-zh-tw'],
+            binDir: '/Users/alice/.nvm/versions/node/v24.9.0/bin',
+            version: '2.2.14',
+            warning: null
+        });
+    });
+
+    it('ignores transient npx shims in the Windows npm cache when identifying the active global command', () => {
+        mockExecFileSync({
+            'where ccstatusline-zh-tw': [
+                'C:\\Users\\Alice\\AppData\\Local\\npm-cache\\_npx\\9f3c1e2a7b6d4c80\\node_modules\\.bin\\ccstatusline-zh-tw.cmd',
+                'C:\\Users\\Alice\\AppData\\Local\\npm-cache\\_npx\\9f3c1e2a7b6d4c80\\node_modules\\.bin\\ccstatusline-zh-tw.ps1',
+                'C:\\Users\\Alice\\AppData\\Roaming\\npm\\ccstatusline-zh-tw.cmd',
+                'C:\\Users\\Alice\\AppData\\Roaming\\npm\\ccstatusline-zh-tw.ps1',
+                ''
+            ].join('\r\n'),
+            'npm.cmd prefix -g': 'C:\\Users\\Alice\\AppData\\Roaming\\npm\r\n',
+            'npm.cmd root -g': 'C:\\Users\\Alice\\AppData\\Roaming\\npm\\node_modules\r\n'
+        });
+        vi.spyOn(fs, 'existsSync').mockImplementation(filePath => (
+            filePath === 'C:\\Users\\Alice\\AppData\\Roaming\\npm\\node_modules\\ccstatusline-zh-tw\\package.json'
+        ));
+        vi.spyOn(fs, 'readFileSync').mockImplementation((filePath) => {
+            if (filePath === 'C:\\Users\\Alice\\AppData\\Roaming\\npm\\node_modules\\ccstatusline-zh-tw\\package.json') {
+                return '{"version":"2.2.14"}';
+            }
+
+            throw new Error(`Unexpected read: ${String(filePath)}`);
+        });
+
+        const activeCommand = inspectActiveGlobalCommand({
+            commandAvailability: {
+                npm: true,
+                bun: false
+            },
+            platform: 'win32'
+        });
+
+        expect(activeCommand).toEqual({
+            packageManager: 'npm',
+            resolvedPath: 'C:\\Users\\Alice\\AppData\\Roaming\\npm\\ccstatusline-zh-tw.cmd',
+            resolvedPaths: [
+                'C:\\Users\\Alice\\AppData\\Roaming\\npm\\ccstatusline-zh-tw.cmd',
+                'C:\\Users\\Alice\\AppData\\Roaming\\npm\\ccstatusline-zh-tw.ps1'
+            ],
+            binDir: 'C:\\Users\\Alice\\AppData\\Roaming\\npm',
             version: '2.2.14',
             warning: null
         });

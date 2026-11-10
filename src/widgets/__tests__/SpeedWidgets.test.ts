@@ -51,7 +51,7 @@ describe('OutputSpeedWidget', () => {
 
     it('should describe session-average behavior and window override', () => {
         expect(widget.getDescription()).toContain('全會話平均');
-        expect(widget.getDescription()).toContain('0-120');
+        expect(widget.getDescription()).toContain('0-3600');
     });
 
     it('should expose a window editor keybind', () => {
@@ -92,6 +92,14 @@ describe('OutputSpeedWidget', () => {
         const item = createItem('output-speed', { metadata: { windowSeconds: '90' } });
 
         expect(widget.render(item, context, DEFAULT_SETTINGS)).toBe('輸出: 120.0 t/s');
+    });
+
+    it('should calculate output speed from a one-hour window', () => {
+        const context: RenderContext = { windowedSpeedMetrics: { 3600: createSpeedMetrics({ outputTokens: 9000, totalDurationMs: 300000 }) } };
+        const item = createItem('output-speed', { metadata: { windowSeconds: '3600' } });
+
+        expect(widget.getEditorDisplay(item).modifierText).toBe('(3600秒視窗)');
+        expect(widget.render(item, context, DEFAULT_SETTINGS)).toBe('輸出: 30.0 t/s');
     });
 });
 
@@ -165,8 +173,8 @@ describe('TotalSpeedWidget', () => {
     });
 
     it('should clamp invalid editor metadata to supported range', () => {
-        const item = createItem('total-speed', { metadata: { windowSeconds: '999' } });
-        expect(widget.getEditorDisplay(item).modifierText).toBe('(120秒視窗)');
+        const item = createItem('total-speed', { metadata: { windowSeconds: '3601' } });
+        expect(widget.getEditorDisplay(item).modifierText).toBe('(3600秒視窗)');
     });
 
     it('should render preview values', () => {

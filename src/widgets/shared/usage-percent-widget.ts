@@ -5,6 +5,9 @@ import type {
 } from '../../types/RenderContext';
 import type { Settings } from '../../types/Settings';
 import type {
+    CustomKeybind,
+    HideableState,
+    Widget,
     WidgetEditorDisplay,
     WidgetItem
 } from '../../types/Widget';
@@ -23,26 +26,22 @@ import {
 import type { UsageWindowMetrics } from '../../utils/usage-types';
 
 import { isHidden } from './hideable';
-import { makeTimerProgressBar } from './progress-bar';
 import { formatRawOrLabeledValue } from './raw-or-labeled';
 import {
     USAGE_NO_DATA_HIDEABLE_STATE,
     cycleUsageDisplayMode,
-    getUsageDisplayMode,
+    formatUsageBar,
     getUsageDisplayModifierText,
-    getUsageProgressBarWidth,
+    getUsagePercentCustomKeybinds,
     isUsageCursorEnabled,
     isUsageInverted,
-    isUsageProgressMode,
-    isUsageSliderMode,
-    makeSliderBar,
     toggleUsageCursor,
     toggleUsageInverted
 } from './usage-display';
 
-export type UsagePercentWidgetKind = 'session' | 'weekly' | 'weekly-sonnet' | 'weekly-opus' | 'fable-weekly';
+export type UsagePercentWidgetKind = 'session' | 'weekly' | 'weekly-sonnet' | 'weekly-opus' | 'fable-weekly' | 'spend-limit';
 
-type UsagePercentField = 'sessionUsage' | 'weeklyUsage' | 'weeklySonnetUsage' | 'weeklyOpusUsage' | 'fableUsage';
+type UsagePercentField = 'sessionUsage' | 'weeklyUsage' | 'weeklySonnetUsage' | 'weeklyOpusUsage' | 'fableUsage' | 'spendLimitUsage';
 
 interface UsageCursorOptions { cursorPercent: number }
 
@@ -52,13 +51,15 @@ interface UsagePercentWidgetKindConfig {
     description: string;
     previewPercent: number;
     usageField: UsagePercentField;
+    // The value comes from the statusline payload, so usage API errors say nothing about it.
+    ignoreApiError?: boolean;
 }
 
 const USAGE_PERCENT_WIDGET_CONFIG: Record<UsagePercentWidgetKind, UsagePercentWidgetKindConfig> = {
     'session': {
-        label: '會話: ',
-        displayName: '會話用量',
-        description: '顯示每日/會話 API 用量百分比',
+        label: '5h: ',
+        displayName: '時段用量',
+        description: '顯示當前 5 小時時段的用量百分比',
         previewPercent: 20,
         usageField: 'sessionUsage'
     },
@@ -89,6 +90,14 @@ const USAGE_PERCENT_WIDGET_CONFIG: Record<UsagePercentWidgetKind, UsagePercentWi
         description: '顯示每週 Fable API 用量百分比',
         previewPercent: 4,
         usageField: 'fableUsage'
+    },
+    'spend-limit': {
+        label: '支出上限: ',
+        displayName: '支出上限用量',
+        description: '顯示 Claude apps gateway 支出上限已使用的百分比',
+        previewPercent: 40,
+        usageField: 'spendLimitUsage',
+        ignoreApiError: true
     }
 };
 
@@ -107,7 +116,16 @@ function resolveUsageWindow(kind: UsagePercentWidgetKind, data: RenderUsageData,
     if (kind === 'weekly-opus') {
         return resolveWeeklyOpusUsageWindow(data);
     }
+    if (!hasUsageWindow(kind)) {
+        return null;
+    }
     return resolveFableUsageWindow(data);
+}
+
+// The spend limit payload does not say how long the limit's period is, so there
+// is no window to place a time cursor in.
+function hasUsageWindow(kind: UsagePercentWidgetKind): boolean {
+    return kind !== 'spend-limit';
 }
 
 function renderUsageDisplay(
@@ -117,22 +135,8 @@ function renderUsageDisplay(
     format: NumberFormat,
     getCursorOptions: () => UsageCursorOptions | undefined
 ): string {
-    const displayMode = getUsageDisplayMode(item);
-
-    if (isUsageProgressMode(displayMode)) {
-        const width = getUsageProgressBarWidth(displayMode);
-        const progressBar = makeTimerProgressBar(percent, width, getCursorOptions());
-        const progressDisplay = `[${progressBar}] ${formatPercent(percent, format)}`;
-        return formatRawOrLabeledValue(item, label, progressDisplay);
-    }
-
-    if (isUsageSliderMode(displayMode)) {
-        const slider = makeSliderBar(percent, undefined, getCursorOptions());
-        const sliderDisplay = displayMode === 'slider' ? `${slider} ${formatPercent(percent, format)}` : slider;
-        return formatRawOrLabeledValue(item, label, sliderDisplay);
-    }
-
-    return formatRawOrLabeledValue(item, label, formatPercent(percent, format));
+    const bar = formatUsageBar(item, percent, format, getCursorOptions);
+    return formatRawOrLabeledValue(item, label, bar ?? formatPercent(percent, format));
 }
 
 export function getUsagePercentWidgetDisplayName(kind: UsagePercentWidgetKind): string {
@@ -189,7 +193,7 @@ export function renderUsagePercentWidgetValue(
     const data: RenderUsageData = context.usageData ?? {};
     const usagePercent = data[config.usageField];
     if (usagePercent === undefined) {
-        if (data.error) {
+        if (data.error && !config.ignoreApiError) {
             return isHidden(item, USAGE_NO_DATA_HIDEABLE_STATE.key)
                 ? null
                 : getUsageErrorMessage(data.error);
@@ -205,7 +209,53 @@ export function renderUsagePercentWidgetValue(
             return undefined;
         }
 
+        // A remaining-percent bar shrinks as the window runs out, so its cursor
+        // marks the time left, keeping the cursor and the fill on one scale.
         const window = resolveUsageWindow(kind, data, context);
-        return window ? { cursorPercent: window.elapsedPercent } : undefined;
+        if (!window) {
+            return undefined;
+        }
+        return { cursorPercent: inverted ? window.remainingPercent : window.elapsedPercent };
     });
+}
+
+// Session, Weekly, Weekly Sonnet, Weekly Opus and Fable Weekly Usage differ only
+// in their kind
+export class UsagePercentWidget implements Widget {
+    private readonly kind: UsagePercentWidgetKind;
+
+    constructor(kind: UsagePercentWidgetKind) {
+        this.kind = kind;
+    }
+
+    getDefaultColor(): string { return 'brightBlue'; }
+    getDescription(): string { return getUsagePercentWidgetDescription(this.kind); }
+    getDisplayName(): string { return getUsagePercentWidgetDisplayName(this.kind); }
+    getCategory(): string { return '用量'; }
+    getLabelPrefix(): string { return getUsagePercentWidgetLabel(this.kind); }
+
+    getEditorDisplay(item: WidgetItem): WidgetEditorDisplay {
+        return getUsagePercentWidgetEditorDisplay(this.kind, item);
+    }
+
+    // The state hides the usage API's error, which a widget that ignores API errors never shows
+    getHideableStates(): HideableState[] {
+        return USAGE_PERCENT_WIDGET_CONFIG[this.kind].ignoreApiError ? [] : [USAGE_NO_DATA_HIDEABLE_STATE];
+    }
+
+    handleEditorAction(action: string, item: WidgetItem): WidgetItem | null {
+        return handleUsagePercentWidgetEditorAction(action, item);
+    }
+
+    render(item: WidgetItem, context: RenderContext, settings: Settings): string | null {
+        return renderUsagePercentWidgetValue(this.kind, item, context, settings);
+    }
+
+    getCustomKeybinds(item?: WidgetItem): CustomKeybind[] {
+        return getUsagePercentCustomKeybinds(item, hasUsageWindow(this.kind));
+    }
+
+    supportsRawValue(): boolean { return true; }
+    supportsColors(item: WidgetItem): boolean { return true; }
+    supportsNumberFormat(): boolean { return true; }
 }

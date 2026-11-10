@@ -11,8 +11,13 @@ import {
 
 import { DEFAULT_SETTINGS } from '../../../types/Settings';
 import type { WidgetItem } from '../../../types/Widget';
+import { getWidgetCatalog } from '../../../utils/widgets';
 import { waitFor } from '../../__tests__/helpers/wait-for-ink';
 import { ItemsEditor } from '../ItemsEditor';
+import {
+    getDescriptionRows,
+    getPickerMaxVisible
+} from '../items-editor/list-window';
 
 class MockTtyStream extends PassThrough {
     isTTY = true;
@@ -59,12 +64,6 @@ function createMockStdout(): CapturedWriteStream {
     });
 }
 
-function flushInk() {
-    return new Promise((resolve) => {
-        setTimeout(resolve, 25);
-    });
-}
-
 function StatefulItemsEditor({ initialWidgets }: { initialWidgets: WidgetItem[] }) {
     const [widgets, setWidgets] = useState(initialWidgets);
 
@@ -96,24 +95,28 @@ describe('ItemsEditor', () => {
         );
 
         try {
-            await flushInk();
-            expect(stripAnsi(stdout.getOutput())).toContain('1. 輸入 Token');
+            await waitFor(() => {
+                expect(stripAnsi(stdout.getOutput())).toContain('1. 輸入 Token');
+            });
             expect(stripAnsi(stdout.getOutput())).not.toContain('(compact)');
 
             stdout.clearOutput();
             stdin.write('.');
-            await flushInk();
-            expect(stripAnsi(stdout.getOutput())).toContain('1. 輸入 Token (compact)');
+            await waitFor(() => {
+                expect(stripAnsi(stdout.getOutput())).toContain('1. 輸入 Token (compact)');
+            });
 
             stdout.clearOutput();
             stdin.write('.');
-            await flushInk();
-            expect(stripAnsi(stdout.getOutput())).toContain('1. 輸入 Token (whole)');
+            await waitFor(() => {
+                expect(stripAnsi(stdout.getOutput())).toContain('1. 輸入 Token (whole)');
+            });
 
             stdout.clearOutput();
             stdin.write('.');
-            await flushInk();
-            expect(stripAnsi(stdout.getOutput())).toContain('1. 輸入 Token');
+            await waitFor(() => {
+                expect(stripAnsi(stdout.getOutput())).toContain('1. 輸入 Token');
+            });
             expect(stripAnsi(stdout.getOutput())).not.toContain('(compact)');
             expect(stripAnsi(stdout.getOutput())).not.toContain('(whole)');
         } finally {
@@ -154,8 +157,9 @@ describe('ItemsEditor', () => {
         );
 
         try {
-            await flushInk();
-            expect(stripAnsi(stdout.getOutput())).toContain('1. 快取讀取 (session) (compact)');
+            await waitFor(() => {
+                expect(stripAnsi(stdout.getOutput())).toContain('1. 快取讀取 (session) (compact)');
+            });
         } finally {
             instance.unmount();
             instance.cleanup();
@@ -182,33 +186,105 @@ describe('ItemsEditor', () => {
         );
 
         try {
-            await flushInk();
-            expect(stripAnsi(stdout.getOutput())).toContain('(e)編輯標籤…');
+            await waitFor(() => {
+                expect(stripAnsi(stdout.getOutput())).toContain('(e)編輯標籤…');
+            });
 
             stdout.clearOutput();
             stdin.write('e');
-            await flushInk();
-            expect(stripAnsi(stdout.getOutput())).toContain('（預設: "模型: "）');
+            await waitFor(() => {
+                expect(stripAnsi(stdout.getOutput())).toContain('（預設: "模型: "）');
+            });
 
             // Trim "模型: " down to "模", one backspace per keypress
-            for (const key of Array.from('型: ', () => '\x7f')) {
-                stdin.write(key);
-                await flushInk();
+            for (const text of ['模型:', '模型', '模']) {
+                stdin.write('\x7f');
+                await waitFor(() => {
+                    expect(stripAnsi(stdout.getOutput())).toContain(`"${text} " （預設: "模型: "）`);
+                });
             }
             stdin.write(' ');
-            await flushInk();
+            await waitFor(() => {
+                expect(stripAnsi(stdout.getOutput())).toContain('"模  " （預設: "模型: "）');
+            });
             stdout.clearOutput();
             stdin.write('\r');
-            await flushInk();
-            expect(stripAnsi(stdout.getOutput())).toContain('1. 模型 （標籤: "模 "）');
+            await waitFor(() => {
+                expect(stripAnsi(stdout.getOutput())).toContain('1. 模型 （標籤: "模 "）');
+            });
 
             stdout.clearOutput();
             stdin.write('r');
-            await flushInk();
+            await waitFor(() => {
+                expect(stripAnsi(stdout.getOutput())).toContain('(raw value)');
+            });
             const rawOutput = stripAnsi(stdout.getOutput());
             expect(rawOutput).toContain('(raw value)');
             expect(rawOutput).not.toContain('(e)編輯標籤…');
             expect(rawOutput).not.toContain('（標籤:');
+        } finally {
+            instance.unmount();
+            instance.cleanup();
+            stdin.destroy();
+            stdout.destroy();
+            stderr.destroy();
+        }
+    });
+
+    it('offers the shared label editor only in remote-control label formats', async () => {
+        const stdin = createMockStdin();
+        const stdout = createMockStdout();
+        const stderr = createMockStdout();
+        const instance = render(
+            React.createElement(StatefulItemsEditor, {
+                initialWidgets: [{
+                    id: '1',
+                    type: 'remote-control-status',
+                    metadata: { format: 'icon-text', nerdFont: 'true', label: 'RC ' }
+                }]
+            }),
+            { stdin, stdout, stderr, debug: true, exitOnCtrlC: false, patchConsole: false }
+        );
+        const output = () => stripAnsi(stdout.getOutput());
+        const press = async (key: string, expected: string) => {
+            stdout.clearOutput();
+            stdin.write(key);
+            await waitFor(() => {
+                expect(output()).toContain(expected);
+            });
+        };
+
+        try {
+            await waitFor(() => {
+                expect(output()).toContain('(icon-text, Nerd 字型)');
+            });
+            expect(output()).not.toContain('(e)編輯標籤…');
+            expect(output()).not.toContain('(label:');
+            for (const format of ['text', 'word']) {
+                await press('f', `(${format})`);
+                expect(output()).not.toContain('(e)編輯標籤…');
+                expect(output()).not.toContain('(label:');
+            }
+
+            await press('f', '(label-check)');
+            expect(output()).toContain('(e)編輯標籤…');
+            expect(output()).toContain('（標籤: "RC "）');
+            await press('e', '（預設: "遠端 "）');
+            await press('X', 'RC X');
+            await press('\r', '（標籤: "RC X"）');
+            await press('f', '(label-mark)');
+            expect(output()).toContain('(e)編輯標籤…');
+            expect(output()).toContain('（標籤: "RC X"）');
+
+            await press('r', '(raw value)');
+            expect(output()).not.toContain('(e)編輯標籤…');
+            expect(output()).not.toContain('(label:');
+            await press('r', '（標籤: "RC X"）');
+            await press('e', '（預設: "遠端 "）');
+            await press('\t', '(label-mark)');
+            expect(output()).not.toContain('(label:');
+            await press('f', '(icon)');
+            expect(output()).not.toContain('(e)編輯標籤…');
         } finally {
             instance.unmount();
             instance.cleanup();
@@ -239,20 +315,29 @@ describe('ItemsEditor', () => {
         );
 
         try {
-            await flushInk();
-            expect(stripAnsi(stdout.getOutput())).toContain('1. 模型 （標籤: "M "）');
+            await waitFor(() => {
+                expect(stripAnsi(stdout.getOutput())).toContain('1. 模型 （標籤: "M "）');
+            });
 
             stdin.write('\x1b[C');
-            await flushInk();
-            for (const char of query) {
+            await waitFor(() => {
+                expect(stripAnsi(stdout.getOutput())).toContain('Search: （無）');
+            });
+            for (const [index, char] of Array.from(query).entries()) {
+                // The search row drops the trailing space a typed space leaves
+                const typed = query.slice(0, index + 1).trimEnd();
+                stdout.clearOutput();
                 stdin.write(char);
-                await flushInk();
+                await waitFor(() => {
+                    expect(stripAnsi(stdout.getOutput())).toContain(`Search: ${typed}`);
+                });
             }
             stdout.clearOutput();
             stdin.write('\r');
-            await flushInk();
+            await waitFor(() => {
+                expect(stripAnsi(stdout.getOutput())).toContain(`1. ${name}`);
+            });
             const output = stripAnsi(stdout.getOutput());
-            expect(output).toContain(`1. ${name}`);
             if (keepsLabel) {
                 expect(output).toContain('（標籤: "M "）');
             } else {
@@ -285,19 +370,26 @@ describe('ItemsEditor', () => {
         );
 
         try {
-            await flushInk();
+            await waitFor(() => {
+                expect(stripAnsi(stdout.getOutput())).toContain('1. 模型');
+            });
             stdin.write('e');
-            await flushInk();
+            await waitFor(() => {
+                expect(stripAnsi(stdout.getOutput())).toContain('（預設: "模型: "）');
+            });
 
             // One macrotask apart: separate keypresses, but no re-render between them
             stdin.write('\x7f');
             await new Promise(resolve => setImmediate(resolve));
             stdin.write('\x7f');
-            await flushInk();
+            await waitFor(() => {
+                expect(stripAnsi(stdout.getOutput())).toContain('"模型 " （預設: "模型: "）');
+            });
             stdout.clearOutput();
             stdin.write('\r');
-            await flushInk();
-            expect(stripAnsi(stdout.getOutput())).toContain('1. 模型 （標籤: "模型"）');
+            await waitFor(() => {
+                expect(stripAnsi(stdout.getOutput())).toContain('1. 模型 （標籤: "模型"）');
+            });
         } finally {
             instance.unmount();
             instance.cleanup();
@@ -365,11 +457,66 @@ describe('ItemsEditor', () => {
         );
 
         try {
-            await flushInk();
+            await waitFor(() => {
+                expect(stripAnsi(stdout.getOutput())).toContain('1. 模型');
+            });
             stdout.clearOutput();
             stdin.write('e');
-            await flushInk();
-            expect(stripAnsi(stdout.getOutput())).toContain('"\u{1F469}\u200D\u{1F4BB}  " （預設: "模型: "）');
+            await waitFor(() => {
+                expect(stripAnsi(stdout.getOutput())).toContain('"\u{1F469}\u200D\u{1F4BB}  " （預設: "模型: "）');
+            });
+        } finally {
+            instance.unmount();
+            instance.cleanup();
+            stdin.destroy();
+            stdout.destroy();
+            stderr.destroy();
+        }
+    });
+
+    it.each([
+        {
+            name: 'a joined emoji',
+            widget: { id: '1', type: 'custom-text', customText: '\u{1F469}‍\u{1F4BB}', merge: true },
+            row: '1. 自定義文字 (\u{1F469}‍\u{1F4BB}) (merged→)'
+        },
+        {
+            name: 'a flag',
+            widget: { id: '1', type: 'custom-text', customText: '\u{1F1FA}\u{1F1F8}', merge: 'no-padding' as const },
+            row: '1. 自定義文字 (\u{1F1FA}\u{1F1F8}) (merged-no-pad→)'
+        },
+        {
+            name: 'a skin-toned label',
+            widget: { id: '1', type: 'model', metadata: { label: '\u{1F44D}\u{1F3FD} ' }, merge: true },
+            row: '1. 模型 （標籤: "\u{1F44D}\u{1F3FD} "） (merged→)'
+        }
+    ])('shows a row with $name in full before the tags that follow it', async ({ widget, row }) => {
+        const stdin = createMockStdin();
+        const stdout = createMockStdout();
+        const stderr = createMockStdout();
+        // Debug mode writes whole frames; the last one starts at the last title
+        const lastFrame = () => {
+            const output = stripAnsi(stdout.getOutput());
+            return output.slice(output.lastIndexOf('Edit Line 1'));
+        };
+
+        const instance = render(
+            React.createElement(StatefulItemsEditor, { initialWidgets: [widget, { id: '2', type: 'version' }] }),
+            {
+                stdin,
+                stdout,
+                stderr,
+                debug: true,
+                exitOnCtrlC: false,
+                patchConsole: false
+            }
+        );
+
+        try {
+            await waitFor(() => {
+                expect(lastFrame()).toContain('2. 版本');
+            });
+            expect(lastFrame()).toContain(row);
         } finally {
             instance.unmount();
             instance.cleanup();
@@ -397,19 +544,29 @@ describe('ItemsEditor', () => {
         );
 
         try {
-            await flushInk();
+            await waitFor(() => {
+                expect(stripAnsi(stdout.getOutput())).toContain('1. 時段計時器');
+            });
             stdin.write('e');
-            await flushInk();
+            await waitFor(() => {
+                expect(stripAnsi(stdout.getOutput())).toContain('（預設: "時段 "）');
+            });
             stdout.clearOutput();
             stdin.write('\r');
-            await flushInk();
-            expect(stripAnsi(stdout.getOutput())).toContain('（標籤: "時段 "）');
+            await waitFor(() => {
+                expect(stripAnsi(stdout.getOutput())).toContain('（標籤: "時段 "）');
+            });
 
+            stdout.clearOutput();
             stdin.write('e');
-            await flushInk();
+            await waitFor(() => {
+                expect(stripAnsi(stdout.getOutput())).toContain('（預設: "時段 "）');
+            });
             stdout.clearOutput();
             stdin.write('\t');
-            await flushInk();
+            await waitFor(() => {
+                expect(stripAnsi(stdout.getOutput())).toContain('1. 時段計時器');
+            });
             expect(stripAnsi(stdout.getOutput())).not.toContain('（標籤:');
         } finally {
             instance.unmount();
@@ -471,5 +628,411 @@ describe('ItemsEditor', () => {
             stdout.destroy();
             stderr.destroy();
         }
+    });
+
+    it('starts on the given widget and reports where the cursor moves', async () => {
+        const stdin = createMockStdin();
+        const stdout = createMockStdout();
+        const stderr = createMockStdout();
+        const onSelectedIndexChange = vi.fn<(index: number) => void>();
+
+        const instance = render(
+            React.createElement(ItemsEditor, {
+                widgets: [{ id: '1', type: 'model' }, { id: '2', type: 'tokens-input' }, { id: '3', type: 'tokens-output' }],
+                onUpdate: vi.fn(),
+                onBack: vi.fn(),
+                initialSelectedIndex: 1,
+                onSelectedIndexChange,
+                lineNumber: 1,
+                settings: DEFAULT_SETTINGS
+            }),
+            { stdin, stdout, stderr, debug: true, exitOnCtrlC: false, patchConsole: false }
+        );
+
+        try {
+            await waitFor(() => {
+                expect(stripAnsi(stdout.getOutput())).toMatch(/▶\s+2\. 輸入 Token/);
+            });
+
+            stdin.write('\x1b[B');
+            await waitFor(() => {
+                expect(onSelectedIndexChange).toHaveBeenLastCalledWith(2);
+            });
+        } finally {
+            instance.unmount();
+            instance.cleanup();
+            stdin.destroy();
+            stdout.destroy();
+            stderr.destroy();
+        }
+    });
+
+    it('shows and applies the CWD link key without dropping its existing display controls', async () => {
+        const stdin = createMockStdin();
+        const stdout = createMockStdout();
+        const stderr = createMockStdout();
+        const lastFrame = () => {
+            const output = stripAnsi(stdout.getOutput());
+            return output.slice(output.lastIndexOf('Edit Line 1'));
+        };
+        const instance = render(
+            React.createElement(StatefulItemsEditor, {
+                initialWidgets: [{
+                    id: '1',
+                    type: 'current-working-dir',
+                    metadata: { abbreviateHome: 'true', segments: '2' }
+                }]
+            }),
+            { stdin, stdout, stderr, debug: true, exitOnCtrlC: false, patchConsole: false }
+        );
+
+        try {
+            await waitFor(() => {
+                expect(lastFrame()).toContain('當前目錄 (~, 段數: 2)');
+            });
+            expect(lastFrame()).toContain('(l)連結模式');
+            expect(lastFrame()).toContain('(h)ome ~ 縮寫');
+            expect(lastFrame()).toContain('(s)路徑段數');
+            expect(lastFrame()).toContain('(f)ish 風格');
+
+            stdin.write('l');
+            await waitFor(() => {
+                expect(lastFrame()).toContain('當前目錄 (~, 段數: 2, 連結: file)');
+            });
+            stdin.write('l');
+            await waitFor(() => {
+                expect(lastFrame()).toContain('連結: VS Code');
+            });
+            stdin.write('l');
+            await waitFor(() => {
+                expect(lastFrame()).toContain('連結: Cursor');
+            });
+            stdin.write('l');
+            await waitFor(() => {
+                expect(lastFrame()).toContain('連結: Zed');
+            });
+            stdin.write('l');
+            await waitFor(() => {
+                expect(lastFrame()).toContain('當前目錄 (~, 段數: 2)');
+                expect(lastFrame()).not.toContain('link:');
+            });
+        } finally {
+            instance.unmount();
+            instance.cleanup();
+            stdin.destroy();
+            stdout.destroy();
+            stderr.destroy();
+        }
+    });
+
+    it('turns fish style off when a cwd segment count is saved', async () => {
+        const stdin = createMockStdin();
+        const stdout = createMockStdout();
+        const stderr = createMockStdout();
+        // Debug mode writes whole frames; the last one starts at the last title
+        const lastFrame = () => {
+            const output = stripAnsi(stdout.getOutput());
+            return output.slice(output.lastIndexOf('Edit Line 1'));
+        };
+
+        const instance = render(
+            React.createElement(StatefulItemsEditor, { initialWidgets: [{ id: '1', type: 'current-working-dir', metadata: { fishStyle: 'true' } }] }),
+            {
+                stdin,
+                stdout,
+                stderr,
+                debug: true,
+                exitOnCtrlC: false,
+                patchConsole: false
+            }
+        );
+
+        try {
+            await waitFor(() => {
+                expect(lastFrame()).toContain('▶  1. 當前目錄 (fish 風格)');
+            });
+
+            stdin.write('s');
+            await waitFor(() => {
+                expect(lastFrame()).toContain('Enter number of segments to display');
+            });
+
+            stdin.write('2');
+            await waitFor(() => {
+                expect(lastFrame()).toContain('(blank for full path): 2');
+            });
+
+            stdin.write('\r');
+            await waitFor(() => {
+                expect(lastFrame()).toContain('▶  1. 當前目錄 (段數: 2)');
+            });
+            expect(lastFrame()).not.toContain('fish 風格');
+        } finally {
+            instance.unmount();
+            instance.cleanup();
+            stdin.destroy();
+            stdout.destroy();
+            stderr.destroy();
+        }
+    });
+
+    describe('widget picker', () => {
+        const ESC = '\x1b';
+        const ENTER = '\r';
+        const UP_ARROW = '\x1b[A';
+        const RIGHT_ARROW = '\x1b[C';
+        const allWidgetCount = getWidgetCatalog(DEFAULT_SETTINGS).length;
+
+        function getEntryRows(output: string): string[] {
+            return output.split('\n').filter(row => /^\s*(▶\s+)?\d+\. /.test(row));
+        }
+
+        function renderEditor(widgets: WidgetItem[], settings = DEFAULT_SETTINGS) {
+            const stdin = createMockStdin();
+            const stdout = createMockStdout();
+            const stderr = createMockStdout();
+            const previews: (WidgetItem[] | null)[] = [];
+            const onUpdate = vi.fn<(widgets: WidgetItem[]) => void>();
+
+            const instance = render(
+                React.createElement(ItemsEditor, {
+                    widgets,
+                    onUpdate,
+                    onBack: vi.fn(),
+                    onPreviewChange: (preview: WidgetItem[] | null) => { previews.push(preview); },
+                    lineNumber: 1,
+                    settings
+                }),
+                {
+                    stdin,
+                    stdout,
+                    stderr,
+                    debug: true,
+                    exitOnCtrlC: false,
+                    patchConsole: false
+                }
+            );
+
+            // Output written since the last key press
+            const screen = () => stripAnsi(stdout.getOutput());
+
+            return {
+                instance,
+                onUpdate,
+                // Sends keys without waiting; follow with waitFor on what they change
+                press: (input: string) => {
+                    stdout.clearOutput();
+                    stdin.write(input);
+                },
+                screen,
+                // The last picker frame drawn since the last key press
+                latestPickerFrame: () => {
+                    const output = screen();
+                    const start = output.lastIndexOf('[新增元件]');
+                    return start === -1 ? '' : output.slice(start);
+                },
+                // The line editor is drawn and listening for keys
+                ready: () => waitFor(() => {
+                    expect(screen()).toContain('1. ');
+                }),
+                latestPreview: () => previews.at(-1),
+                cleanup: () => {
+                    instance.unmount();
+                    instance.cleanup();
+                    stdin.destroy();
+                    stdout.destroy();
+                    stderr.destroy();
+                }
+            };
+        }
+
+        it('shows the highlighted widget added after the cursor until the picker is cancelled', async () => {
+            const editor = renderEditor([{ id: '1', type: 'model' }]);
+
+            try {
+                await editor.ready();
+                editor.press('a');
+                await waitFor(() => {
+                    expect(editor.screen()).toContain('[新增元件]');
+                });
+                // Browsing categories highlights no widget, so the line is untouched
+                expect(editor.latestPreview() ?? null).toBeNull();
+
+                editor.press('git branch');
+                await waitFor(() => {
+                    expect(editor.latestPreview()?.map(widget => widget.type)).toEqual(['model', 'git-branch']);
+                });
+
+                // The first ESC clears the search, the second closes the picker
+                editor.press(ESC);
+                await waitFor(() => {
+                    expect(editor.latestPreview()).toBeNull();
+                });
+                editor.press(ESC);
+                await waitFor(() => {
+                    expect(editor.screen()).toContain('Edit Line 1');
+                    expect(editor.screen()).not.toContain('[新增元件]');
+                });
+                expect(editor.onUpdate).not.toHaveBeenCalled();
+            } finally {
+                editor.cleanup();
+            }
+        });
+
+        it('shows the widget at the cursor with its type swapped when changing type', async () => {
+            const editor = renderEditor([{ id: '1', type: 'model' }, { id: '2', type: 'tokens-input' }]);
+
+            try {
+                await editor.ready();
+                editor.press(RIGHT_ARROW);
+                await waitFor(() => {
+                    expect(editor.screen()).toContain('[更改元件型別]');
+                });
+                editor.press('git branch');
+                await waitFor(() => {
+                    expect(editor.latestPreview()).toEqual([
+                        { id: '1', type: 'git-branch' },
+                        { id: '2', type: 'tokens-input' }
+                    ]);
+                });
+            } finally {
+                editor.cleanup();
+            }
+        });
+
+        it('applies exactly the previewed line, powerline background included, on Enter', async () => {
+            const powerlineSettings = {
+                ...DEFAULT_SETTINGS,
+                powerline: { ...DEFAULT_SETTINGS.powerline, enabled: true }
+            };
+            const editor = renderEditor([{ id: '1', type: 'model', backgroundColor: 'bgRed' }], powerlineSettings);
+
+            try {
+                await editor.ready();
+                editor.press('a');
+                await waitFor(() => {
+                    expect(editor.screen()).toContain('[新增元件]');
+                });
+                editor.press('git branch');
+                await waitFor(() => {
+                    expect(editor.latestPreview()?.map(widget => widget.type)).toEqual(['model', 'git-branch']);
+                });
+                const preview = editor.latestPreview();
+                expect(preview?.[1]?.backgroundColor).toEqual(expect.any(String));
+                expect(preview?.[1]?.backgroundColor).not.toBe('bgRed');
+
+                editor.press(ENTER);
+                await waitFor(() => {
+                    expect(editor.onUpdate).toHaveBeenCalledTimes(1);
+                    expect(editor.latestPreview()).toBeNull();
+                });
+                expect(editor.onUpdate).toHaveBeenCalledWith(preview);
+            } finally {
+                editor.cleanup();
+            }
+        });
+
+        it('shows a window of a long list and counts the entries hidden below it', async () => {
+            const editor = renderEditor([{ id: '1', type: 'model' }]);
+
+            try {
+                await editor.ready();
+                editor.press('a');
+                await waitFor(() => {
+                    expect(editor.screen()).toContain('[新增元件]');
+                });
+                editor.press(ENTER);
+                await waitFor(() => {
+                    expect(editor.latestPickerFrame()).toMatch(/↓ \d+ 項/);
+                });
+                const output = editor.latestPickerFrame();
+
+                const shown = getEntryRows(output).length;
+                const hiddenBelow = Number(/↓ (\d+) 項/.exec(output)?.[1]);
+                expect(shown).toBeGreaterThan(0);
+                expect(shown).toBeLessThan(allWidgetCount);
+                expect(shown + hiddenBelow).toBe(allWidgetCount);
+                expect(output).not.toMatch(/↑ \d+ 項/);
+            } finally {
+                editor.cleanup();
+            }
+        });
+
+        // The highlighted widget's description shows under the list, so the
+        // list gives up rows for the tallest one it holds (the mock terminal
+        // is 120 columns, less the description's indent of 2)
+        it('leaves room under the list for its tallest description', async () => {
+            const editor = renderEditor([{ id: '1', type: 'model' }]);
+            const tallest = Math.max(...getWidgetCatalog(DEFAULT_SETTINGS).map(entry => getDescriptionRows(entry.description, 118)));
+            const statusLines = DEFAULT_SETTINGS.lines.filter(line => line.length > 0).length;
+
+            try {
+                await editor.ready();
+                editor.press('a');
+                await waitFor(() => {
+                    expect(editor.screen()).toContain('[新增元件]');
+                });
+                editor.press(ENTER);
+                await waitFor(() => {
+                    expect(editor.latestPickerFrame()).toMatch(/↓ \d+ 項/);
+                });
+
+                expect(tallest).toBeGreaterThan(1);
+                expect(getEntryRows(editor.latestPickerFrame())).toHaveLength(getPickerMaxVisible(40, statusLines, tallest));
+            } finally {
+                editor.cleanup();
+            }
+        });
+
+        it('scrolls the window to keep the highlighted widget visible', async () => {
+            const editor = renderEditor([{ id: '1', type: 'model' }]);
+
+            try {
+                await editor.ready();
+                editor.press('a');
+                await waitFor(() => {
+                    expect(editor.screen()).toContain('[新增元件]');
+                });
+                editor.press(ENTER);
+                await waitFor(() => {
+                    expect(editor.latestPickerFrame()).toMatch(/↓ \d+ 項/);
+                });
+                // Up from the first widget wraps to the last one
+                editor.press(UP_ARROW);
+                await waitFor(() => {
+                    const highlighted = getEntryRows(editor.latestPickerFrame()).find(row => row.includes('▶'));
+                    expect(highlighted).toMatch(new RegExp(`${allWidgetCount}\\. `));
+                });
+                const output = editor.latestPickerFrame();
+                const rows = getEntryRows(output);
+
+                expect(rows.some(row => /^\s*1\. /.test(row))).toBe(false);
+                expect(output).toMatch(/↑ \d+ 項/);
+                expect(output).not.toMatch(/↓ \d+ 項/);
+            } finally {
+                editor.cleanup();
+            }
+        });
+
+        it('clears the preview when the editor is closed mid-pick', async () => {
+            const editor = renderEditor([{ id: '1', type: 'model' }]);
+
+            try {
+                await editor.ready();
+                editor.press('a');
+                await waitFor(() => {
+                    expect(editor.screen()).toContain('[新增元件]');
+                });
+                editor.press('git branch');
+                await waitFor(() => {
+                    expect(editor.latestPreview()?.map(widget => widget.type)).toEqual(['model', 'git-branch']);
+                });
+
+                editor.instance.unmount();
+                expect(editor.latestPreview()).toBeNull();
+            } finally {
+                editor.cleanup();
+            }
+        });
     });
 });

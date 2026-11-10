@@ -13,7 +13,7 @@ const LABEL = '會話: ';
 
 export class SessionNameWidget implements Widget {
     getDefaultColor(): string { return 'cyan'; }
-    getDescription(): string { return '顯示透過 /rename 命令設定的會話名稱'; }
+    getDescription(): string { return '顯示 /rename 設定的會話名稱，或 Claude Code 自動產生的標題'; }
     getDisplayName(): string { return '會話名稱'; }
     getCategory(): string { return '會話'; }
     getLabelPrefix(): string { return LABEL; }

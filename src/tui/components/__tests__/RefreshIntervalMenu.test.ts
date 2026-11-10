@@ -169,6 +169,16 @@ describe('buildConfigureStatusLineItems', () => {
         expect(items[0]?.disabled).toBeFalsy();
     });
 
+    it('should ask for an install before the refresh interval, keeping the cache TTLs editable', () => {
+        const items = buildConfigureStatusLineItems(10, true, 5, 5, 5, false);
+        expect(items[0]?.sublabel).toBe('（請先安裝）');
+        expect(items[0]?.disabled).toBe(true);
+        expect(items.slice(1).map(item => item.disabled)).toEqual([undefined, undefined, undefined]);
+
+        // An install wouldn't help an older Claude Code
+        expect(buildConfigureStatusLineItems(null, false, 5, 5, 5, false)[0]?.sublabel).toContain('需要 Claude Code');
+    });
+
     it('should show the configured Git cache TTL', () => {
         const items = buildConfigureStatusLineItems(10, true, 5, 5, 5);
         expect(items[1]?.label).toContain('Git 快取 TTL');
@@ -426,6 +436,60 @@ describe('RefreshIntervalMenu', () => {
                 expect(onCustomCommandCacheTtlUpdate).toHaveBeenCalledWith(7);
             });
             expect(onGitCacheTtlUpdate).not.toHaveBeenCalled();
+        } finally {
+            instance.unmount();
+            instance.cleanup();
+            stdin.destroy();
+            stdout.destroy();
+            stderr.destroy();
+        }
+    });
+
+    it('keeps the cancelled setting highlighted after Escape closes its prompt', async () => {
+        const stdin = createMockStdin();
+        const stdout = createMockStdout();
+        const stderr = createMockStdout();
+        const onUpdate = vi.fn();
+        const onCustomCommandCacheTtlUpdate = vi.fn();
+        const onBack = vi.fn();
+        const instance = render(
+            React.createElement(RefreshIntervalMenu, {
+                currentInterval: 10,
+                supportsRefreshInterval: true,
+                gitCacheTtlSeconds: 5,
+                customCommandCacheTtlSeconds: 7,
+                terminalWidthCacheTtlSeconds: 9,
+                onUpdate,
+                onGitCacheTtlUpdate: vi.fn(),
+                onCustomCommandCacheTtlUpdate,
+                onTerminalWidthCacheTtlUpdate: vi.fn(),
+                onBack
+            }),
+            {
+                stdin,
+                stdout,
+                stderr,
+                debug: true,
+                exitOnCtrlC: false,
+                patchConsole: false
+            }
+        );
+
+        try {
+            await waitFor(() => {
+                expect(stdout.getOutput()).toMatch(selected('重新整理間隔'));
+            });
+            await press(stdin, stdout, '\u001B[B', selected('Git 快取 TTL'));
+            await press(stdin, stdout, '\u001B[B', selected('自訂命令快取 TTL'));
+            await press(stdin, stdout, '\r', '輸入自訂命令快取 TTL（秒，0-60）:');
+
+            await press(stdin, stdout, '\u001B', selected('自訂命令快取 TTL'));
+            expect(stdout.getOutput()).not.toMatch(selected('重新整理間隔'));
+
+            await press(stdin, stdout, '\r', '輸入自訂命令快取 TTL（秒，0-60）:');
+            expect(onUpdate).not.toHaveBeenCalled();
+            expect(onCustomCommandCacheTtlUpdate).not.toHaveBeenCalled();
+            expect(onBack).not.toHaveBeenCalled();
         } finally {
             instance.unmount();
             instance.cleanup();
