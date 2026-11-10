@@ -180,7 +180,7 @@ describe('global package manager inspection', () => {
                 ],
                 binDir: `${root}/usr/bin`,
                 version: '2.2.13',
-                warning: `⚠ Multiple ccstatusline-zh-tw binaries are on PATH. Claude Code will run the first match: ${root}/usr/bin/ccstatusline-zh-tw.\nOther matches: ${root}/.bun/bin/ccstatusline-zh-tw`
+                warning: `⚠ PATH 中存在多個 ccstatusline-zh-tw 可執行檔案，Claude Code 將使用第一個匹配：${root}/usr/bin/ccstatusline-zh-tw。\n其他匹配：${root}/.bun/bin/ccstatusline-zh-tw`
             });
         } finally {
             fs.rmSync(root, { recursive: true, force: true });

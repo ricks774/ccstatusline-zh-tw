@@ -220,7 +220,7 @@ describe('global command resolution', () => {
 
             const resolution = inspectGlobalCommandResolution('npm', { platform: 'linux' });
 
-            expect(resolution.warning).toBe(`⚠ Multiple ccstatusline-zh-tw binaries are on PATH. Claude Code will run the first match: ${root}/usr/bin/ccstatusline-zh-tw.\nOther matches: ${root}/.bun/bin/ccstatusline-zh-tw`);
+            expect(resolution.warning).toBe(`⚠ PATH 中存在多個 ccstatusline-zh-tw 可執行檔案，Claude Code 將使用第一個匹配：${root}/usr/bin/ccstatusline-zh-tw。\n其他匹配：${root}/.bun/bin/ccstatusline-zh-tw`);
         } finally {
             fs.rmSync(root, { recursive: true, force: true });
         }
